@@ -150,9 +150,12 @@ describe('RefreshAccessTokenUseCase', () => {
 
         const result = await useCase.execute({ refreshToken: 'refresh-token' });
 
-        expect(result.accessToken).toBe('access-token');
-        expect(result.expiresIn).toBe(900);
-        expect(result.refreshToken).toBeUndefined();
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.value.accessToken).toBe('access-token');
+            expect(result.value.expiresIn).toBe(900);
+            expect(result.value.refreshToken).toBeUndefined();
+        }
         expect(tokenService.accessPayloads[0]?.userId).toBe(session.userId);
         expect(tokenService.accessPayloads[0]?.roles).toHaveLength(1);
         expect(tokenService.accessPayloads[0]?.roles[0]?.getValue()).toBe('USER');
@@ -163,9 +166,12 @@ describe('RefreshAccessTokenUseCase', () => {
         const { useCase, auditLogger, sessionRepository } = createUseCase();
         sessionRepository.session = null;
 
-        await expect(
-            useCase.execute({ refreshToken: 'invalid' }),
-        ).rejects.toBeInstanceOf(AuthInvalidRefreshTokenError);
+        const result = await useCase.execute({ refreshToken: 'invalid' });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error).toBeInstanceOf(AuthInvalidRefreshTokenError);
+        }
 
         expect(auditLogger.events.some((event) => event.action === 'REFRESH_FAIL')).toBe(true);
     });
@@ -177,9 +183,12 @@ describe('RefreshAccessTokenUseCase', () => {
         const { useCase, auditLogger, sessionRepository } = createUseCase();
         sessionRepository.session = session;
 
-        await expect(
-            useCase.execute({ refreshToken: 'refresh-token' }),
-        ).rejects.toBeInstanceOf(AuthInvalidRefreshTokenError);
+        const result = await useCase.execute({ refreshToken: 'refresh-token' });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error).toBeInstanceOf(AuthInvalidRefreshTokenError);
+        }
 
         expect(auditLogger.events.some((event) => event.action === 'REFRESH_FAIL')).toBe(true);
     });
@@ -189,9 +198,12 @@ describe('RefreshAccessTokenUseCase', () => {
         const { useCase, auditLogger, sessionRepository } = createUseCase();
         sessionRepository.session = session;
 
-        await expect(
-            useCase.execute({ refreshToken: 'refresh-token' }),
-        ).rejects.toBeInstanceOf(AuthInvalidRefreshTokenError);
+        const result = await useCase.execute({ refreshToken: 'refresh-token' });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error).toBeInstanceOf(AuthInvalidRefreshTokenError);
+        }
 
         expect(auditLogger.events.some((event) => event.action === 'REFRESH_FAIL')).toBe(true);
     });
@@ -205,8 +217,11 @@ describe('RefreshAccessTokenUseCase', () => {
 
         const result = await useCase.execute({ refreshToken: 'refresh-token' });
 
-        expect(result.accessToken).toBe('access-token');
-        expect(result.refreshToken).toBe('refresh-token');
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.value.accessToken).toBe('access-token');
+            expect(result.value.refreshToken).toBe('refresh-token');
+        }
         expect(sessionRepository.updated).not.toBeNull();
         expect(sessionRepository.updated?.refreshTokenHash).toBe('hashed:refresh-token');
         expect(auditLogger.events.some((event) => event.action === 'REFRESH_SUCCESS')).toBe(true);

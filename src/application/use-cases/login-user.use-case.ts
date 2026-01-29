@@ -8,6 +8,7 @@ import type { TokenService } from '../ports/token.service.js';
 import type { UserRepository } from '../ports/user.repository.js';
 import type { LoginUserRequest } from '../dto/login-user.request.js';
 import type { LoginUserResponse } from '../dto/login-user.response.js';
+import { fail, ok, type Result } from '../../shared/result.js';
 import { Session, SessionStatus } from '../../domain/entities/session.entity.js';
 import { AuthInvalidCredentialsError } from '../../domain/errors/auth-invalid-credentials.error.js';
 import { AuthRateLimitedError } from '../../domain/errors/auth-rate-limited.error.js';
@@ -27,10 +28,16 @@ export type LoginUserDependencies = {
     refreshTokenTtlSeconds: number;
 };
 
+export type LoginUserError =
+    | AuthInvalidCredentialsError
+    | AuthUserDisabledError
+    | AuthUserLockedError
+    | AuthRateLimitedError;
+
 export class LoginUserUseCase {
     constructor(private readonly dependencies: LoginUserDependencies) {}
 
-    async execute(request: LoginUserRequest): Promise<LoginUserResponse> {
+    async execute(request: LoginUserRequest): Promise<Result<LoginUserResponse, LoginUserError>> {
         const now = this.dependencies.dateProvider.now();
 
         try {
@@ -38,25 +45,25 @@ export class LoginUserUseCase {
         } catch (error) {
             await this.logFailure(request, now);
             if (error instanceof AuthRateLimitedError) {
-                throw error;
+                return fail(error);
             }
-            throw error;
+            return fail(new AuthRateLimitedError());
         }
 
         const user = await this.dependencies.userRepository.findByEmail(request.email);
         if (!user) {
             await this.logFailure(request, now);
-            throw new AuthInvalidCredentialsError();
+            return fail(new AuthInvalidCredentialsError());
         }
 
         if (!user.isActive()) {
             await this.logFailure(request, now, user.id);
-            throw new AuthUserDisabledError();
+            return fail(new AuthUserDisabledError());
         }
 
         if (user.isLocked(now)) {
             await this.logFailure(request, now, user.id);
-            throw new AuthUserLockedError();
+            return fail(new AuthUserLockedError());
         }
 
         const passwordValid = await this.dependencies.passwordHasher.verify(
@@ -66,7 +73,7 @@ export class LoginUserUseCase {
 
         if (!passwordValid) {
             await this.logFailure(request, now, user.id);
-            throw new AuthInvalidCredentialsError();
+            return fail(new AuthInvalidCredentialsError());
         }
 
         const sessionId = generateSessionId(now);
@@ -104,11 +111,11 @@ export class LoginUserUseCase {
             createdAt: now,
         });
 
-        return {
+        return ok({
             accessToken,
             refreshToken,
             expiresIn: this.dependencies.accessTokenTtlSeconds,
-        };
+        });
     }
 
     private async logFailure(

@@ -176,9 +176,12 @@ describe('LoginUserUseCase', () => {
             userAgent: 'unit-test',
         });
 
-        expect(result.accessToken).toBe('access-token');
-        expect(result.refreshToken).toBe('refresh-token');
-        expect(result.expiresIn).toBe(900);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.value.accessToken).toBe('access-token');
+            expect(result.value.refreshToken).toBe('refresh-token');
+            expect(result.value.expiresIn).toBe(900);
+        }
         expect(sessionRepository.created).not.toBeNull();
         expect(sessionRepository.created?.refreshTokenHash).toBe('hashed:refresh-token');
         expect(tokenService.accessPayloads[0]?.userId).toBe(user.id);
@@ -194,14 +197,17 @@ describe('LoginUserUseCase', () => {
             passwordHasher: new PasswordHasherStub(false),
         });
 
-        await expect(
-            useCase.execute({
-                email: user.email,
-                password: 'wrong-password',
-                ip: '127.0.0.1',
-                userAgent: 'unit-test',
-            }),
-        ).rejects.toBeInstanceOf(AuthInvalidCredentialsError);
+        const result = await useCase.execute({
+            email: user.email,
+            password: 'wrong-password',
+            ip: '127.0.0.1',
+            userAgent: 'unit-test',
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error).toBeInstanceOf(AuthInvalidCredentialsError);
+        }
 
         expect(sessionRepository.created).toBeNull();
         expect(auditLogger.events.some((event) => event.action === 'LOGIN_FAIL')).toBe(true);
@@ -213,14 +219,17 @@ describe('LoginUserUseCase', () => {
             userRepository: buildUserRepository(user),
         });
 
-        await expect(
-            useCase.execute({
-                email: user.email,
-                password: 'valid-password',
-                ip: '127.0.0.1',
-                userAgent: 'unit-test',
-            }),
-        ).rejects.toBeInstanceOf(AuthUserDisabledError);
+        const result = await useCase.execute({
+            email: user.email,
+            password: 'valid-password',
+            ip: '127.0.0.1',
+            userAgent: 'unit-test',
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error).toBeInstanceOf(AuthUserDisabledError);
+        }
 
         expect(sessionRepository.created).toBeNull();
         expect(auditLogger.events.some((event) => event.action === 'LOGIN_FAIL')).toBe(true);
@@ -234,14 +243,17 @@ describe('LoginUserUseCase', () => {
             userRepository: buildUserRepository(user),
         });
 
-        await expect(
-            useCase.execute({
-                email: user.email,
-                password: 'valid-password',
-                ip: '127.0.0.1',
-                userAgent: 'unit-test',
-            }),
-        ).rejects.toBeInstanceOf(AuthUserLockedError);
+        const result = await useCase.execute({
+            email: user.email,
+            password: 'valid-password',
+            ip: '127.0.0.1',
+            userAgent: 'unit-test',
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error).toBeInstanceOf(AuthUserLockedError);
+        }
 
         expect(sessionRepository.created).toBeNull();
         expect(auditLogger.events.some((event) => event.action === 'LOGIN_FAIL')).toBe(true);
@@ -254,14 +266,17 @@ describe('LoginUserUseCase', () => {
             loginRateLimiter: new BlockingRateLimiter(),
         });
 
-        await expect(
-            useCase.execute({
-                email: user.email,
-                password: 'valid-password',
-                ip: '127.0.0.1',
-                userAgent: 'unit-test',
-            }),
-        ).rejects.toBeInstanceOf(AuthRateLimitedError);
+        const result = await useCase.execute({
+            email: user.email,
+            password: 'valid-password',
+            ip: '127.0.0.1',
+            userAgent: 'unit-test',
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error).toBeInstanceOf(AuthRateLimitedError);
+        }
 
         expect(sessionRepository.created).toBeNull();
         expect(auditLogger.events.some((event) => event.action === 'LOGIN_FAIL')).toBe(true);

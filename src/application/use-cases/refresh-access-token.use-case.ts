@@ -8,6 +8,7 @@ import type { RefreshAccessTokenRequest } from '../dto/refresh-access-token.requ
 import type { RefreshAccessTokenResponse } from '../dto/refresh-access-token.response.js';
 import { Session, SessionStatus } from '../../domain/entities/session.entity.js';
 import { AuthInvalidRefreshTokenError } from '../../domain/errors/auth-invalid-refresh-token.error.js';
+import { fail, ok, type Result } from '../../shared/result.js';
 
 export type RefreshAccessTokenDependencies = {
     sessionRepository: SessionRepository;
@@ -24,7 +25,9 @@ export type RefreshAccessTokenDependencies = {
 export class RefreshAccessTokenUseCase {
     constructor(private readonly dependencies: RefreshAccessTokenDependencies) {}
 
-    async execute(request: RefreshAccessTokenRequest): Promise<RefreshAccessTokenResponse> {
+    async execute(
+        request: RefreshAccessTokenRequest,
+    ): Promise<Result<RefreshAccessTokenResponse, AuthInvalidRefreshTokenError>> {
         const now = this.dependencies.dateProvider.now();
         const refreshTokenHash = this.dependencies.refreshTokenHasher.hash(request.refreshToken);
 
@@ -34,13 +37,13 @@ export class RefreshAccessTokenUseCase {
 
         if (!session || !this.isSessionValid(session, now)) {
             await this.logFailure(now);
-            throw new AuthInvalidRefreshTokenError();
+            return fail(new AuthInvalidRefreshTokenError());
         }
 
         const user = await this.dependencies.userRepository.findById(session.userId);
         if (!user) {
             await this.logFailure(now);
-            throw new AuthInvalidRefreshTokenError();
+            return fail(new AuthInvalidRefreshTokenError());
         }
 
         const accessToken = this.dependencies.tokenService.createAccessToken({
@@ -78,7 +81,7 @@ export class RefreshAccessTokenUseCase {
             createdAt: now,
         });
 
-        return result;
+        return ok(result);
     }
 
     private isSessionValid(session: Session, now: Date): boolean {
