@@ -15,7 +15,7 @@ import { AuthUserLockedError } from '../../../src/domain/errors/auth-user-locked
 import { Session } from '../../../src/domain/entities/session.entity.js';
 import { User, UserStatus } from '../../../src/domain/entities/user.entity.js';
 import type { UserProps } from '../../../src/domain/entities/user.entity.js';
-import { UserRole } from '../../../src/domain/value-objects/user-role.js';
+import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
 
 const fixedNow = new Date('2026-01-29T10:00:00.000Z');
 
@@ -26,7 +26,7 @@ const createUser = (overrides: Partial<UserProps> = {}): User =>
         passwordHash: 'hashed-password',
         status: UserStatus.Active,
         lockedUntil: undefined,
-        roles: [UserRole.User],
+        roles: [UserRole.user()],
         createdAt: fixedNow,
         updatedAt: fixedNow,
         ...overrides,
@@ -165,7 +165,8 @@ describe('LoginUserUseCase', () => {
         expect(sessionRepository.created).not.toBeNull();
         expect(sessionRepository.created?.refreshTokenHash).toBe('hashed:refresh-token');
         expect(tokenService.accessPayloads[0]?.userId).toBe(user.id);
-        expect(tokenService.accessPayloads[0]?.roles).toEqual([UserRole.User]);
+        expect(tokenService.accessPayloads[0]?.roles).toHaveLength(1);
+        expect(tokenService.accessPayloads[0]?.roles[0]?.getValue()).toBe('USER');
         expect(auditLogger.events.some((event) => event.action === 'LOGIN_SUCCESS')).toBe(true);
     });
 

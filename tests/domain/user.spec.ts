@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { User, UserStatus } from '../../src/domain/entities/user.entity.js';
 import type { UserProps } from '../../src/domain/entities/user.entity.js';
-import { UserRole } from '../../src/domain/value-objects/user-role.js';
+import { UserRole } from '../../src/domain/value-objects/user-role.value-object.js';
 
 const baseDate = new Date('2026-01-01T00:00:00.000Z');
 
@@ -12,7 +12,7 @@ const createUser = (overrides: Partial<UserProps> = {}): User => {
         passwordHash: 'hash',
         status: UserStatus.Active,
         lockedUntil: undefined,
-        roles: [UserRole.User],
+        roles: [UserRole.user()],
         createdAt: baseDate,
         updatedAt: baseDate,
         ...overrides,
