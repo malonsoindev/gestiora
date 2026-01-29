@@ -32,6 +32,11 @@ const createUser = (overrides: Partial<UserProps> = {}): User =>
         ...overrides,
     });
 
+const buildUserRepository = (user: User | null): UserRepository => ({
+    findByEmail: async () => user,
+    findById: async () => user,
+});
+
 class FixedDateProvider implements DateProvider {
     constructor(private readonly date: Date) {}
 
@@ -42,9 +47,18 @@ class FixedDateProvider implements DateProvider {
 
 class SessionRepositorySpy implements SessionRepository {
     created: Session | null = null;
+    updated: Session | null = null;
 
     async create(session: Session): Promise<void> {
         this.created = session;
+    }
+
+    async findByRefreshTokenHash(): Promise<Session | null> {
+        return null;
+    }
+
+    async update(session: Session): Promise<void> {
+        this.updated = session;
     }
 }
 
@@ -124,7 +138,10 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
     const tokenService = new TokenServiceStub();
 
     const resolvedDependencies: UseCaseDependencies = {
-        userRepository: { findByEmail: async () => createUser() },
+        userRepository: {
+            findByEmail: async () => createUser(),
+            findById: async () => createUser(),
+        },
         sessionRepository,
         passwordHasher: new PasswordHasherStub(true),
         tokenService,
@@ -149,7 +166,7 @@ describe('LoginUserUseCase', () => {
     it('authenticates a user and returns tokens', async () => {
         const user = createUser();
         const { useCase, sessionRepository, auditLogger, tokenService } = createUseCase({
-            userRepository: { findByEmail: async () => user },
+            userRepository: buildUserRepository(user),
         });
 
         const result = await useCase.execute({
@@ -173,7 +190,7 @@ describe('LoginUserUseCase', () => {
     it('rejects invalid credentials with a generic error', async () => {
         const user = createUser();
         const { useCase, sessionRepository, auditLogger } = createUseCase({
-            userRepository: { findByEmail: async () => user },
+            userRepository: buildUserRepository(user),
             passwordHasher: new PasswordHasherStub(false),
         });
 
@@ -193,7 +210,7 @@ describe('LoginUserUseCase', () => {
     it('rejects inactive users', async () => {
         const user = createUser({ status: UserStatus.Inactive });
         const { useCase, sessionRepository, auditLogger } = createUseCase({
-            userRepository: { findByEmail: async () => user },
+            userRepository: buildUserRepository(user),
         });
 
         await expect(
@@ -214,7 +231,7 @@ describe('LoginUserUseCase', () => {
             lockedUntil: new Date('2026-01-29T10:10:00.000Z'),
         });
         const { useCase, sessionRepository, auditLogger } = createUseCase({
-            userRepository: { findByEmail: async () => user },
+            userRepository: buildUserRepository(user),
         });
 
         await expect(
@@ -233,7 +250,7 @@ describe('LoginUserUseCase', () => {
     it('rejects rate-limited attempts', async () => {
         const user = createUser();
         const { useCase, sessionRepository, auditLogger } = createUseCase({
-            userRepository: { findByEmail: async () => user },
+            userRepository: buildUserRepository(user),
             loginRateLimiter: new BlockingRateLimiter(),
         });
 
