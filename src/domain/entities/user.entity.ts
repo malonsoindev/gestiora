@@ -1,11 +1,15 @@
-import { UserRole } from '../value-objects/user-role.js';
+import { UserRole } from '../value-objects/user-role.value-object.js';
 
+// Por ahora usamos enum por simplicidad; si aparecen reglas de transicion o invariantes,
+// se evaluara migrar a un Value Object para encapsular la logica.
 export enum UserStatus {
     Active = 'ACTIVE',
     Inactive = 'INACTIVE',
     Deleted = 'DELETED',
 }
 
+// Usamos un objeto de props para simplificar el constructor, facilitar tests/serializacion
+// y mantener la entidad con un estado interno controlado.
 export type UserProps = {
     id: string;
     email: string;
@@ -17,6 +21,12 @@ export type UserProps = {
     updatedAt: Date;
 };
 
+/**
+ * Entidad de dominio con estado interno inmutable.
+ * Patrón: Factory Method + props. El constructor es privado y la creacion se
+ * centraliza en create() para validar invariantes, facilitar tests/serializacion
+ * y mantener el control del estado interno.
+ */
 export class User {
     private constructor(private readonly props: UserProps) {}
 

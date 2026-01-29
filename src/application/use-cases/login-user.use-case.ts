@@ -6,24 +6,13 @@ import type { RefreshTokenHasher } from '../ports/refresh-token-hasher.js';
 import type { SessionRepository } from '../ports/session.repository.js';
 import type { TokenService } from '../ports/token.service.js';
 import type { UserRepository } from '../ports/user.repository.js';
+import type { LoginUserRequest } from '../dto/login-user.request.js';
+import type { LoginUserResponse } from '../dto/login-user.response.js';
 import { Session, SessionStatus } from '../../domain/entities/session.entity.js';
 import { AuthInvalidCredentialsError } from '../../domain/errors/auth-invalid-credentials.error.js';
 import { AuthRateLimitedError } from '../../domain/errors/auth-rate-limited.error.js';
 import { AuthUserDisabledError } from '../../domain/errors/auth-user-disabled.error.js';
 import { AuthUserLockedError } from '../../domain/errors/auth-user-locked.error.js';
-
-export type LoginUserRequest = {
-    email: string;
-    password: string;
-    ip?: string;
-    userAgent?: string;
-};
-
-export type LoginUserResponse = {
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
-};
 
 export type LoginUserDependencies = {
     userRepository: UserRepository;

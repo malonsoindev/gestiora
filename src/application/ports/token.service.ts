@@ -1,4 +1,4 @@
-import { UserRole } from '../../domain/value-objects/user-role.js';
+import { UserRole } from '../../domain/value-objects/user-role.value-object.js';
 
 export type AccessTokenPayload = {
     userId: string;
