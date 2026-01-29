@@ -1,0 +1,28 @@
+{
+  "name": "gestiora",
+  "version": "1.0.0",
+  "description": "Backend for Gestiora platform",
+  "homepage": "https://github.com/malonsoindev/gestiora#readme",
+  "bugs": {
+    "url": "https://github.com/malonsoindev/gestiora/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/malonsoindev/gestiora.git"
+  },
+  "license": "ISC",
+  "author": "Manuel Alonso",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx main.ts",
+    "dev:watch": "tsx watch main.ts",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^25.1.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
