@@ -13,7 +13,7 @@ export const buildServer = (): FastifyInstance => {
         compositionRoot.logoutUserUseCase,
     );
 
-    void registerAuthRoutes(app, authController);
+    void registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);
 
     return app;
 };

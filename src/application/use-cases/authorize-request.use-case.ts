@@ -27,7 +27,7 @@ export class AuthorizeRequestUseCase {
             if (!logResult.success) {
                 return fail(logResult.error);
             }
-            return fail(new AuthorizationError('Missing access token'));
+            return fail(new AuthorizationError('Missing access token', 'UNAUTHENTICATED'));
         }
 
         const tokenResult = this.dependencies.tokenService.verifyAccessToken(request.token);
@@ -36,7 +36,7 @@ export class AuthorizeRequestUseCase {
             if (!logResult.success) {
                 return fail(logResult.error);
             }
-            return fail(tokenResult.error);
+            return fail(new AuthorizationError('Invalid access token', 'UNAUTHENTICATED'));
         }
 
         const principal = tokenResult.value;
@@ -46,7 +46,7 @@ export class AuthorizeRequestUseCase {
             if (!logResult.success) {
                 return fail(logResult.error);
             }
-            return fail(new AuthorizationError('Insufficient role'));
+            return fail(new AuthorizationError('Insufficient role', 'FORBIDDEN'));
         }
 
         return ok(principal);
