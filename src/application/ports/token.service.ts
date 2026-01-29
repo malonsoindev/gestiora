@@ -15,4 +15,5 @@ export type RefreshTokenPayload = {
 export interface TokenService {
     createAccessToken(payload: AccessTokenPayload): Result<string, PortError>;
     createRefreshToken(payload: RefreshTokenPayload): Result<string, PortError>;
+    verifyAccessToken(token: string): Result<AccessTokenPayload, PortError>;
 }
