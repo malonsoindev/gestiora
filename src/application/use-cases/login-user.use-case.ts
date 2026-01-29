@@ -9,6 +9,7 @@ import type { UserRepository } from '../ports/user.repository.js';
 import type { LoginUserRequest } from '../dto/login-user.request.js';
 import type { LoginUserResponse } from '../dto/login-user.response.js';
 import { fail, ok, type Result } from '../../shared/result.js';
+import type { PortError } from '../errors/port.error.js';
 import { Session, SessionStatus } from '../../domain/entities/session.entity.js';
 import { AuthInvalidCredentialsError } from '../../domain/errors/auth-invalid-credentials.error.js';
 import { AuthRateLimitedError } from '../../domain/errors/auth-rate-limited.error.js';
@@ -32,56 +33,92 @@ export type LoginUserError =
     | AuthInvalidCredentialsError
     | AuthUserDisabledError
     | AuthUserLockedError
-    | AuthRateLimitedError;
+    | AuthRateLimitedError
+    | PortError;
 
 export class LoginUserUseCase {
     constructor(private readonly dependencies: LoginUserDependencies) {}
 
     async execute(request: LoginUserRequest): Promise<Result<LoginUserResponse, LoginUserError>> {
-        const now = this.dependencies.dateProvider.now();
+        const nowResult = this.dependencies.dateProvider.now();
+        if (!nowResult.success) {
+            return fail(nowResult.error);
+        }
+        const now = nowResult.value;
 
-        try {
-            await this.dependencies.loginRateLimiter.assertAllowed(request.email, request.ip);
-        } catch (error) {
-            await this.logFailure(request, now);
-            if (error instanceof AuthRateLimitedError) {
-                return fail(error);
+        const rateLimitResult = await this.dependencies.loginRateLimiter.assertAllowed(
+            request.email,
+            request.ip,
+        );
+        if (!rateLimitResult.success) {
+            const logResult = await this.logFailure(request, now);
+            if (!logResult.success) {
+                return fail(logResult.error);
             }
-            return fail(new AuthRateLimitedError());
+            return fail(rateLimitResult.error);
         }
 
-        const user = await this.dependencies.userRepository.findByEmail(request.email);
+        const userResult = await this.dependencies.userRepository.findByEmail(request.email);
+        if (!userResult.success) {
+            return fail(userResult.error);
+        }
+        const user = userResult.value;
         if (!user) {
-            await this.logFailure(request, now);
+            const logResult = await this.logFailure(request, now);
+            if (!logResult.success) {
+                return fail(logResult.error);
+            }
             return fail(new AuthInvalidCredentialsError());
         }
 
         if (!user.isActive()) {
-            await this.logFailure(request, now, user.id);
+            const logResult = await this.logFailure(request, now, user.id);
+            if (!logResult.success) {
+                return fail(logResult.error);
+            }
             return fail(new AuthUserDisabledError());
         }
 
         if (user.isLocked(now)) {
-            await this.logFailure(request, now, user.id);
+            const logResult = await this.logFailure(request, now, user.id);
+            if (!logResult.success) {
+                return fail(logResult.error);
+            }
             return fail(new AuthUserLockedError());
         }
 
-        const passwordValid = await this.dependencies.passwordHasher.verify(
+        const passwordResult = await this.dependencies.passwordHasher.verify(
             request.password,
             user.passwordHash,
         );
+        if (!passwordResult.success) {
+            return fail(passwordResult.error);
+        }
+        const passwordValid = passwordResult.value;
 
         if (!passwordValid) {
-            await this.logFailure(request, now, user.id);
+            const logResult = await this.logFailure(request, now, user.id);
+            if (!logResult.success) {
+                return fail(logResult.error);
+            }
             return fail(new AuthInvalidCredentialsError());
         }
 
         const sessionId = generateSessionId(now);
-        const refreshToken = this.dependencies.tokenService.createRefreshToken({
+        const refreshTokenResult = this.dependencies.tokenService.createRefreshToken({
             sessionId,
             userId: user.id,
         });
-        const refreshTokenHash = this.dependencies.refreshTokenHasher.hash(refreshToken);
+        if (!refreshTokenResult.success) {
+            return fail(refreshTokenResult.error);
+        }
+        const refreshToken = refreshTokenResult.value;
+
+        const refreshTokenHashResult = this.dependencies.refreshTokenHasher.hash(refreshToken);
+        if (!refreshTokenHashResult.success) {
+            return fail(refreshTokenHashResult.error);
+        }
+        const refreshTokenHash = refreshTokenHashResult.value;
         const refreshExpiresAt = addSeconds(now, this.dependencies.refreshTokenTtlSeconds);
 
         const session = Session.create({
@@ -96,20 +133,30 @@ export class LoginUserUseCase {
             ...(request.userAgent ? { userAgent: request.userAgent } : {}),
         });
 
-        await this.dependencies.sessionRepository.create(session);
+        const sessionResult = await this.dependencies.sessionRepository.create(session);
+        if (!sessionResult.success) {
+            return fail(sessionResult.error);
+        }
 
-        const accessToken = this.dependencies.tokenService.createAccessToken({
+        const accessTokenResult = this.dependencies.tokenService.createAccessToken({
             userId: user.id,
             roles: user.roles,
         });
+        if (!accessTokenResult.success) {
+            return fail(accessTokenResult.error);
+        }
+        const accessToken = accessTokenResult.value;
 
-        await this.dependencies.auditLogger.log({
+        const auditResult = await this.dependencies.auditLogger.log({
             action: 'LOGIN_SUCCESS',
             actorUserId: user.id,
             targetUserId: user.id,
             metadata: buildMetadata(request),
             createdAt: now,
         });
+        if (!auditResult.success) {
+            return fail(auditResult.error);
+        }
 
         return ok({
             accessToken,
@@ -122,7 +169,7 @@ export class LoginUserUseCase {
         request: LoginUserRequest,
         now: Date,
         targetUserId?: string,
-    ): Promise<void> {
+    ): Promise<Result<void, PortError>> {
         const event = {
             action: 'LOGIN_FAIL',
             metadata: buildMetadata(request),
@@ -130,7 +177,7 @@ export class LoginUserUseCase {
             ...(targetUserId ? { actorUserId: targetUserId, targetUserId } : {}),
         };
 
-        await this.dependencies.auditLogger.log(event);
+        return this.dependencies.auditLogger.log(event);
     }
 }
 

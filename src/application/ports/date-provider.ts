@@ -1,3 +1,6 @@
+import type { Result } from '../../shared/result.js';
+import type { PortError } from '../errors/port.error.js';
+
 export interface DateProvider {
-    now(): Date;
+    now(): Result<Date, PortError>;
 }

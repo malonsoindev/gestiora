@@ -16,6 +16,7 @@ import { Session } from '../../../src/domain/entities/session.entity.js';
 import { User, UserStatus } from '../../../src/domain/entities/user.entity.js';
 import type { UserProps } from '../../../src/domain/entities/user.entity.js';
 import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
+import { fail, ok } from '../../../src/shared/result.js';
 
 const fixedNow = new Date('2026-01-29T10:00:00.000Z');
 
@@ -33,15 +34,15 @@ const createUser = (overrides: Partial<UserProps> = {}): User =>
     });
 
 const buildUserRepository = (user: User | null): UserRepository => ({
-    findByEmail: async () => user,
-    findById: async () => user,
+    findByEmail: async () => ok(user),
+    findById: async () => ok(user),
 });
 
 class FixedDateProvider implements DateProvider {
     constructor(private readonly date: Date) {}
 
-    now(): Date {
-        return this.date;
+    now() {
+        return ok(this.date);
     }
 }
 
@@ -49,24 +50,27 @@ class SessionRepositorySpy implements SessionRepository {
     created: Session | null = null;
     updated: Session | null = null;
 
-    async create(session: Session): Promise<void> {
+    async create(session: Session) {
         this.created = session;
+        return ok(undefined);
     }
 
-    async findByRefreshTokenHash(): Promise<Session | null> {
-        return null;
+    async findByRefreshTokenHash() {
+        return ok(null);
     }
 
-    async update(session: Session): Promise<void> {
+    async update(session: Session) {
         this.updated = session;
+        return ok(undefined);
     }
 }
 
 class AuditLoggerSpy implements AuditLogger {
     events: AuditEvent[] = [];
 
-    async log(event: AuditEvent): Promise<void> {
+    async log(event: AuditEvent) {
         this.events.push(event);
+        return ok(undefined);
     }
 }
 
@@ -74,43 +78,44 @@ class TokenServiceStub implements TokenService {
     accessPayloads: AccessTokenPayload[] = [];
     refreshPayloads: RefreshTokenPayload[] = [];
 
-    createAccessToken(payload: AccessTokenPayload): string {
+    createAccessToken(payload: AccessTokenPayload) {
         this.accessPayloads.push(payload);
-        return 'access-token';
+        return ok('access-token');
     }
 
-    createRefreshToken(payload: RefreshTokenPayload): string {
+    createRefreshToken(payload: RefreshTokenPayload) {
         this.refreshPayloads.push(payload);
-        return 'refresh-token';
+        return ok('refresh-token');
     }
 }
 
 class PasswordHasherStub implements PasswordHasher {
     constructor(private readonly valid: boolean) {}
 
-    async verify(plainText: string, hash: string): Promise<boolean> {
+    async verify(plainText: string, hash: string) {
         void plainText;
         void hash;
-        return this.valid;
+        return ok(this.valid);
     }
 }
 
 class RefreshTokenHasherStub implements RefreshTokenHasher {
-    hash(value: string): string {
-        return `hashed:${value}`;
+    hash(value: string) {
+        return ok(`hashed:${value}`);
     }
 }
 
 class AllowAllRateLimiter implements LoginRateLimiter {
-    async assertAllowed(email: string, ip?: string): Promise<void> {
+    async assertAllowed(email: string, ip?: string) {
         void email;
         void ip;
+        return ok(undefined);
     }
 }
 
 class BlockingRateLimiter implements LoginRateLimiter {
-    async assertAllowed(): Promise<void> {
-        throw new AuthRateLimitedError();
+    async assertAllowed() {
+        return fail(new AuthRateLimitedError());
     }
 }
 
@@ -138,10 +143,7 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
     const tokenService = new TokenServiceStub();
 
     const resolvedDependencies: UseCaseDependencies = {
-        userRepository: {
-            findByEmail: async () => createUser(),
-            findById: async () => createUser(),
-        },
+        userRepository: buildUserRepository(createUser()),
         sessionRepository,
         passwordHasher: new PasswordHasherStub(true),
         tokenService,

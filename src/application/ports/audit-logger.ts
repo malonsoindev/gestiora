@@ -1,3 +1,6 @@
+import type { Result } from '../../shared/result.js';
+import type { PortError } from '../errors/port.error.js';
+
 export type AuditEvent = {
     action: string;
     actorUserId?: string;
@@ -7,5 +10,5 @@ export type AuditEvent = {
 };
 
 export interface AuditLogger {
-    log(event: AuditEvent): Promise<void>;
+    log(event: AuditEvent): Promise<Result<void, PortError>>;
 }

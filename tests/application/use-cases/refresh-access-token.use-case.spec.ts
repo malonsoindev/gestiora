@@ -12,14 +12,15 @@ import type { SessionProps } from '../../../src/domain/entities/session.entity.j
 import { User, UserStatus } from '../../../src/domain/entities/user.entity.js';
 import type { UserProps } from '../../../src/domain/entities/user.entity.js';
 import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
+import { ok } from '../../../src/shared/result.js';
 
 const fixedNow = new Date('2026-01-29T12:00:00.000Z');
 
 class FixedDateProvider implements DateProvider {
     constructor(private readonly date: Date) {}
 
-    now(): Date {
-        return this.date;
+    now() {
+        return ok(this.date);
     }
 }
 
@@ -28,25 +29,28 @@ class SessionRepositorySpy implements SessionRepository {
     updated: Session | null = null;
     session: Session | null = null;
 
-    async create(session: Session): Promise<void> {
+    async create(session: Session) {
         this.created = session;
+        return ok(undefined);
     }
 
-    async findByRefreshTokenHash(hash: string): Promise<Session | null> {
+    async findByRefreshTokenHash(hash: string) {
         void hash;
-        return this.session;
+        return ok(this.session);
     }
 
-    async update(session: Session): Promise<void> {
+    async update(session: Session) {
         this.updated = session;
+        return ok(undefined);
     }
 }
 
 class AuditLoggerSpy implements AuditLogger {
     events: AuditEvent[] = [];
 
-    async log(event: AuditEvent): Promise<void> {
+    async log(event: AuditEvent) {
         this.events.push(event);
+        return ok(undefined);
     }
 }
 
@@ -54,20 +58,20 @@ class TokenServiceStub implements TokenService {
     accessPayloads: AccessTokenPayload[] = [];
     refreshPayloads: RefreshTokenPayload[] = [];
 
-    createAccessToken(payload: AccessTokenPayload): string {
+    createAccessToken(payload: AccessTokenPayload) {
         this.accessPayloads.push(payload);
-        return 'access-token';
+        return ok('access-token');
     }
 
-    createRefreshToken(payload: RefreshTokenPayload): string {
+    createRefreshToken(payload: RefreshTokenPayload) {
         this.refreshPayloads.push(payload);
-        return 'refresh-token';
+        return ok('refresh-token');
     }
 }
 
 class RefreshTokenHasherStub implements RefreshTokenHasher {
-    hash(value: string): string {
-        return `hashed:${value}`;
+    hash(value: string) {
+        return ok(`hashed:${value}`);
     }
 }
 
@@ -96,8 +100,8 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
     const resolvedDependencies: UseCaseDependencies = {
         sessionRepository,
         userRepository: {
-            findByEmail: async () => null,
-            findById: async () => createUser(),
+            findByEmail: async () => ok(null),
+            findById: async () => ok(createUser()),
         },
         tokenService,
         refreshTokenHasher: new RefreshTokenHasherStub(),

@@ -1,4 +1,6 @@
 import { UserRole } from '../../domain/value-objects/user-role.value-object.js';
+import type { Result } from '../../shared/result.js';
+import type { PortError } from '../errors/port.error.js';
 
 export type AccessTokenPayload = {
     userId: string;
@@ -11,6 +13,6 @@ export type RefreshTokenPayload = {
 };
 
 export interface TokenService {
-    createAccessToken(payload: AccessTokenPayload): string;
-    createRefreshToken(payload: RefreshTokenPayload): string;
+    createAccessToken(payload: AccessTokenPayload): Result<string, PortError>;
+    createRefreshToken(payload: RefreshTokenPayload): Result<string, PortError>;
 }
