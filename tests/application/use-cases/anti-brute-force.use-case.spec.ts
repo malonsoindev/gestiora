@@ -1,0 +1,79 @@
+import { describe, expect, it } from 'vitest';
+import { AntiBruteForceUseCase } from '../../../src/application/use-cases/anti-brute-force.use-case.js';
+import type { LoginAttemptRepository } from '../../../src/application/ports/login-attempt.repository.js';
+import type { DateProvider } from '../../../src/application/ports/date-provider.js';
+import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
+import { AuthRateLimitedError } from '../../../src/domain/errors/auth-rate-limited.error.js';
+import { ok } from '../../../src/shared/result.js';
+
+class FixedDateProvider implements DateProvider {
+    constructor(private readonly date: Date) {}
+
+    now() {
+        return ok(this.date);
+    }
+}
+
+class LoginAttemptRepositoryStub implements LoginAttemptRepository {
+    attemptsInWindow = 0;
+
+    async countFailedAttempts() {
+        return ok(this.attemptsInWindow);
+    }
+
+    async recordAttempt() {
+        return ok(undefined);
+    }
+}
+
+class AuditLoggerSpy implements AuditLogger {
+    events: AuditEvent[] = [];
+
+    async log(event: AuditEvent) {
+        this.events.push(event);
+        return ok(undefined);
+    }
+}
+
+describe('AntiBruteForceUseCase', () => {
+    it('allows login when attempts are below limit', async () => {
+        const repo = new LoginAttemptRepositoryStub();
+        repo.attemptsInWindow = 2;
+
+        const useCase = new AntiBruteForceUseCase({
+            loginAttemptRepository: repo,
+            auditLogger: new AuditLoggerSpy(),
+            dateProvider: new FixedDateProvider(new Date('2026-01-29T18:00:00.000Z')),
+            maxAttempts: 5,
+            windowMinutes: 15,
+            lockMinutes: 30,
+        });
+
+        const result = await useCase.execute({ email: 'user@example.com', ip: '1.2.3.4' });
+
+        expect(result.success).toBe(true);
+    });
+
+    it('blocks login when attempts reach limit', async () => {
+        const repo = new LoginAttemptRepositoryStub();
+        repo.attemptsInWindow = 5;
+
+        const auditLogger = new AuditLoggerSpy();
+        const useCase = new AntiBruteForceUseCase({
+            loginAttemptRepository: repo,
+            auditLogger,
+            dateProvider: new FixedDateProvider(new Date('2026-01-29T18:00:00.000Z')),
+            maxAttempts: 5,
+            windowMinutes: 15,
+            lockMinutes: 30,
+        });
+
+        const result = await useCase.execute({ email: 'user@example.com', ip: '1.2.3.4' });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error).toBeInstanceOf(AuthRateLimitedError);
+        }
+        expect(auditLogger.events.some((event) => event.action === 'USER_LOCKED')).toBe(true);
+    });
+});
