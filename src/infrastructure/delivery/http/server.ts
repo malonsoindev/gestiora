@@ -40,6 +40,23 @@ export const buildServer = (): FastifyInstance => {
         }
     }
 
+    // Añadimos un error handler personalizado para manejar errores de validación y otros errores generales
+    // y devolver respuestas JSON consistentes.
+    const isObject = (value: unknown): value is Record<string, unknown> =>
+        typeof value === 'object' && value !== null;
+
+    app.setErrorHandler((error, _request, reply) => {
+        const statusCode = isObject(error) && typeof error.statusCode === 'number' ? error.statusCode : 500;
+        const message = isObject(error) && typeof error.message === 'string' ? error.message : 'Internal error';
+
+        if (statusCode === 400 && isObject(error) && 'validation' in error) {
+            void reply.code(400).send({ error: 'VALIDATION_ERROR', message });
+            return;
+        }
+
+        void reply.code(statusCode).send({ error: 'INTERNAL_ERROR' });
+    });
+
     void app.register(fastifyStatic, {
         root: path.join(process.cwd(), 'public'),
         prefix: '/',
