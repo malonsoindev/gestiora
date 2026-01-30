@@ -4,7 +4,9 @@ import type { FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
 import fastifyCors from '@fastify/cors';
 import { AuthController } from './controllers/auth.controller.js';
+import { AdminController } from './controllers/admin.controller.js';
 import { registerAuthRoutes } from './routes/auth.routes.js';
+import { registerAdminRoutes } from './routes/admin.routes.js';
 import { compositionRoot } from '../../../composition/index.js';
 import { config, isDevelopment, isProduction } from '../../../config/env.js';
 
@@ -70,8 +72,10 @@ export const buildServer = (): FastifyInstance => {
         compositionRoot.refreshAccessTokenUseCase,
         compositionRoot.logoutUserUseCase,
     );
+    const adminController = new AdminController();
 
     void registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);
+    void registerAdminRoutes(app, adminController, compositionRoot.authorizeRequestUseCase);
 
     return app;
 };
