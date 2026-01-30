@@ -1,0 +1,1467 @@
+openapi: 3.0.3
+info:
+  title: Gestiora API
+  version: 0.1.0
+  description: OpenAPI specification based on Gestiora design docs.
+servers:
+  - url: http://localhost:3000
+tags:
+  - name: Auth
+    description: Authentication and session management
+  - name: AdminUsers
+    description: User and role administration (admin only)
+  - name: Providers
+    description: Supplier management
+  - name: Documents
+    description: Document and invoice management
+  - name: Extraction
+    description: AI extraction workflows
+  - name: Search
+    description: Natural language search (RAG)
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials or user disabled/locked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Access token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
+        '401':
+          description: Invalid refresh token or session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '204':
+          description: Logout completed (idempotent)
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/users:
+    post:
+      tags: [AdminUsers]
+      summary: Create user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateUserResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [AdminUsers]
+      summary: List users
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/UserStatus'
+        - in: query
+          name: role
+          schema:
+            $ref: '#/components/schemas/UserRole'
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: User list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/users/{userId}:
+    get:
+      tags: [AdminUsers]
+      summary: Get user detail
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetail'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [AdminUsers]
+      summary: Update user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetail'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [AdminUsers]
+      summary: Soft delete user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: User deleted
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/users/{userId}/status:
+    patch:
+      tags: [AdminUsers]
+      summary: Update user status
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserStatusRequest'
+      responses:
+        '200':
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetail'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/users/{userId}/sessions/revoke:
+    post:
+      tags: [AdminUsers]
+      summary: Revoke all user sessions
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Sessions revoked
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /providers:
+    post:
+      tags: [Providers]
+      summary: Create provider
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProviderRequest'
+      responses:
+        '201':
+          description: Provider created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateProviderResponse'
+        '400':
+          description: Validation error or duplicate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [Providers]
+      summary: List providers
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/ProviderStatus'
+        - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Provider list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /providers/{providerId}:
+    get:
+      tags: [Providers]
+      summary: Get provider detail
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Provider detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderDetail'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Providers]
+      summary: Update provider
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProviderRequest'
+      responses:
+        '200':
+          description: Provider updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderDetail'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Providers]
+      summary: Soft delete provider
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Provider deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /providers/{providerId}/status:
+    patch:
+      tags: [Providers]
+      summary: Update provider status
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: providerId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProviderStatusRequest'
+      responses:
+        '200':
+          description: Provider status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderDetail'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents:
+    post:
+      tags: [Documents]
+      summary: Upload document (PDF)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DocumentUploadRequest'
+      responses:
+        '201':
+          description: Document created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentCreateResponse'
+        '400':
+          description: Invalid file format or size
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [Documents]
+      summary: List documents
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: providerId
+          schema:
+            type: string
+        - in: query
+          name: fromDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: toDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: minTotal
+          schema:
+            type: number
+        - in: query
+          name: maxTotal
+          schema:
+            type: number
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Document list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/{documentId}:
+    get:
+      tags: [Documents]
+      summary: Get document detail
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: documentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Document detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentDetail'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Documents]
+      summary: Soft delete document
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: documentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Document deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/{documentId}/file:
+    get:
+      tags: [Documents]
+      summary: Download document file
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: documentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/{documentId}/invoice:
+    put:
+      tags: [Documents]
+      summary: Update invoice metadata
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: documentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvoiceUpdateRequest'
+      responses:
+        '200':
+          description: Invoice updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceDetail'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/{documentId}/extraction:
+    get:
+      tags: [Extraction]
+      summary: Get extraction status and result
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: documentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Extraction status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractionStatusResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/{documentId}/extraction/reprocess:
+    post:
+      tags: [Extraction]
+      summary: Reprocess extraction
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: documentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Reprocess requested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractionReprocessResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/{documentId}/extraction/fields:
+    put:
+      tags: [Extraction]
+      summary: Review or correct extracted fields
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: documentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractionFieldsUpdateRequest'
+      responses:
+        '200':
+          description: Fields updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /search:
+    post:
+      tags: [Search]
+      summary: Search documents using natural language
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Search response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Query too ambiguous
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /search/{queryId}:
+    get:
+      tags: [Search]
+      summary: Get search response by query id (optional)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: queryId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    OkResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required: [ok]
+
+    UserRole:
+      type: string
+      enum: [Usuario, Administrador]
+
+    UserStatus:
+      type: string
+      enum: [ACTIVO, INACTIVO, ELIMINADO]
+
+    ProviderStatus:
+      type: string
+      enum: [ACTIVO, INACTIVO, ELIMINADO, BORRADOR]
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 12
+
+    LoginResponse:
+      type: object
+      required: [accessToken, refreshToken, expiresIn]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    RefreshResponse:
+      type: object
+      required: [accessToken, expiresIn]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+          nullable: true
+        expiresIn:
+          type: integer
+
+    LogoutRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    CreateUserRequest:
+      type: object
+      required: [email, password, roles]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 12
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        name:
+          type: string
+        avatar:
+          type: string
+
+    CreateUserResponse:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+
+    UserSummary:
+      type: object
+      required: [userId, email, status, roles, createdAt]
+      properties:
+        userId:
+          type: string
+        email:
+          type: string
+          format: email
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+        createdAt:
+          type: string
+          format: date-time
+
+    UserDetail:
+      type: object
+      required: [userId, email, status, roles, createdAt, updatedAt]
+      properties:
+        userId:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        avatar:
+          type: string
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    UserListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSummary'
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        name:
+          type: string
+        avatar:
+          type: string
+
+    UpdateUserStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/UserStatus'
+
+    CreateProviderRequest:
+      type: object
+      required: [razonSocial]
+      properties:
+        razonSocial:
+          type: string
+        cif:
+          type: string
+        direccion:
+          type: string
+        poblacion:
+          type: string
+        provincia:
+          type: string
+        pais:
+          type: string
+        status:
+          $ref: '#/components/schemas/ProviderStatus'
+
+    CreateProviderResponse:
+      type: object
+      required: [providerId]
+      properties:
+        providerId:
+          type: string
+
+    ProviderDetail:
+      type: object
+      required: [providerId, razonSocial, status, createdAt, updatedAt]
+      properties:
+        providerId:
+          type: string
+        razonSocial:
+          type: string
+        cif:
+          type: string
+        direccion:
+          type: string
+        poblacion:
+          type: string
+        provincia:
+          type: string
+        pais:
+          type: string
+        status:
+          $ref: '#/components/schemas/ProviderStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ProviderSummary:
+      type: object
+      required: [providerId, razonSocial, status]
+      properties:
+        providerId:
+          type: string
+        razonSocial:
+          type: string
+        status:
+          $ref: '#/components/schemas/ProviderStatus'
+
+    ProviderListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderSummary'
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+
+    UpdateProviderRequest:
+      type: object
+      properties:
+        razonSocial:
+          type: string
+        cif:
+          type: string
+        direccion:
+          type: string
+        poblacion:
+          type: string
+        provincia:
+          type: string
+        pais:
+          type: string
+
+    UpdateProviderStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/ProviderStatus'
+
+    DocumentUploadRequest:
+      type: object
+      required: [providerId, file]
+      properties:
+        providerId:
+          type: string
+        file:
+          type: string
+          format: binary
+
+    DocumentCreateResponse:
+      type: object
+      required: [documentId]
+      properties:
+        documentId:
+          type: string
+
+    DocumentSummary:
+      type: object
+      required: [documentId, providerId, status, createdAt]
+      properties:
+        documentId:
+          type: string
+        providerId:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVO, ELIMINADO]
+        createdAt:
+          type: string
+          format: date-time
+
+    DocumentDetail:
+      type: object
+      required: [documentId, providerId, status, createdAt, updatedAt]
+      properties:
+        documentId:
+          type: string
+        providerId:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVO, ELIMINADO]
+        fileRef:
+          $ref: '#/components/schemas/FileRef'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    DocumentListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentSummary'
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+
+    FileRef:
+      type: object
+      required: [storageKey, filename, mimeType, sizeBytes, checksum]
+      properties:
+        storageKey:
+          type: string
+        filename:
+          type: string
+        mimeType:
+          type: string
+        sizeBytes:
+          type: integer
+        checksum:
+          type: string
+
+    InvoiceUpdateRequest:
+      type: object
+      properties:
+        numeroFactura:
+          type: string
+        fechaOperacion:
+          type: string
+          format: date
+        fechaVencimiento:
+          type: string
+          format: date
+        baseImponible:
+          type: number
+        iva:
+          type: number
+        total:
+          type: number
+
+    InvoiceDetail:
+      type: object
+      properties:
+        invoiceId:
+          type: string
+        documentId:
+          type: string
+        numeroFactura:
+          type: string
+        fechaOperacion:
+          type: string
+          format: date
+        fechaVencimiento:
+          type: string
+          format: date
+        baseImponible:
+          type: number
+        iva:
+          type: number
+        total:
+          type: number
+
+    ExtractionStatus:
+      type: string
+      enum: [PENDIENTE, EN_PROCESO, COMPLETADO, FALLIDO]
+
+    ExtractionFieldStatus:
+      type: string
+      enum: [PROPUESTO, CONFIRMADO, RECHAZADO]
+
+    ExtractionField:
+      type: object
+      required: [name, value, source, status]
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+        source:
+          type: string
+          enum: [AI, MANUAL]
+        confidence:
+          type: number
+        status:
+          $ref: '#/components/schemas/ExtractionFieldStatus'
+        evidenceIds:
+          type: array
+          items:
+            type: string
+
+    ExtractionStatusResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/ExtractionStatus'
+        version:
+          type: integer
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtractionField'
+
+    ExtractionReprocessResponse:
+      type: object
+      required: [jobId]
+      properties:
+        jobId:
+          type: string
+
+    ExtractionFieldUpdate:
+      type: object
+      required: [name, status]
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+        status:
+          $ref: '#/components/schemas/ExtractionFieldStatus'
+
+    ExtractionFieldsUpdateRequest:
+      type: object
+      required: [fields]
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtractionFieldUpdate'
+
+    SearchRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+
+    SearchReference:
+      type: object
+      required: [documentId, snippets]
+      properties:
+        documentId:
+          type: string
+        snippets:
+          type: array
+          items:
+            type: string
+
+    SearchResponse:
+      type: object
+      required: [answer, references]
+      properties:
+        answer:
+          type: string
+        references:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchReference'
