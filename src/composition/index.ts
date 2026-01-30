@@ -64,7 +64,7 @@ const refreshAccessTokenUseCase = new RefreshAccessTokenUseCase({
     dateProvider,
     accessTokenTtlSeconds: ACCESS_TOKEN_TTL_SECONDS,
     refreshTokenTtlSeconds: REFRESH_TOKEN_TTL_SECONDS,
-    rotateRefreshTokens: false,
+    rotateRefreshTokens: true,
 });
 
 const logoutUserUseCase = new LogoutUserUseCase({

@@ -57,6 +57,7 @@ class AuditLoggerSpy implements AuditLogger {
 class TokenServiceStub implements TokenService {
     accessPayloads: AccessTokenPayload[] = [];
     refreshPayloads: RefreshTokenPayload[] = [];
+    private refreshCount = 0;
 
     createAccessToken(payload: AccessTokenPayload) {
         this.accessPayloads.push(payload);
@@ -65,7 +66,12 @@ class TokenServiceStub implements TokenService {
 
     createRefreshToken(payload: RefreshTokenPayload) {
         this.refreshPayloads.push(payload);
-        return ok('refresh-token');
+        this.refreshCount += 1;
+        return ok(`refresh-token-${this.refreshCount}`);
+    }
+
+    verifyAccessToken(_token: string) {
+        return ok({ userId: 'user-1', roles: [UserRole.user()] });
     }
 }
 
@@ -224,10 +230,10 @@ describe('RefreshAccessTokenUseCase', () => {
         expect(result.success).toBe(true);
         if (result.success) {
             expect(result.value.accessToken).toBe('access-token');
-            expect(result.value.refreshToken).toBe('refresh-token');
+            expect(result.value.refreshToken).toBe('refresh-token-1');
         }
         expect(sessionRepository.updated).not.toBeNull();
-        expect(sessionRepository.updated?.refreshTokenHash).toBe('hashed:refresh-token');
+        expect(sessionRepository.updated?.refreshTokenHash).toBe('hashed:refresh-token-1');
         expect(auditLogger.events.some((event) => event.action === 'REFRESH_SUCCESS')).toBe(true);
     });
 });
