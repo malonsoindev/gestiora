@@ -41,6 +41,8 @@ const envSchema = z.object({
         .transform((value) => value === 'true')
         .pipe(z.boolean())
         .optional(),
+    JWT_ACCESS_SECRET: z.string().min(1),
+    JWT_REFRESH_SECRET: z.string().min(1),
 });
 
 export type Config = z.infer<typeof envSchema>;

@@ -10,7 +10,7 @@ const start = async () => {
     await app.listen({ port, host: '0.0.0.0' });
 };
 
-start().catch((error) => {
+await start().catch((error) => {
     console.error(error);
     process.exit(1);
 });

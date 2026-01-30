@@ -6,7 +6,7 @@ import { InMemoryAuditLogger } from '../infrastructure/adapters/in-memory-audit-
 import { SystemDateProvider } from '../infrastructure/adapters/system-date-provider.js';
 import { BcryptPasswordHasher } from '../infrastructure/adapters/bcrypt-password-hasher.js';
 import { SimpleRefreshTokenHasher } from '../infrastructure/adapters/simple-refresh-token-hasher.js';
-import { InMemoryTokenService } from '../infrastructure/adapters/in-memory-token.service.js';
+import { JwtTokenService } from '../infrastructure/adapters/jwt-token.service.js';
 import { InMemoryLoginRateLimiter } from '../infrastructure/adapters/in-memory-login-rate-limiter.js';
 import { LoginUserUseCase } from '../application/use-cases/login-user.use-case.js';
 import { RefreshAccessTokenUseCase } from '../application/use-cases/refresh-access-token.use-case.js';
@@ -15,6 +15,7 @@ import { AuthorizeRequestUseCase } from '../application/use-cases/authorize-requ
 import { AntiBruteForceUseCase } from '../application/use-cases/anti-brute-force.use-case.js';
 import { User, UserStatus } from '../domain/entities/user.entity.js';
 import { UserRole } from '../domain/value-objects/user-role.value-object.js';
+import { config } from '../config/env.js';
 
 const ACCESS_TOKEN_TTL_SECONDS = 900;
 const REFRESH_TOKEN_TTL_SECONDS = 2_592_000;
@@ -29,7 +30,9 @@ const auditLogger = new InMemoryAuditLogger();
 const dateProvider = new SystemDateProvider();
 const passwordHasher = new BcryptPasswordHasher();
 const refreshTokenHasher = new SimpleRefreshTokenHasher();
-const tokenService = new InMemoryTokenService(
+const tokenService = new JwtTokenService(
+    config.JWT_ACCESS_SECRET,
+    config.JWT_REFRESH_SECRET,
     ACCESS_TOKEN_TTL_SECONDS,
     REFRESH_TOKEN_TTL_SECONDS,
 );
