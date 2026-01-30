@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { AuthController, AuthLoginBody, AuthRefreshBody } from '../controllers/auth.controller.js';
 import type { AuthorizeRequestUseCase } from '../../../../application/use-cases/authorize-request.use-case.js';
 import { buildAuthorizeMiddleware } from '../middlewares/authorize.middleware.js';
+import { authSchemas } from '../schemas/auth.schemas.js';
 
 export const registerAuthRoutes = async (
     app: FastifyInstance,
@@ -10,12 +11,14 @@ export const registerAuthRoutes = async (
 ): Promise<void> => {
     app.post<{ Body: AuthLoginBody }>(
         '/auth/login',
+        { schema: authSchemas.login },
         async (request, reply) => controller.login(request, reply),
     );
     app.post<{ Body: AuthRefreshBody }>(
         '/auth/refresh',
         {
             preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: authSchemas.refresh,
         },
         async (request, reply) => controller.refresh(request, reply),
     );
@@ -23,6 +26,7 @@ export const registerAuthRoutes = async (
         '/auth/logout',
         {
             preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: authSchemas.logout,
         },
         async (request, reply) => controller.logout(request, reply),
     );
