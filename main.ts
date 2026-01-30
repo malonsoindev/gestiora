@@ -4,7 +4,7 @@ import { config } from './src/config/env.js';
 
 const start = async () => {
     seedUsers();
-    const app = buildServer();
+    const app = await buildServer();
     const port = config.PORT;
 
     await app.listen({ port, host: '0.0.0.0' });

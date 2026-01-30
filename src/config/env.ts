@@ -36,6 +36,11 @@ const envSchema = z.object({
         .pipe(z.number().min(1).max(65535))
         .default(3000),
     CORS: corsSchema.optional(),
+    SWAGGER: z
+        .string()
+        .transform((value) => value === 'true')
+        .pipe(z.boolean())
+        .optional(),
 });
 
 export type Config = z.infer<typeof envSchema>;

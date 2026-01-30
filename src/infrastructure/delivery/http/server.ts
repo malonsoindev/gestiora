@@ -3,6 +3,8 @@ import Fastify from 'fastify';
 import type { FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
 import fastifyCors from '@fastify/cors';
+import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
 import { AuthController } from './controllers/auth.controller.js';
 import { AdminController } from './controllers/admin.controller.js';
 import { registerAuthRoutes } from './routes/auth.routes.js';
@@ -10,7 +12,7 @@ import { registerAdminRoutes } from './routes/admin.routes.js';
 import { compositionRoot } from '../../../composition/index.js';
 import { config, isDevelopment, isProduction } from '../../../config/env.js';
 
-export const buildServer = (): FastifyInstance => {
+export const buildServer = async (): Promise<FastifyInstance> => {
     const app = Fastify({ logger: true });
     const corsOrigin = (() => {
         if (config.CORS === false) {
@@ -42,6 +44,30 @@ export const buildServer = (): FastifyInstance => {
         }
     }
 
+    if (config.SWAGGER === true) {
+        await app.register(swagger, {
+            openapi: {
+                info: {
+                    title: 'Gestiora API',
+                    version: '0.1.0',
+                },
+                components: {
+                    securitySchemes: {
+                        bearerAuth: {
+                            type: 'http',
+                            scheme: 'bearer',
+                            bearerFormat: 'JWT',
+                        },
+                    },
+                },
+            },
+        });
+
+        await app.register(swaggerUi, {
+            routePrefix: '/docs',
+        });
+    }
+
     // Añadimos un error handler personalizado para manejar errores de validación y otros errores generales
     // y devolver respuestas JSON consistentes.
     const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -59,7 +85,7 @@ export const buildServer = (): FastifyInstance => {
         void reply.code(statusCode).send({ error: 'INTERNAL_ERROR' });
     });
 
-    void app.register(fastifyStatic, {
+    await app.register(fastifyStatic, {
         root: path.join(process.cwd(), 'public'),
         prefix: '/',
         index: ['index.html'],
@@ -74,8 +100,8 @@ export const buildServer = (): FastifyInstance => {
     );
     const adminController = new AdminController();
 
-    void registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);
-    void registerAdminRoutes(app, adminController, compositionRoot.authorizeRequestUseCase);
+    await registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);
+    await registerAdminRoutes(app, adminController, compositionRoot.authorizeRequestUseCase);
 
     return app;
 };
