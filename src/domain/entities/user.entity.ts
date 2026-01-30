@@ -31,6 +31,7 @@ export class User {
     private constructor(private readonly props: UserProps) {}
 
     static create(props: UserProps): User {
+        console.log('Creating user with props:', props);
         return new User({ ...props });
     }
 

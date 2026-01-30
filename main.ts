@@ -3,7 +3,7 @@ import { seedUsers } from './src/composition/index.js';
 import { config } from './src/config/env.js';
 
 const start = async () => {
-    seedUsers();
+    await seedUsers();
     const app = await buildServer();
     const port = config.PORT;
 

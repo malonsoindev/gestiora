@@ -1,9 +1,10 @@
+import bcrypt from 'bcrypt';
 import { InMemoryUserRepository } from '../infrastructure/persistence/in-memory-user.repository.js';
 import { InMemorySessionRepository } from '../infrastructure/persistence/in-memory-session.repository.js';
 import { InMemoryLoginAttemptRepository } from '../infrastructure/persistence/in-memory-login-attempt.repository.js';
 import { InMemoryAuditLogger } from '../infrastructure/adapters/in-memory-audit-logger.js';
 import { SystemDateProvider } from '../infrastructure/adapters/system-date-provider.js';
-import { PlainTextPasswordHasher } from '../infrastructure/adapters/plain-text-password-hasher.js';
+import { BcryptPasswordHasher } from '../infrastructure/adapters/bcrypt-password-hasher.js';
 import { SimpleRefreshTokenHasher } from '../infrastructure/adapters/simple-refresh-token-hasher.js';
 import { InMemoryTokenService } from '../infrastructure/adapters/in-memory-token.service.js';
 import { InMemoryLoginRateLimiter } from '../infrastructure/adapters/in-memory-login-rate-limiter.js';
@@ -26,7 +27,7 @@ const sessionRepository = new InMemorySessionRepository();
 const loginAttemptRepository = new InMemoryLoginAttemptRepository();
 const auditLogger = new InMemoryAuditLogger();
 const dateProvider = new SystemDateProvider();
-const passwordHasher = new PlainTextPasswordHasher();
+const passwordHasher = new BcryptPasswordHasher();
 const refreshTokenHasher = new SimpleRefreshTokenHasher();
 const tokenService = new InMemoryTokenService(
     ACCESS_TOKEN_TTL_SECONDS,
@@ -102,14 +103,17 @@ export const compositionRoot = {
     antiBruteForceUseCase,
 };
 
-export const seedUsers = (): void => {
+export const seedUsers = async (): Promise<void> => {
     const now = new Date();
+    const saltRounds = 12;
+    const adminHash = await bcrypt.hash('AdminPass1!a', saltRounds);
+    const userHash = await bcrypt.hash('UserPass1!a', saltRounds);
 
     userRepository.add(
         User.create({
             id: 'admin-1',
             email: 'admin@example.com',
-            passwordHash: 'AdminPass1!a',
+            passwordHash: adminHash,
             status: UserStatus.Active,
             roles: [UserRole.admin()],
             createdAt: now,
@@ -121,7 +125,7 @@ export const seedUsers = (): void => {
         User.create({
             id: 'user-1',
             email: 'user@example.com',
-            passwordHash: 'UserPass1!a',
+            passwordHash: userHash,
             status: UserStatus.Active,
             roles: [UserRole.user()],
             createdAt: now,
