@@ -1,13 +1,13 @@
 import bcrypt from 'bcrypt';
-import { InMemoryUserRepository } from '../infrastructure/persistence/in-memory-user.repository.js';
-import { InMemorySessionRepository } from '../infrastructure/persistence/in-memory-session.repository.js';
-import { InMemoryLoginAttemptRepository } from '../infrastructure/persistence/in-memory-login-attempt.repository.js';
-import { InMemoryAuditLogger } from '../infrastructure/adapters/in-memory-audit-logger.js';
+import { InMemoryUserRepository } from '../infrastructure/persistence/in-memory/in-memory-user.repository.js';
+import { InMemorySessionRepository } from '../infrastructure/persistence/in-memory/in-memory-session.repository.js';
+import { InMemoryLoginAttemptRepository } from '../infrastructure/persistence/in-memory/in-memory-login-attempt.repository.js';
+import { InMemoryAuditLogger } from '../infrastructure/adapters/in-memory/in-memory-audit-logger.js';
 import { SystemDateProvider } from '../infrastructure/adapters/system-date-provider.js';
 import { BcryptPasswordHasher } from '../infrastructure/adapters/bcrypt-password-hasher.js';
 import { SimpleRefreshTokenHasher } from '../infrastructure/adapters/simple-refresh-token-hasher.js';
 import { JwtTokenService } from '../infrastructure/adapters/jwt-token.service.js';
-import { InMemoryLoginRateLimiter } from '../infrastructure/adapters/in-memory-login-rate-limiter.js';
+import { InMemoryLoginRateLimiter } from '../infrastructure/adapters/in-memory/in-memory-login-rate-limiter.js';
 import { LoginUserUseCase } from '../application/use-cases/login-user.use-case.js';
 import { RefreshAccessTokenUseCase } from '../application/use-cases/refresh-access-token.use-case.js';
 import { LogoutUserUseCase } from '../application/use-cases/logout-user.use-case.js';
@@ -16,6 +16,10 @@ import { AntiBruteForceUseCase } from '../application/use-cases/anti-brute-force
 import { User, UserStatus } from '../domain/entities/user.entity.js';
 import { UserRole } from '../domain/value-objects/user-role.value-object.js';
 import { config } from '../config/env.js';
+import { DatabaseFactory } from '../infrastructure/database/database-factory.js';
+import { PostgresUserRepository } from '../infrastructure/persistence/postgres/postgres-user.repository.js';
+import { PostgresSessionRepository } from '../infrastructure/persistence/postgres/postgres-session.repository.js';
+import { PostgresLoginAttemptRepository } from '../infrastructure/persistence/postgres/postgres-login-attempt.repository.js';
 
 const ACCESS_TOKEN_TTL_SECONDS = 900;
 const REFRESH_TOKEN_TTL_SECONDS = 2_592_000;
@@ -23,9 +27,19 @@ const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_WINDOW_MINUTES = 15;
 const LOGIN_LOCK_MINUTES = 30;
 
-const userRepository = new InMemoryUserRepository();
-const sessionRepository = new InMemorySessionRepository();
-const loginAttemptRepository = new InMemoryLoginAttemptRepository();
+const usePostgres = config.DATABASE_TYPE === 'postgres';
+const sqlClient = usePostgres ? DatabaseFactory.createClient() : undefined;
+const unitOfWork = usePostgres ? DatabaseFactory.createUnitOfWork() : undefined;
+
+const userRepository = usePostgres && sqlClient
+    ? new PostgresUserRepository(sqlClient)
+    : new InMemoryUserRepository();
+const sessionRepository = usePostgres && sqlClient
+    ? new PostgresSessionRepository(sqlClient)
+    : new InMemorySessionRepository();
+const loginAttemptRepository = usePostgres && sqlClient
+    ? new PostgresLoginAttemptRepository(sqlClient)
+    : new InMemoryLoginAttemptRepository();
 const auditLogger = new InMemoryAuditLogger();
 const dateProvider = new SystemDateProvider();
 const passwordHasher = new BcryptPasswordHasher();
@@ -99,6 +113,7 @@ export const compositionRoot = {
     refreshTokenHasher,
     tokenService,
     loginRateLimiter,
+    unitOfWork,
     loginUserUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
@@ -107,6 +122,9 @@ export const compositionRoot = {
 };
 
 export const seedUsers = async (): Promise<void> => {
+    if (!(userRepository instanceof InMemoryUserRepository)) {
+        return;
+    }
     const now = new Date();
     const saltRounds = 12;
     const adminHash = await bcrypt.hash('AdminPass1!a', saltRounds);

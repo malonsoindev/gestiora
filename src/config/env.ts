@@ -43,7 +43,15 @@ const envSchema = z.object({
         .optional(),
     JWT_ACCESS_SECRET: z.string().min(1),
     JWT_REFRESH_SECRET: z.string().min(1),
-});
+    DATABASE_TYPE: z.enum(['in-memory', 'postgres']).default('in-memory'),
+    DATABASE_URL: z.url().optional(),
+}).refine(
+    (data) => data.DATABASE_TYPE !== 'postgres' || Boolean(data.DATABASE_URL),
+    {
+        message: 'DATABASE_URL is required when DATABASE_TYPE is postgres',
+        path: ['DATABASE_URL'],
+    },
+);
 
 export type Config = z.infer<typeof envSchema>;
 
