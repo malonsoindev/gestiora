@@ -1,5 +1,5 @@
 import postgres from 'postgres';
-import { config } from '../../config/env.js';
+import { config } from '../../composition/config.js';
 import { PgUnitOfWork } from './pg-unit-of-work.js';
 
 type SqlClient = ReturnType<typeof postgres>;
