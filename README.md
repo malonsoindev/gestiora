@@ -15,6 +15,9 @@ Ejecucion (dev)
 Tests
 1) npm test
 
+Database schema
+1) npm run db:apply
+
 Variables de entorno
 - PORT (por defecto 3000)
 

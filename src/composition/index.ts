@@ -31,6 +31,17 @@ const usePostgres = config.DATABASE_TYPE === 'postgres';
 const sqlClient = usePostgres ? DatabaseFactory.createClient() : undefined;
 const unitOfWork = usePostgres ? DatabaseFactory.createUnitOfWork() : undefined;
 
+if (usePostgres && sqlClient) {
+
+    const hayConexion = await DatabaseFactory.checkConnection();
+    if (hayConexion) {
+        console.log('Conexión a la base de datos Postgres establecida correctamente');
+    }
+    else {
+        console.log('No se pudo establecer conexión a la base de datos Postgres');
+    }
+}
+
 const userRepository = usePostgres && sqlClient
     ? new PostgresUserRepository(sqlClient)
     : new InMemoryUserRepository();
