@@ -20,6 +20,7 @@ export const buildAuthorizeMiddleware = (
             .execute(authRequest)
             .then((result) => {
                 if (result.success) {
+                    request.auth = result.value;
                     done();
                     return;
                 }
