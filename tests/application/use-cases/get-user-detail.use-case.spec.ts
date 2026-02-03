@@ -43,6 +43,10 @@ class UserRepositoryStub implements UserRepository {
     async list() {
         return ok({ items: [], total: 0 });
     }
+
+    async update() {
+        return ok(undefined);
+    }
 }
 
 describe('GetUserDetailUseCase', () => {

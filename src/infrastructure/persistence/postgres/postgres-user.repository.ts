@@ -139,6 +139,27 @@ export class PostgresUserRepository implements UserRepository {
         }
     }
 
+    async update(user: User): Promise<Result<void, PortError>> {
+        try {
+            await this.sql`
+                update users
+                set
+                    name = ${user.name ?? null},
+                    avatar = ${user.avatar ?? null},
+                    status = ${user.status},
+                    roles = ${user.roles.map((role) => role.getValue())},
+                    updated_at = ${user.updatedAt},
+                    deleted_at = ${user.deletedAt ?? null}
+                where id = ${user.id}
+            `;
+
+            return ok(undefined);
+        } catch (error) {
+            const cause = error instanceof Error ? error : new Error('Unknown error');
+            return fail(new PortError('UserRepository', 'Failed to update user', cause));
+        }
+    }
+
     private mapStatus(value: string): UserStatus {
         switch (value) {
             case UserStatus.Active:

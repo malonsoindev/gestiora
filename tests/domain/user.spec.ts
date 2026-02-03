@@ -78,4 +78,32 @@ describe('User', () => {
         expect(user.avatar).toBe('avatar.png');
         expect(user.deletedAt).toBe(deletedAt);
     });
+
+    it('returns an updated user when updating profile info', () => {
+        const now = new Date('2026-01-02T00:00:00.000Z');
+        const user = createUser({
+            name: 'Old Name',
+            avatar: 'old.png',
+            roles: [UserRole.user()],
+            status: UserStatus.Active,
+            updatedAt: baseDate,
+        });
+
+        const updated = user.updateInfo({
+            name: 'New Name',
+            avatar: 'new.png',
+            roles: [UserRole.admin()],
+            status: UserStatus.Inactive,
+            updatedAt: now,
+        });
+
+        expect(updated).not.toBe(user);
+        expect(updated.name).toBe('New Name');
+        expect(updated.avatar).toBe('new.png');
+        expect(updated.roles[0]?.getValue()).toBe('ADMIN');
+        expect(updated.status).toBe(UserStatus.Inactive);
+        expect(updated.updatedAt).toBe(now);
+        expect(updated.createdAt).toBe(user.createdAt);
+        expect(updated.email).toBe(user.email);
+    });
 });

@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { CreateUserUseCase } from '../../../../application/use-cases/create-user.use-case.js';
 import type { ListUsersUseCase } from '../../../../application/use-cases/list-users.use-case.js';
 import type { GetUserDetailUseCase } from '../../../../application/use-cases/get-user-detail.use-case.js';
+import type { UpdateUserUseCase } from '../../../../application/use-cases/update-user.use-case.js';
 import { InvalidEmailError } from '../../../../domain/errors/invalid-email.error.js';
 import { InvalidPasswordError } from '../../../../domain/errors/invalid-password.error.js';
 import { InvalidUserRolesError } from '../../../../domain/errors/invalid-user-roles.error.js';
@@ -21,11 +22,19 @@ export type AdminCreateUserBody = {
     avatar?: string;
 };
 
+export type AdminUpdateUserBody = {
+    roles?: Array<'Usuario' | 'Administrador'>;
+    status?: 'ACTIVO' | 'INACTIVO' | 'ELIMINADO';
+    name?: string;
+    avatar?: string;
+};
+
 export class AdminUsersController {
     constructor(
         private readonly createUserUseCase: CreateUserUseCase,
         private readonly listUsersUseCase: ListUsersUseCase,
         private readonly getUserDetailUseCase: GetUserDetailUseCase,
+        private readonly updateUserUseCase: UpdateUserUseCase,
     ) {}
 
     async createUser(request: FastifyRequest<{ Body: AdminCreateUserBody }>, reply: FastifyReply) {
@@ -149,6 +158,68 @@ export class AdminUsersController {
 
         if (result.error instanceof UserNotFoundError) {
             return reply.code(404).send({ error: 'NOT_FOUND' });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+    }
+
+    async updateUser(
+        request: FastifyRequest<{ Params: { userId: string }; Body: AdminUpdateUserBody }>,
+        reply: FastifyReply,
+    ) {
+        const roles = request.body.roles ? this.mapRoles(request.body.roles) : undefined;
+        if (request.body.roles && !roles) {
+            return reply.code(400).send({ error: 'INVALID_ROLE' });
+        }
+
+        const status = request.body.status ? this.mapStatus(request.body.status) : undefined;
+        if (request.body.status && !status) {
+            return reply.code(400).send({ error: 'INVALID_STATUS' });
+        }
+
+        const result = await this.updateUserUseCase.execute({
+            userId: request.params.userId,
+            ...(request.body.name !== undefined ? { name: request.body.name } : {}),
+            ...(request.body.avatar !== undefined ? { avatar: request.body.avatar } : {}),
+            ...(roles ? { roles } : {}),
+            ...(status ? { status } : {}),
+        });
+
+        if (result.success) {
+            const detail = await this.getUserDetailUseCase.execute({
+                userId: request.params.userId,
+            });
+
+            if (detail.success) {
+                return reply.code(200).send({
+                    userId: detail.value.userId,
+                    email: detail.value.email,
+                    ...(detail.value.name ? { name: detail.value.name } : {}),
+                    ...(detail.value.avatar ? { avatar: detail.value.avatar } : {}),
+                    status: this.mapStatusToApi(detail.value.status),
+                    roles: detail.value.roles.map((role) => this.mapRoleToApi(role)),
+                    createdAt: detail.value.createdAt.toISOString(),
+                    updatedAt: detail.value.updatedAt.toISOString(),
+                    deletedAt: detail.value.deletedAt ? detail.value.deletedAt.toISOString() : null,
+                });
+            }
+
+            if (detail.error instanceof UserNotFoundError) {
+                return reply.code(404).send({ error: 'NOT_FOUND' });
+            }
+
+            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        }
+
+        if (result.error instanceof UserNotFoundError) {
+            return reply.code(404).send({ error: 'NOT_FOUND' });
+        }
+
+        if (
+            result.error instanceof InvalidUserRolesError ||
+            result.error instanceof InvalidUserStatusError
+        ) {
+            return reply.code(400).send({ error: 'VALIDATION_ERROR' });
         }
 
         return reply.code(500).send({ error: 'INTERNAL_ERROR' });

@@ -54,4 +54,10 @@ export class InMemoryUserRepository implements UserRepository {
 
         return ok({ items, total });
     }
+
+    async update(user: User): Promise<Result<void, PortError>> {
+        this.usersById.set(user.id, user);
+        this.usersByEmail.set(user.email, user);
+        return ok(undefined);
+    }
 }

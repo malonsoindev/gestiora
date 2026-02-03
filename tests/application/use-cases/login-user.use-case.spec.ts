@@ -39,6 +39,7 @@ const buildUserRepository = (user: User | null): UserRepository => ({
     findById: async () => ok(user),
     create: async () => ok(undefined),
     list: async () => ok({ items: [], total: 0 }),
+    update: async () => ok(undefined),
 });
 
 class FixedDateProvider implements DateProvider {

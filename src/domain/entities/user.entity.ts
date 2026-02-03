@@ -93,4 +93,21 @@ export class User {
 
         return this.props.lockedUntil.getTime() > referenceTime.getTime();
     }
+
+    updateInfo(update: {
+        name?: string;
+        avatar?: string;
+        roles?: UserRole[];
+        status?: UserStatus;
+        updatedAt: Date;
+    }): User {
+        return User.create({
+            ...this.props,
+            roles: update.roles ?? this.props.roles,
+            status: update.status ?? this.props.status,
+            updatedAt: update.updatedAt,
+            ...(update.name !== undefined ? { name: update.name } : {}),
+            ...(update.avatar !== undefined ? { avatar: update.avatar } : {}),
+        });
+    }
 }

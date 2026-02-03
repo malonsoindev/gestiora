@@ -39,6 +39,10 @@ class UserRepositoryStub implements UserRepository {
     async list() {
         return ok({ items: this.users, total: this.total });
     }
+
+    async update() {
+        return ok(undefined);
+    }
 }
 
 class UserRepositorySpy implements UserRepository {
@@ -59,6 +63,10 @@ class UserRepositorySpy implements UserRepository {
     async list(filter: { status?: UserStatus; role?: UserRole; page: number; pageSize: number }) {
         this.lastFilter = filter;
         return ok({ items: [], total: 0 });
+    }
+
+    async update() {
+        return ok(undefined);
     }
 }
 

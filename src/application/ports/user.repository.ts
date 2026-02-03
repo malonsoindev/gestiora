@@ -13,4 +13,5 @@ export interface UserRepository {
         page: number;
         pageSize: number;
     }): Promise<Result<{ items: User[]; total: number }, PortError>>;
+    update(user: User): Promise<Result<void, PortError>>;
 }

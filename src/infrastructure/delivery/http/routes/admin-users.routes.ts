@@ -1,6 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import type { AuthorizeRequestUseCase } from '../../../../application/use-cases/authorize-request.use-case.js';
-import type { AdminUsersController, AdminCreateUserBody } from '../controllers/admin-users.controller.js';
+import type {
+    AdminUsersController,
+    AdminCreateUserBody,
+    AdminUpdateUserBody,
+} from '../controllers/admin-users.controller.js';
 import { buildAuthorizeMiddleware } from '../middlewares/authorize.middleware.js';
 import { adminUsersSchemas } from '../schemas/admin-users.schemas.js';
 
@@ -41,5 +45,14 @@ export const registerAdminUsersRoutes = async (
             schema: adminUsersSchemas.detail,
         },
         async (request, reply) => controller.getUserDetail(request, reply),
+    );
+
+    app.put<{ Params: { userId: string }; Body: AdminUpdateUserBody }>(
+        '/admin/users/:userId',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, true),
+            schema: adminUsersSchemas.update,
+        },
+        async (request, reply) => controller.updateUser(request, reply),
     );
 };
