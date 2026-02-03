@@ -73,4 +73,13 @@ export const registerAdminUsersRoutes = async (
         },
         async (request, reply) => controller.softDeleteUser(request, reply),
     );
+
+    app.post<{ Params: { userId: string } }>(
+        '/admin/users/:userId/sessions/revoke',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, true),
+            schema: adminUsersSchemas.revokeSessions,
+        },
+        async (request, reply) => controller.revokeUserSessions(request, reply),
+    );
 };

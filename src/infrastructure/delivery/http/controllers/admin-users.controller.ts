@@ -5,6 +5,7 @@ import type { GetUserDetailUseCase } from '../../../../application/use-cases/get
 import type { UpdateUserUseCase } from '../../../../application/use-cases/update-user.use-case.js';
 import type { UpdateUserStatusUseCase } from '../../../../application/use-cases/update-user-status.use-case.js';
 import type { SoftDeleteUserUseCase } from '../../../../application/use-cases/soft-delete-user.use-case.js';
+import type { RevokeUserSessionsUseCase } from '../../../../application/use-cases/revoke-user-sessions.use-case.js';
 import { InvalidEmailError } from '../../../../domain/errors/invalid-email.error.js';
 import { InvalidPasswordError } from '../../../../domain/errors/invalid-password.error.js';
 import { InvalidUserRolesError } from '../../../../domain/errors/invalid-user-roles.error.js';
@@ -40,6 +41,7 @@ export class AdminUsersController {
         private readonly updateUserUseCase: UpdateUserUseCase,
         private readonly updateUserStatusUseCase: UpdateUserStatusUseCase,
         private readonly softDeleteUserUseCase: SoftDeleteUserUseCase,
+        private readonly revokeUserSessionsUseCase: RevokeUserSessionsUseCase,
     ) {}
 
     async createUser(request: FastifyRequest<{ Body: AdminCreateUserBody }>, reply: FastifyReply) {
@@ -305,6 +307,25 @@ export class AdminUsersController {
 
         if (result.error instanceof SelfDeletionNotAllowedError) {
             return reply.code(400).send({ error: 'SELF_DELETE_NOT_ALLOWED' });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+    }
+
+    async revokeUserSessions(
+        request: FastifyRequest<{ Params: { userId: string } }>,
+        reply: FastifyReply,
+    ) {
+        const result = await this.revokeUserSessionsUseCase.execute({
+            userId: request.params.userId,
+        });
+
+        if (result.success) {
+            return reply.code(204).send();
+        }
+
+        if (result.error instanceof UserNotFoundError) {
+            return reply.code(404).send({ error: 'NOT_FOUND' });
         }
 
         return reply.code(500).send({ error: 'INTERNAL_ERROR' });

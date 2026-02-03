@@ -291,4 +291,31 @@ export const adminUsersSchemas = {
             },
         },
     },
+    revokeSessions: {
+        security: [{ bearerAuth: [] }],
+        params: {
+            type: 'object',
+            required: ['userId'],
+            properties: {
+                userId: { type: 'string' },
+            },
+        },
+        response: {
+            204: { type: 'null' },
+            403: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
 };

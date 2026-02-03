@@ -19,6 +19,7 @@ import { UpdateUserUseCase } from '../application/use-cases/update-user.use-case
 import { UpdateUserStatusUseCase } from '../application/use-cases/update-user-status.use-case.js';
 import { SoftDeleteUserUseCase } from '../application/use-cases/soft-delete-user.use-case.js';
 import { UpdateOwnProfileUseCase } from '../application/use-cases/update-own-profile.use-case.js';
+import { RevokeUserSessionsUseCase } from '../application/use-cases/revoke-user-sessions.use-case.js';
 import { CreateUserUseCase } from '../application/use-cases/create-user.use-case.js';
 import { User, UserStatus } from '../domain/entities/user.entity.js';
 import { Email } from '../domain/value-objects/email.value-object.js';
@@ -158,6 +159,11 @@ const updateOwnProfileUseCase = new UpdateOwnProfileUseCase({
     now: () => new Date(),
 });
 
+const revokeUserSessionsUseCase = new RevokeUserSessionsUseCase({
+    userRepository,
+    sessionRepository,
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
@@ -177,6 +183,7 @@ export const compositionRoot = {
     updateUserStatusUseCase,
     softDeleteUserUseCase,
     updateOwnProfileUseCase,
+    revokeUserSessionsUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,
