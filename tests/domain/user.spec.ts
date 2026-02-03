@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { User, UserStatus } from '../../src/domain/entities/user.entity.js';
+import { Email } from '../../src/domain/value-objects/email.value-object.js';
 import type { UserProps } from '../../src/domain/entities/user.entity.js';
 import { UserRole } from '../../src/domain/value-objects/user-role.value-object.js';
 
@@ -8,7 +9,7 @@ const baseDate = new Date('2026-01-01T00:00:00.000Z');
 const createUser = (overrides: Partial<UserProps> = {}): User => {
     const user = User.create({
         id: 'user-1',
-        email: 'user@example.com',
+        email: Email.create('user@example.com'),
         passwordHash: 'hash',
         status: UserStatus.Active,
         lockedUntil: undefined,

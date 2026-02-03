@@ -13,7 +13,9 @@ import { RefreshAccessTokenUseCase } from '../application/use-cases/refresh-acce
 import { LogoutUserUseCase } from '../application/use-cases/logout-user.use-case.js';
 import { AuthorizeRequestUseCase } from '../application/use-cases/authorize-request.use-case.js';
 import { AntiBruteForceUseCase } from '../application/use-cases/anti-brute-force.use-case.js';
+import { CreateUserUseCase } from '../application/use-cases/create-user.use-case.js';
 import { User, UserStatus } from '../domain/entities/user.entity.js';
+import { Email } from '../domain/value-objects/email.value-object.js';
 import { UserRole } from '../domain/value-objects/user-role.value-object.js';
 import { config } from '../config/env.js';
 import { DatabaseFactory } from '../infrastructure/database/database-factory.js';
@@ -114,6 +116,13 @@ const antiBruteForceUseCase = new AntiBruteForceUseCase({
     lockMinutes: LOGIN_LOCK_MINUTES,
 });
 
+const createUserUseCase = new CreateUserUseCase({
+    userRepository,
+    passwordHasher,
+    auditLogger,
+    dateProvider,
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
@@ -126,6 +135,7 @@ export const compositionRoot = {
     loginRateLimiter,
     unitOfWork,
     loginUserUseCase,
+    createUserUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,
@@ -144,7 +154,7 @@ export const seedUsers = async (): Promise<void> => {
     userRepository.add(
         User.create({
             id: 'admin-1',
-            email: 'admin@example.com',
+            email: Email.create('admin@example.com'),
             passwordHash: adminHash,
             status: UserStatus.Active,
             roles: [UserRole.admin()],
@@ -156,7 +166,7 @@ export const seedUsers = async (): Promise<void> => {
     userRepository.add(
         User.create({
             id: 'user-1',
-            email: 'user@example.com',
+            email: Email.create('user@example.com'),
             passwordHash: userHash,
             status: UserStatus.Active,
             roles: [UserRole.user()],

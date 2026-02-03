@@ -6,4 +6,8 @@ export class PlainTextPasswordHasher implements PasswordHasher {
     async verify(plainText: string, hash: string): Promise<Result<boolean, PortError>> {
         return ok(plainText === hash);
     }
+
+    async hash(plainText: string): Promise<Result<string, PortError>> {
+        return ok(plainText);
+    }
 }

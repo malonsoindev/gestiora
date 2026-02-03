@@ -7,8 +7,10 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { AuthController } from './controllers/auth.controller.js';
 import { AdminController } from './controllers/admin.controller.js';
+import { AdminUsersController } from './controllers/admin-users.controller.js';
 import { registerAuthRoutes } from './routes/auth.routes.js';
 import { registerAdminRoutes } from './routes/admin.routes.js';
+import { registerAdminUsersRoutes } from './routes/admin-users.routes.js';
 import { compositionRoot } from '../../../composition/index.js';
 import { config, isDevelopment, isProduction } from '../../../config/env.js';
 
@@ -99,9 +101,11 @@ export const buildServer = async (): Promise<FastifyInstance> => {
         compositionRoot.logoutUserUseCase,
     );
     const adminController = new AdminController();
+    const adminUsersController = new AdminUsersController(compositionRoot.createUserUseCase);
 
     await registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);
     await registerAdminRoutes(app, adminController, compositionRoot.authorizeRequestUseCase);
+    await registerAdminUsersRoutes(app, adminUsersController, compositionRoot.authorizeRequestUseCase);
 
     return app;
 };

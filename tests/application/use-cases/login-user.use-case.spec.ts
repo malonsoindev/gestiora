@@ -16,6 +16,7 @@ import { Session } from '../../../src/domain/entities/session.entity.js';
 import { User, UserStatus } from '../../../src/domain/entities/user.entity.js';
 import type { UserProps } from '../../../src/domain/entities/user.entity.js';
 import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
+import { Email } from '../../../src/domain/value-objects/email.value-object.js';
 import { fail, ok } from '../../../src/shared/result.js';
 
 const fixedNow = new Date('2026-01-29T10:00:00.000Z');
@@ -23,7 +24,7 @@ const fixedNow = new Date('2026-01-29T10:00:00.000Z');
 const createUser = (overrides: Partial<UserProps> = {}): User =>
     User.create({
         id: 'user-1',
-        email: 'user@example.com',
+        email: Email.create('user@example.com'),
         passwordHash: 'hashed-password',
         status: UserStatus.Active,
         lockedUntil: undefined,
@@ -36,6 +37,7 @@ const createUser = (overrides: Partial<UserProps> = {}): User =>
 const buildUserRepository = (user: User | null): UserRepository => ({
     findByEmail: async () => ok(user),
     findById: async () => ok(user),
+    create: async () => ok(undefined),
 });
 
 class FixedDateProvider implements DateProvider {
@@ -87,6 +89,10 @@ class TokenServiceStub implements TokenService {
         this.refreshPayloads.push(payload);
         return ok('refresh-token');
     }
+
+    verifyAccessToken() {
+        return ok({ userId: 'user-1', roles: [UserRole.user()] });
+    }
 }
 
 class PasswordHasherStub implements PasswordHasher {
@@ -96,6 +102,10 @@ class PasswordHasherStub implements PasswordHasher {
         void plainText;
         void hash;
         return ok(this.valid);
+    }
+
+    async hash(value: string) {
+        return ok(`hashed:${value}`);
     }
 }
 

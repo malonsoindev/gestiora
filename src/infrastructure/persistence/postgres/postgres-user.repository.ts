@@ -4,6 +4,7 @@ import { toDate } from '../../../shared/date-utils.js';
 import { PortError } from '../../../application/errors/port.error.js';
 import type { UserRepository } from '../../../application/ports/user.repository.js';
 import { User, UserStatus } from '../../../domain/entities/user.entity.js';
+import { Email } from '../../../domain/value-objects/email.value-object.js';
 import { UserRole } from '../../../domain/value-objects/user-role.value-object.js';
 
 type SqlClient = Sql<{}>;
@@ -62,7 +63,7 @@ export class PostgresUserRepository implements UserRepository {
 
         return User.create({
             id: String(row.id),
-            email: String(row.email),
+            email: Email.create(String(row.email)),
             passwordHash: String(row.password_hash),
             status,
             ...(row.locked_until ? { lockedUntil: toDate(row.locked_until) } : {}),
@@ -70,6 +71,37 @@ export class PostgresUserRepository implements UserRepository {
             createdAt: toDate(row.created_at),
             updatedAt: toDate(row.updated_at),
         });
+    }
+
+    async create(user: User): Promise<Result<void, PortError>> {
+        try {
+            await this.sql`
+                insert into users (
+                    id,
+                    email,
+                    password_hash,
+                    status,
+                    locked_until,
+                    roles,
+                    created_at,
+                    updated_at
+                ) values (
+                    ${user.id},
+                    ${user.email},
+                    ${user.passwordHash},
+                    ${user.status},
+                    ${user.lockedUntil ?? null},
+                    ${user.roles.map((role) => role.getValue())},
+                    ${user.createdAt},
+                    ${user.updatedAt}
+                )
+            `;
+
+            return ok(undefined);
+        } catch (error) {
+            const cause = error instanceof Error ? error : new Error('Unknown error');
+            return fail(new PortError('UserRepository', 'Failed to create user', cause));
+        }
     }
 
     private mapStatus(value: string): UserStatus {

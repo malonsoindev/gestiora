@@ -1,4 +1,5 @@
 import { UserRole } from '../value-objects/user-role.value-object.js';
+import type { Email } from '../value-objects/email.value-object.js';
 
 // Por ahora usamos enum por simplicidad; si aparecen reglas de transicion o invariantes,
 // se evaluara migrar a un Value Object para encapsular la logica.
@@ -12,7 +13,7 @@ export enum UserStatus {
 // y mantener la entidad con un estado interno controlado.
 export type UserProps = {
     id: string;
-    email: string;
+    email: Email;
     passwordHash: string;
     name?: string;
     avatar?: string;
@@ -42,7 +43,7 @@ export class User {
     }
 
     get email(): string {
-        return this.props.email;
+        return this.props.email.getValue();
     }
 
     get passwordHash(): string {

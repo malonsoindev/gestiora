@@ -23,4 +23,9 @@ export class InMemoryUserRepository implements UserRepository {
     async findById(id: string): Promise<Result<User | null, PortError>> {
         return ok(this.usersById.get(id) ?? null);
     }
+
+    async create(user: User): Promise<Result<void, PortError>> {
+        this.add(user);
+        return ok(undefined);
+    }
 }
