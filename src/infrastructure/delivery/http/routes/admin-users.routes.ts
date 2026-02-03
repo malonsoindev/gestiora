@@ -24,7 +24,7 @@ export const registerAdminUsersRoutes = async (
 
     app.get<{
         Querystring: {
-            status?: 'ACTIVO' | 'INACTIVO' | 'ELIMINADO';
+            status?: 'ACTIVE' | 'INACTIVE' | 'DELETED';
             role?: 'Usuario' | 'Administrador';
             page?: number;
             pageSize?: number;
@@ -54,5 +54,14 @@ export const registerAdminUsersRoutes = async (
             schema: adminUsersSchemas.update,
         },
         async (request, reply) => controller.updateUser(request, reply),
+    );
+
+    app.patch<{ Params: { userId: string }; Body: { status: 'ACTIVE' | 'INACTIVE' | 'DELETED' } }>(
+        '/admin/users/:userId/status',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, true),
+            schema: adminUsersSchemas.updateStatus,
+        },
+        async (request, reply) => controller.updateUserStatus(request, reply),
     );
 };

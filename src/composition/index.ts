@@ -16,6 +16,7 @@ import { AntiBruteForceUseCase } from '../application/use-cases/anti-brute-force
 import { ListUsersUseCase } from '../application/use-cases/list-users.use-case.js';
 import { GetUserDetailUseCase } from '../application/use-cases/get-user-detail.use-case.js';
 import { UpdateUserUseCase } from '../application/use-cases/update-user.use-case.js';
+import { UpdateUserStatusUseCase } from '../application/use-cases/update-user-status.use-case.js';
 import { CreateUserUseCase } from '../application/use-cases/create-user.use-case.js';
 import { User, UserStatus } from '../domain/entities/user.entity.js';
 import { Email } from '../domain/value-objects/email.value-object.js';
@@ -139,6 +140,11 @@ const updateUserUseCase = new UpdateUserUseCase({
     now: () => new Date(),
 });
 
+const updateUserStatusUseCase = new UpdateUserStatusUseCase({
+    userRepository,
+    now: () => new Date(),
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
@@ -155,6 +161,7 @@ export const compositionRoot = {
     listUsersUseCase,
     getUserDetailUseCase,
     updateUserUseCase,
+    updateUserStatusUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,

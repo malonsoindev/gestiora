@@ -3,6 +3,7 @@ import type { CreateUserUseCase } from '../../../../application/use-cases/create
 import type { ListUsersUseCase } from '../../../../application/use-cases/list-users.use-case.js';
 import type { GetUserDetailUseCase } from '../../../../application/use-cases/get-user-detail.use-case.js';
 import type { UpdateUserUseCase } from '../../../../application/use-cases/update-user.use-case.js';
+import type { UpdateUserStatusUseCase } from '../../../../application/use-cases/update-user-status.use-case.js';
 import { InvalidEmailError } from '../../../../domain/errors/invalid-email.error.js';
 import { InvalidPasswordError } from '../../../../domain/errors/invalid-password.error.js';
 import { InvalidUserRolesError } from '../../../../domain/errors/invalid-user-roles.error.js';
@@ -17,14 +18,14 @@ export type AdminCreateUserBody = {
     email: string;
     password: string;
     roles: Array<'Usuario' | 'Administrador'>;
-    status?: 'ACTIVO' | 'INACTIVO' | 'ELIMINADO';
+    status?: 'ACTIVE' | 'INACTIVE' | 'DELETED';
     name?: string;
     avatar?: string;
 };
 
 export type AdminUpdateUserBody = {
     roles?: Array<'Usuario' | 'Administrador'>;
-    status?: 'ACTIVO' | 'INACTIVO' | 'ELIMINADO';
+    status?: 'ACTIVE' | 'INACTIVE' | 'DELETED';
     name?: string;
     avatar?: string;
 };
@@ -35,6 +36,7 @@ export class AdminUsersController {
         private readonly listUsersUseCase: ListUsersUseCase,
         private readonly getUserDetailUseCase: GetUserDetailUseCase,
         private readonly updateUserUseCase: UpdateUserUseCase,
+        private readonly updateUserStatusUseCase: UpdateUserStatusUseCase,
     ) {}
 
     async createUser(request: FastifyRequest<{ Body: AdminCreateUserBody }>, reply: FastifyReply) {
@@ -90,7 +92,7 @@ export class AdminUsersController {
     async listUsers(
         request: FastifyRequest<{
             Querystring: {
-                status?: 'ACTIVO' | 'INACTIVO' | 'ELIMINADO';
+                status?: 'ACTIVE' | 'INACTIVE' | 'DELETED';
                 role?: 'Usuario' | 'Administrador';
                 page?: number;
                 pageSize?: number;
@@ -225,6 +227,57 @@ export class AdminUsersController {
         return reply.code(500).send({ error: 'INTERNAL_ERROR' });
     }
 
+    async updateUserStatus(
+        request: FastifyRequest<{ Params: { userId: string }; Body: { status: 'ACTIVE' | 'INACTIVE' | 'DELETED' } }>,
+        reply: FastifyReply,
+    ) {
+        const status = this.mapStatus(request.body.status);
+        if (!status) {
+            return reply.code(400).send({ error: 'INVALID_STATUS' });
+        }
+
+        const result = await this.updateUserStatusUseCase.execute({
+            userId: request.params.userId,
+            status,
+        });
+
+        if (result.success) {
+            const detail = await this.getUserDetailUseCase.execute({
+                userId: request.params.userId,
+            });
+
+            if (detail.success) {
+                return reply.code(200).send({
+                    userId: detail.value.userId,
+                    email: detail.value.email,
+                    ...(detail.value.name ? { name: detail.value.name } : {}),
+                    ...(detail.value.avatar ? { avatar: detail.value.avatar } : {}),
+                    status: this.mapStatusToApi(detail.value.status),
+                    roles: detail.value.roles.map((role) => this.mapRoleToApi(role)),
+                    createdAt: detail.value.createdAt.toISOString(),
+                    updatedAt: detail.value.updatedAt.toISOString(),
+                    deletedAt: detail.value.deletedAt ? detail.value.deletedAt.toISOString() : null,
+                });
+            }
+
+            if (detail.error instanceof UserNotFoundError) {
+                return reply.code(404).send({ error: 'NOT_FOUND' });
+            }
+
+            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        }
+
+        if (result.error instanceof UserNotFoundError) {
+            return reply.code(404).send({ error: 'NOT_FOUND' });
+        }
+
+        if (result.error instanceof InvalidUserStatusError) {
+            return reply.code(400).send({ error: 'VALIDATION_ERROR' });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+    }
+
     private mapRoles(values: Array<'Usuario' | 'Administrador'>): UserRole[] | null {
         const roles = values.map((value) => {
             switch (value) {
@@ -255,29 +308,29 @@ export class AdminUsersController {
         }
     }
 
-    private mapStatus(value: 'ACTIVO' | 'INACTIVO' | 'ELIMINADO'): UserStatus | null {
+    private mapStatus(value: 'ACTIVE' | 'INACTIVE' | 'DELETED'): UserStatus | null {
         switch (value) {
-            case 'ACTIVO':
+            case 'ACTIVE':
                 return UserStatus.Active;
-            case 'INACTIVO':
+            case 'INACTIVE':
                 return UserStatus.Inactive;
-            case 'ELIMINADO':
+            case 'DELETED':
                 return UserStatus.Deleted;
             default:
                 return null;
         }
     }
 
-    private mapStatusToApi(status: UserStatus): 'ACTIVO' | 'INACTIVO' | 'ELIMINADO' {
+    private mapStatusToApi(status: UserStatus): 'ACTIVE' | 'INACTIVE' | 'DELETED' {
         switch (status) {
             case UserStatus.Active:
-                return 'ACTIVO';
+                return 'ACTIVE';
             case UserStatus.Inactive:
-                return 'INACTIVO';
+                return 'INACTIVE';
             case UserStatus.Deleted:
-                return 'ELIMINADO';
+                return 'DELETED';
             default:
-                return 'INACTIVO';
+                return 'INACTIVE';
         }
     }
 

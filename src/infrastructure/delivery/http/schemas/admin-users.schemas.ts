@@ -13,7 +13,7 @@ export const adminUsersSchemas = {
                     minItems: 1,
                     items: { type: 'string', enum: ['Usuario', 'Administrador'] },
                 },
-                status: { type: 'string', enum: ['ACTIVO', 'INACTIVO', 'ELIMINADO'] },
+                status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
                 name: { type: 'string' },
                 avatar: { type: 'string' },
             },
@@ -48,7 +48,7 @@ export const adminUsersSchemas = {
             type: 'object',
             additionalProperties: false,
             properties: {
-                status: { type: 'string', enum: ['ACTIVO', 'INACTIVO', 'ELIMINADO'] },
+                status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
                 role: { type: 'string', enum: ['Usuario', 'Administrador'] },
                 page: { type: 'integer', minimum: 1 },
                 pageSize: { type: 'integer', minimum: 1 },
@@ -67,7 +67,7 @@ export const adminUsersSchemas = {
                             properties: {
                                 userId: { type: 'string' },
                                 email: { type: 'string', format: 'email' },
-                                status: { type: 'string', enum: ['ACTIVO', 'INACTIVO', 'ELIMINADO'] },
+                                status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
                                 roles: {
                                     type: 'array',
                                     items: { type: 'string', enum: ['Usuario', 'Administrador'] },
@@ -115,7 +115,7 @@ export const adminUsersSchemas = {
                     email: { type: 'string', format: 'email' },
                     name: { type: 'string' },
                     avatar: { type: 'string' },
-                    status: { type: 'string', enum: ['ACTIVO', 'INACTIVO', 'ELIMINADO'] },
+                    status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
                     roles: {
                         type: 'array',
                         items: { type: 'string', enum: ['Usuario', 'Administrador'] },
@@ -158,7 +158,7 @@ export const adminUsersSchemas = {
                     type: 'array',
                     items: { type: 'string', enum: ['Usuario', 'Administrador'] },
                 },
-                status: { type: 'string', enum: ['ACTIVO', 'INACTIVO', 'ELIMINADO'] },
+                status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
                 name: { type: 'string' },
                 avatar: { type: 'string' },
             },
@@ -172,7 +172,66 @@ export const adminUsersSchemas = {
                     email: { type: 'string', format: 'email' },
                     name: { type: 'string' },
                     avatar: { type: 'string' },
-                    status: { type: 'string', enum: ['ACTIVO', 'INACTIVO', 'ELIMINADO'] },
+                    status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
+                    roles: {
+                        type: 'array',
+                        items: { type: 'string', enum: ['Usuario', 'Administrador'] },
+                    },
+                    createdAt: { type: 'string', format: 'date-time' },
+                    updatedAt: { type: 'string', format: 'date-time' },
+                    deletedAt: { type: 'string', format: 'date-time', nullable: true },
+                },
+            },
+            400: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            403: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
+    updateStatus: {
+        security: [{ bearerAuth: [] }],
+        params: {
+            type: 'object',
+            required: ['userId'],
+            properties: {
+                userId: { type: 'string' },
+            },
+        },
+        body: {
+            type: 'object',
+            required: ['status'],
+            additionalProperties: false,
+            properties: {
+                status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
+            },
+        },
+        response: {
+            200: {
+                type: 'object',
+                required: ['userId', 'email', 'status', 'roles', 'createdAt', 'updatedAt'],
+                properties: {
+                    userId: { type: 'string' },
+                    email: { type: 'string', format: 'email' },
+                    name: { type: 'string' },
+                    avatar: { type: 'string' },
+                    status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
                     roles: {
                         type: 'array',
                         items: { type: 'string', enum: ['Usuario', 'Administrador'] },

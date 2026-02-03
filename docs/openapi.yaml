@@ -1023,7 +1023,7 @@ components:
 
     UserStatus:
       type: string
-      enum: [ACTIVO, INACTIVO, ELIMINADO]
+      enum: [ACTIVE, INACTIVE, DELETED]
 
     ProviderStatus:
       type: string
