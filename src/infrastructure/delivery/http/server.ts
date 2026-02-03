@@ -104,6 +104,7 @@ export const buildServer = async (): Promise<FastifyInstance> => {
     const adminUsersController = new AdminUsersController(
         compositionRoot.createUserUseCase,
         compositionRoot.listUsersUseCase,
+        compositionRoot.getUserDetailUseCase,
     );
 
     await registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);

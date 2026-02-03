@@ -97,4 +97,48 @@ export const adminUsersSchemas = {
             },
         },
     },
+    detail: {
+        security: [{ bearerAuth: [] }],
+        params: {
+            type: 'object',
+            required: ['userId'],
+            properties: {
+                userId: { type: 'string' },
+            },
+        },
+        response: {
+            200: {
+                type: 'object',
+                required: ['userId', 'email', 'status', 'roles', 'createdAt', 'updatedAt'],
+                properties: {
+                    userId: { type: 'string' },
+                    email: { type: 'string', format: 'email' },
+                    name: { type: 'string' },
+                    avatar: { type: 'string' },
+                    status: { type: 'string', enum: ['ACTIVO', 'INACTIVO', 'ELIMINADO'] },
+                    roles: {
+                        type: 'array',
+                        items: { type: 'string', enum: ['Usuario', 'Administrador'] },
+                    },
+                    createdAt: { type: 'string', format: 'date-time' },
+                    updatedAt: { type: 'string', format: 'date-time' },
+                    deletedAt: { type: 'string', format: 'date-time', nullable: true },
+                },
+            },
+            403: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
 };

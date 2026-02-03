@@ -33,4 +33,13 @@ export const registerAdminUsersRoutes = async (
         },
         async (request, reply) => controller.listUsers(request, reply),
     );
+
+    app.get<{ Params: { userId: string } }>(
+        '/admin/users/:userId',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, true),
+            schema: adminUsersSchemas.detail,
+        },
+        async (request, reply) => controller.getUserDetail(request, reply),
+    );
 };

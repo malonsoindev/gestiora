@@ -1,11 +1,13 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { CreateUserUseCase } from '../../../../application/use-cases/create-user.use-case.js';
 import type { ListUsersUseCase } from '../../../../application/use-cases/list-users.use-case.js';
+import type { GetUserDetailUseCase } from '../../../../application/use-cases/get-user-detail.use-case.js';
 import { InvalidEmailError } from '../../../../domain/errors/invalid-email.error.js';
 import { InvalidPasswordError } from '../../../../domain/errors/invalid-password.error.js';
 import { InvalidUserRolesError } from '../../../../domain/errors/invalid-user-roles.error.js';
 import { InvalidUserStatusError } from '../../../../domain/errors/invalid-user-status.error.js';
 import { UserAlreadyExistsError } from '../../../../domain/errors/user-already-exists.error.js';
+import { UserNotFoundError } from '../../../../domain/errors/user-not-found.error.js';
 import { UserRole } from '../../../../domain/value-objects/user-role.value-object.js';
 import { UserStatus } from '../../../../domain/entities/user.entity.js';
 import { PortError } from '../../../../application/errors/port.error.js';
@@ -23,6 +25,7 @@ export class AdminUsersController {
     constructor(
         private readonly createUserUseCase: CreateUserUseCase,
         private readonly listUsersUseCase: ListUsersUseCase,
+        private readonly getUserDetailUseCase: GetUserDetailUseCase,
     ) {}
 
     async createUser(request: FastifyRequest<{ Body: AdminCreateUserBody }>, reply: FastifyReply) {
@@ -119,6 +122,33 @@ export class AdminUsersController {
                 pageSize: result.value.pageSize,
                 total: result.value.total,
             });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+    }
+
+    async getUserDetail(
+        request: FastifyRequest<{ Params: { userId: string } }>,
+        reply: FastifyReply,
+    ) {
+        const result = await this.getUserDetailUseCase.execute({ userId: request.params.userId });
+
+        if (result.success) {
+            return reply.code(200).send({
+                userId: result.value.userId,
+                email: result.value.email,
+                ...(result.value.name ? { name: result.value.name } : {}),
+                ...(result.value.avatar ? { avatar: result.value.avatar } : {}),
+                status: this.mapStatusToApi(result.value.status),
+                roles: result.value.roles.map((role) => this.mapRoleToApi(role)),
+                createdAt: result.value.createdAt.toISOString(),
+                updatedAt: result.value.updatedAt.toISOString(),
+                deletedAt: result.value.deletedAt ? result.value.deletedAt.toISOString() : null,
+            });
+        }
+
+        if (result.error instanceof UserNotFoundError) {
+            return reply.code(404).send({ error: 'NOT_FOUND' });
         }
 
         return reply.code(500).send({ error: 'INTERNAL_ERROR' });
