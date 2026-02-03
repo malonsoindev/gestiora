@@ -64,4 +64,17 @@ describe('User', () => {
 
         expect(unlockedUser.isLocked(now)).toBe(false);
     });
+
+    it('exposes optional profile fields when provided', () => {
+        const deletedAt = new Date('2026-01-05T00:00:00.000Z');
+        const user = createUser({
+            name: 'Test User',
+            avatar: 'avatar.png',
+            deletedAt,
+        });
+
+        expect(user.name).toBe('Test User');
+        expect(user.avatar).toBe('avatar.png');
+        expect(user.deletedAt).toBe(deletedAt);
+    });
 });
