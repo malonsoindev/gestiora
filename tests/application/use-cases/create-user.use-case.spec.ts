@@ -73,6 +73,10 @@ class UserRepositorySpy implements UserRepository {
         this.createdUser = user;
         return ok(undefined);
     }
+
+    async list() {
+        return ok({ items: [], total: 0 });
+    }
 }
 
 describe('CreateUserUseCase', () => {

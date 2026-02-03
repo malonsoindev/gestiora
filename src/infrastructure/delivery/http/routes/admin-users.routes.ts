@@ -17,4 +17,20 @@ export const registerAdminUsersRoutes = async (
         },
         async (request, reply) => controller.createUser(request, reply),
     );
+
+    app.get<{
+        Querystring: {
+            status?: 'ACTIVO' | 'INACTIVO' | 'ELIMINADO';
+            role?: 'Usuario' | 'Administrador';
+            page?: number;
+            pageSize?: number;
+        };
+    }>(
+        '/admin/users',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, true),
+            schema: adminUsersSchemas.list,
+        },
+        async (request, reply) => controller.listUsers(request, reply),
+    );
 };

@@ -42,4 +42,59 @@ export const adminUsersSchemas = {
             },
         },
     },
+    list: {
+        security: [{ bearerAuth: [] }],
+        querystring: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+                status: { type: 'string', enum: ['ACTIVO', 'INACTIVO', 'ELIMINADO'] },
+                role: { type: 'string', enum: ['Usuario', 'Administrador'] },
+                page: { type: 'integer', minimum: 1 },
+                pageSize: { type: 'integer', minimum: 1 },
+            },
+        },
+        response: {
+            200: {
+                type: 'object',
+                required: ['items', 'page', 'pageSize', 'total'],
+                properties: {
+                    items: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            required: ['userId', 'email', 'status', 'roles', 'createdAt'],
+                            properties: {
+                                userId: { type: 'string' },
+                                email: { type: 'string', format: 'email' },
+                                status: { type: 'string', enum: ['ACTIVO', 'INACTIVO', 'ELIMINADO'] },
+                                roles: {
+                                    type: 'array',
+                                    items: { type: 'string', enum: ['Usuario', 'Administrador'] },
+                                },
+                                createdAt: { type: 'string', format: 'date-time' },
+                            },
+                        },
+                    },
+                    page: { type: 'integer' },
+                    pageSize: { type: 'integer' },
+                    total: { type: 'integer' },
+                },
+            },
+            400: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            403: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
 };

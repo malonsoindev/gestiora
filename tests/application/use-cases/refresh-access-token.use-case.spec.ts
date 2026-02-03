@@ -110,6 +110,7 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
             findByEmail: async () => ok(null),
             findById: async () => ok(createUser()),
             create: async () => ok(undefined),
+            list: async () => ok({ items: [], total: 0 }),
         },
         tokenService,
         refreshTokenHasher: new RefreshTokenHasherStub(),

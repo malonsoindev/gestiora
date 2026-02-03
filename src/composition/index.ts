@@ -13,6 +13,7 @@ import { RefreshAccessTokenUseCase } from '../application/use-cases/refresh-acce
 import { LogoutUserUseCase } from '../application/use-cases/logout-user.use-case.js';
 import { AuthorizeRequestUseCase } from '../application/use-cases/authorize-request.use-case.js';
 import { AntiBruteForceUseCase } from '../application/use-cases/anti-brute-force.use-case.js';
+import { ListUsersUseCase } from '../application/use-cases/list-users.use-case.js';
 import { CreateUserUseCase } from '../application/use-cases/create-user.use-case.js';
 import { User, UserStatus } from '../domain/entities/user.entity.js';
 import { Email } from '../domain/value-objects/email.value-object.js';
@@ -123,6 +124,10 @@ const createUserUseCase = new CreateUserUseCase({
     dateProvider,
 });
 
+const listUsersUseCase = new ListUsersUseCase({
+    userRepository,
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
@@ -136,6 +141,7 @@ export const compositionRoot = {
     unitOfWork,
     loginUserUseCase,
     createUserUseCase,
+    listUsersUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,

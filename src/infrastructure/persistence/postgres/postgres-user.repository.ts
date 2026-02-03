@@ -104,6 +104,41 @@ export class PostgresUserRepository implements UserRepository {
         }
     }
 
+    async list(filter: {
+        status?: UserStatus;
+        role?: UserRole;
+        page: number;
+        pageSize: number;
+    }): Promise<Result<{ items: User[]; total: number }, PortError>> {
+        try {
+            const offset = (filter.page - 1) * filter.pageSize;
+            const rows = await this.sql`
+                select id, email, password_hash, status, locked_until, roles, created_at, updated_at
+                from users
+                where (${filter.status ?? null}::text is null or status = ${filter.status ?? null})
+                  and (${filter.role?.getValue() ?? null}::text is null or ${filter.role?.getValue() ?? null} = any(roles))
+                order by created_at desc
+                limit ${filter.pageSize}
+                offset ${offset}
+            `;
+
+            const totalResult = await this.sql`
+                select count(*)::int as count
+                from users
+                where (${filter.status ?? null}::text is null or status = ${filter.status ?? null})
+                  and (${filter.role?.getValue() ?? null}::text is null or ${filter.role?.getValue() ?? null} = any(roles))
+            `;
+
+            const total = totalResult[0]?.count ?? 0;
+            const items = rows.map((row) => this.mapRowToUser(row));
+
+            return ok({ items, total });
+        } catch (error) {
+            const cause = error instanceof Error ? error : new Error('Unknown error');
+            return fail(new PortError('UserRepository', 'Failed to list users', cause));
+        }
+    }
+
     private mapStatus(value: string): UserStatus {
         switch (value) {
             case UserStatus.Active:
