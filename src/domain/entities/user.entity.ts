@@ -14,11 +14,14 @@ export type UserProps = {
     id: string;
     email: string;
     passwordHash: string;
+    name?: string;
+    avatar?: string;
     status: UserStatus;
     lockedUntil?: Date;
     roles: UserRole[];
     createdAt: Date;
     updatedAt: Date;
+    deletedAt?: Date;
 };
 
 /**
@@ -46,6 +49,14 @@ export class User {
         return this.props.passwordHash;
     }
 
+    get name(): string | undefined {
+        return this.props.name;
+    }
+
+    get avatar(): string | undefined {
+        return this.props.avatar;
+    }
+
     get status(): UserStatus {
         return this.props.status;
     }
@@ -64,6 +75,10 @@ export class User {
 
     get updatedAt(): Date {
         return this.props.updatedAt;
+    }
+
+    get deletedAt(): Date | undefined {
+        return this.props.deletedAt;
     }
 
     isActive(): boolean {
