@@ -18,6 +18,7 @@ import { GetUserDetailUseCase } from '../application/use-cases/get-user-detail.u
 import { UpdateUserUseCase } from '../application/use-cases/update-user.use-case.js';
 import { UpdateUserStatusUseCase } from '../application/use-cases/update-user-status.use-case.js';
 import { SoftDeleteUserUseCase } from '../application/use-cases/soft-delete-user.use-case.js';
+import { UpdateOwnProfileUseCase } from '../application/use-cases/update-own-profile.use-case.js';
 import { CreateUserUseCase } from '../application/use-cases/create-user.use-case.js';
 import { User, UserStatus } from '../domain/entities/user.entity.js';
 import { Email } from '../domain/value-objects/email.value-object.js';
@@ -152,6 +153,11 @@ const softDeleteUserUseCase = new SoftDeleteUserUseCase({
     now: () => new Date(),
 });
 
+const updateOwnProfileUseCase = new UpdateOwnProfileUseCase({
+    userRepository,
+    now: () => new Date(),
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
@@ -170,6 +176,7 @@ export const compositionRoot = {
     updateUserUseCase,
     updateUserStatusUseCase,
     softDeleteUserUseCase,
+    updateOwnProfileUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,
@@ -183,7 +190,7 @@ export const seedUsers = async (): Promise<void> => {
     const now = new Date();
     const saltRounds = 12;
     const adminHash = await bcrypt.hash('AdminPass1!a', saltRounds);
-    const userHash = await bcrypt.hash('UserPass1!a', saltRounds);
+    const userHash = await bcrypt.hash('UserPass1!a01', saltRounds);
 
     userRepository.add(
         User.create({
