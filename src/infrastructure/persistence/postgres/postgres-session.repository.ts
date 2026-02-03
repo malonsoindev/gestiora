@@ -81,6 +81,22 @@ export class PostgresSessionRepository implements SessionRepository {
         }
     }
 
+    async revokeByUserId(userId: string): Promise<Result<void, PortError>> {
+        try {
+            await this.sql`
+                update sessions
+                set status = ${SessionStatus.Revoked},
+                    revoked_at = now()
+                where user_id = ${userId}
+                  and status = ${SessionStatus.Active}
+            `;
+            return ok(undefined);
+        } catch (error) {
+            const cause = error instanceof Error ? error : new Error('Unknown error');
+            return fail(new PortError('SessionRepository', 'Failed to revoke sessions', cause));
+        }
+    }
+
     private mapRowToSession(row: Record<string, unknown>): Session {
         const statusValue = String(row.status);
         const status = this.mapStatus(statusValue);

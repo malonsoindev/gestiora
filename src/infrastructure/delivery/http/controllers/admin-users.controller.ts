@@ -4,12 +4,14 @@ import type { ListUsersUseCase } from '../../../../application/use-cases/list-us
 import type { GetUserDetailUseCase } from '../../../../application/use-cases/get-user-detail.use-case.js';
 import type { UpdateUserUseCase } from '../../../../application/use-cases/update-user.use-case.js';
 import type { UpdateUserStatusUseCase } from '../../../../application/use-cases/update-user-status.use-case.js';
+import type { SoftDeleteUserUseCase } from '../../../../application/use-cases/soft-delete-user.use-case.js';
 import { InvalidEmailError } from '../../../../domain/errors/invalid-email.error.js';
 import { InvalidPasswordError } from '../../../../domain/errors/invalid-password.error.js';
 import { InvalidUserRolesError } from '../../../../domain/errors/invalid-user-roles.error.js';
 import { InvalidUserStatusError } from '../../../../domain/errors/invalid-user-status.error.js';
 import { UserAlreadyExistsError } from '../../../../domain/errors/user-already-exists.error.js';
 import { UserNotFoundError } from '../../../../domain/errors/user-not-found.error.js';
+import { SelfDeletionNotAllowedError } from '../../../../domain/errors/self-deletion-not-allowed.error.js';
 import { UserRole } from '../../../../domain/value-objects/user-role.value-object.js';
 import { UserStatus } from '../../../../domain/entities/user.entity.js';
 import { PortError } from '../../../../application/errors/port.error.js';
@@ -37,6 +39,7 @@ export class AdminUsersController {
         private readonly getUserDetailUseCase: GetUserDetailUseCase,
         private readonly updateUserUseCase: UpdateUserUseCase,
         private readonly updateUserStatusUseCase: UpdateUserStatusUseCase,
+        private readonly softDeleteUserUseCase: SoftDeleteUserUseCase,
     ) {}
 
     async createUser(request: FastifyRequest<{ Body: AdminCreateUserBody }>, reply: FastifyReply) {
@@ -273,6 +276,35 @@ export class AdminUsersController {
 
         if (result.error instanceof InvalidUserStatusError) {
             return reply.code(400).send({ error: 'VALIDATION_ERROR' });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+    }
+
+    async softDeleteUser(
+        request: FastifyRequest<{ Params: { userId: string } }>,
+        reply: FastifyReply,
+    ) {
+        const actorUserId = request.auth?.userId;
+        if (!actorUserId) {
+            return reply.code(403).send({ error: 'FORBIDDEN' });
+        }
+
+        const result = await this.softDeleteUserUseCase.execute({
+            userId: request.params.userId,
+            actorUserId,
+        });
+
+        if (result.success) {
+            return reply.code(204).send();
+        }
+
+        if (result.error instanceof UserNotFoundError) {
+            return reply.code(404).send({ error: 'NOT_FOUND' });
+        }
+
+        if (result.error instanceof SelfDeletionNotAllowedError) {
+            return reply.code(400).send({ error: 'SELF_DELETE_NOT_ALLOWED' });
         }
 
         return reply.code(500).send({ error: 'INTERNAL_ERROR' });

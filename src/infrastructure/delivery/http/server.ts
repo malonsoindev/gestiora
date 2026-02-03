@@ -107,6 +107,7 @@ export const buildServer = async (): Promise<FastifyInstance> => {
         compositionRoot.getUserDetailUseCase,
         compositionRoot.updateUserUseCase,
         compositionRoot.updateUserStatusUseCase,
+        compositionRoot.softDeleteUserUseCase,
     );
 
     await registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);

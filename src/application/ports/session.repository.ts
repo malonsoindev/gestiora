@@ -6,4 +6,5 @@ export interface SessionRepository {
     create(session: Session): Promise<Result<void, PortError>>;
     findByRefreshTokenHash(hash: string): Promise<Result<Session | null, PortError>>;
     update(session: Session): Promise<Result<void, PortError>>;
+    revokeByUserId(userId: string): Promise<Result<void, PortError>>;
 }

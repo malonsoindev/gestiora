@@ -99,6 +99,7 @@ export class User {
         avatar?: string;
         roles?: UserRole[];
         status?: UserStatus;
+        deletedAt?: Date;
         updatedAt: Date;
     }): User {
         return User.create({
@@ -108,6 +109,7 @@ export class User {
             updatedAt: update.updatedAt,
             ...(update.name !== undefined ? { name: update.name } : {}),
             ...(update.avatar !== undefined ? { avatar: update.avatar } : {}),
+            ...(update.deletedAt !== undefined ? { deletedAt: update.deletedAt } : {}),
         });
     }
 }

@@ -106,4 +106,16 @@ describe('User', () => {
         expect(updated.createdAt).toBe(user.createdAt);
         expect(updated.email).toBe(user.email);
     });
+
+    it('supports updating deletedAt', () => {
+        const now = new Date('2026-01-03T00:00:00.000Z');
+        const user = createUser({ deletedAt: undefined });
+
+        const updated = user.updateInfo({
+            deletedAt: now,
+            updatedAt: now,
+        });
+
+        expect(updated.deletedAt).toBe(now);
+    });
 });

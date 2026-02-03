@@ -64,4 +64,13 @@ export const registerAdminUsersRoutes = async (
         },
         async (request, reply) => controller.updateUserStatus(request, reply),
     );
+
+    app.delete<{ Params: { userId: string } }>(
+        '/admin/users/:userId',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, true),
+            schema: adminUsersSchemas.softDelete,
+        },
+        async (request, reply) => controller.softDeleteUser(request, reply),
+    );
 };
