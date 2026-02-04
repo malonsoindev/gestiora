@@ -208,6 +208,7 @@ export const seedUsers = async (): Promise<void> => {
             roles: [UserRole.admin()],
             createdAt: now,
             updatedAt: now,
+            name: 'Admin User'
         }),
     );
 
@@ -220,6 +221,7 @@ export const seedUsers = async (): Promise<void> => {
             roles: [UserRole.user()],
             createdAt: now,
             updatedAt: now,
+            name: 'Regular User'
         }),
     );
 };

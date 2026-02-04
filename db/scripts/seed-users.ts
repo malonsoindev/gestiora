@@ -16,10 +16,10 @@ const run = async () => {
         const now = new Date();
         const saltRounds = 12;
         const adminHash = await bcrypt.hash('AdminPass1!a', saltRounds);
-        const userHash = await bcrypt.hash('UserPass1!a', saltRounds);
+        const userHash = await bcrypt.hash('UserPass1!a01', saltRounds);
 
         await sql`
-            insert into users (id, email, password_hash, status, locked_until, roles, created_at, updated_at)
+            insert into users (id, email, password_hash, status, locked_until, roles, created_at, updated_at, name, avatar)
             values (
                 'admin-1',
                 'admin@example.com',
@@ -28,13 +28,15 @@ const run = async () => {
                 null,
                 ${['ADMIN']}::text[],
                 ${now},
-                ${now}
+                ${now},
+                'Admin User',
+                null
             )
             on conflict (email) do nothing
         `;
 
         await sql`
-            insert into users (id, email, password_hash, status, locked_until, roles, created_at, updated_at)
+            insert into users (id, email, password_hash, status, locked_until, roles, created_at, updated_at, name, avatar)
             values (
                 'user-1',
                 'user@example.com',
@@ -43,7 +45,9 @@ const run = async () => {
                 null,
                 ${['USER']}::text[],
                 ${now},
-                ${now}
+                ${now},
+                'Regular User',
+                null
             )
             on conflict (email) do nothing
         `;

@@ -1,11 +1,11 @@
 create table if not exists users (
     id text primary key,
+    name text null,
     email text unique not null,
     password_hash text not null,
     status text not null,
     locked_until timestamptz null,
     roles text[] not null,
-    name text null,
     avatar text null,
     created_at timestamptz not null,
     updated_at timestamptz not null,
