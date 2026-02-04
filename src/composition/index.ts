@@ -23,6 +23,7 @@ import { RevokeUserSessionsUseCase } from '../application/use-cases/revoke-user-
 import { CreateUserUseCase } from '../application/use-cases/create-user.use-case.js';
 import { ListProvidersUseCase } from '../application/use-cases/list-providers.use-case.js';
 import { GetProviderDetailUseCase } from '../application/use-cases/get-provider-detail.use-case.js';
+import { UpdateProviderUseCase } from '../application/use-cases/update-provider.use-case.js';
 import { User, UserStatus } from '../domain/entities/user.entity.js';
 import { Email } from '../domain/value-objects/email.value-object.js';
 import { UserRole } from '../domain/value-objects/user-role.value-object.js';
@@ -186,6 +187,12 @@ const getProviderDetailUseCase = new GetProviderDetailUseCase({
     providerRepository,
 });
 
+const updateProviderUseCase = new UpdateProviderUseCase({
+    providerRepository,
+    auditLogger,
+    dateProvider,
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
@@ -210,6 +217,7 @@ export const compositionRoot = {
     createProviderUseCase,
     listProvidersUseCase,
     getProviderDetailUseCase,
+    updateProviderUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,

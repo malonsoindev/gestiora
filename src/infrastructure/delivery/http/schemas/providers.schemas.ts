@@ -125,4 +125,66 @@ export const providersSchemas = {
             },
         },
     },
+    update: {
+        security: [{ bearerAuth: [] }],
+        params: {
+            type: 'object',
+            required: ['providerId'],
+            properties: {
+                providerId: { type: 'string' },
+            },
+        },
+        body: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+                razonSocial: { type: 'string' },
+                cif: { type: 'string' },
+                direccion: { type: 'string' },
+                poblacion: { type: 'string' },
+                provincia: { type: 'string' },
+                pais: { type: 'string' },
+            },
+        },
+        response: {
+            200: {
+                type: 'object',
+                required: ['providerId', 'razonSocial', 'status', 'createdAt', 'updatedAt'],
+                properties: {
+                    providerId: { type: 'string' },
+                    razonSocial: { type: 'string' },
+                    cif: { type: 'string' },
+                    direccion: { type: 'string' },
+                    poblacion: { type: 'string' },
+                    provincia: { type: 'string' },
+                    pais: { type: 'string' },
+                    status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED', 'DRAFT'] },
+                    createdAt: { type: 'string', format: 'date-time' },
+                    updatedAt: { type: 'string', format: 'date-time' },
+                    deletedAt: { type: 'string', format: 'date-time', nullable: true },
+                },
+            },
+            400: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            401: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
 };

@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { CreateProviderUseCase } from '../../../../application/use-cases/create-provider.use-case.js';
 import type { ListProvidersUseCase } from '../../../../application/use-cases/list-providers.use-case.js';
 import type { GetProviderDetailUseCase } from '../../../../application/use-cases/get-provider-detail.use-case.js';
+import type { UpdateProviderUseCase } from '../../../../application/use-cases/update-provider.use-case.js';
 import { InvalidCifError } from '../../../../domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '../../../../domain/errors/invalid-provider-status.error.js';
 import { ProviderAlreadyExistsError } from '../../../../domain/errors/provider-already-exists.error.js';
@@ -17,6 +18,15 @@ export type CreateProviderBody = {
     provincia?: string;
     pais?: string;
     status?: 'ACTIVE' | 'INACTIVE' | 'DELETED' | 'DRAFT';
+};
+
+export type UpdateProviderBody = {
+    razonSocial?: string;
+    cif?: string;
+    direccion?: string;
+    poblacion?: string;
+    provincia?: string;
+    pais?: string;
 };
 
 export type ProvidersListQuery = {
@@ -35,6 +45,7 @@ export class ProvidersController {
         private readonly createProviderUseCase: CreateProviderUseCase,
         private readonly listProvidersUseCase: ListProvidersUseCase,
         private readonly getProviderDetailUseCase: GetProviderDetailUseCase,
+        private readonly updateProviderUseCase: UpdateProviderUseCase,
     ) {}
 
     async createProvider(request: FastifyRequest<{ Body: CreateProviderBody }>, reply: FastifyReply) {
@@ -143,6 +154,69 @@ export class ProvidersController {
 
         if (result.error instanceof ProviderNotFoundError) {
             return reply.code(404).send({ error: 'NOT_FOUND' });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+    }
+
+    async updateProvider(
+        request: FastifyRequest<{ Params: ProviderDetailParams; Body: UpdateProviderBody }>,
+        reply: FastifyReply,
+    ) {
+        const actorUserId = request.auth?.userId;
+        if (!actorUserId) {
+            return reply.code(401).send({ error: 'UNAUTHORIZED' });
+        }
+
+        const result = await this.updateProviderUseCase.execute({
+            actorUserId,
+            providerId: request.params.providerId,
+            ...(request.body.razonSocial !== undefined ? { razonSocial: request.body.razonSocial } : {}),
+            ...(request.body.cif !== undefined ? { cif: request.body.cif } : {}),
+            ...(request.body.direccion !== undefined ? { direccion: request.body.direccion } : {}),
+            ...(request.body.poblacion !== undefined ? { poblacion: request.body.poblacion } : {}),
+            ...(request.body.provincia !== undefined ? { provincia: request.body.provincia } : {}),
+            ...(request.body.pais !== undefined ? { pais: request.body.pais } : {}),
+        });
+
+        if (result.success) {
+            const detail = await this.getProviderDetailUseCase.execute({
+                providerId: request.params.providerId,
+            });
+
+            if (detail.success) {
+                return reply.code(200).send({
+                    providerId: detail.value.providerId,
+                    razonSocial: detail.value.razonSocial,
+                    ...(detail.value.cif ? { cif: detail.value.cif } : {}),
+                    ...(detail.value.direccion ? { direccion: detail.value.direccion } : {}),
+                    ...(detail.value.poblacion ? { poblacion: detail.value.poblacion } : {}),
+                    ...(detail.value.provincia ? { provincia: detail.value.provincia } : {}),
+                    ...(detail.value.pais ? { pais: detail.value.pais } : {}),
+                    status: this.mapStatusToApi(detail.value.status),
+                    createdAt: detail.value.createdAt.toISOString(),
+                    updatedAt: detail.value.updatedAt.toISOString(),
+                    deletedAt: detail.value.deletedAt ? detail.value.deletedAt.toISOString() : null,
+                });
+            }
+
+            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        }
+
+        if (result.error instanceof ProviderNotFoundError) {
+            return reply.code(404).send({ error: 'NOT_FOUND' });
+        }
+
+        if (result.error instanceof ProviderAlreadyExistsError) {
+            return reply.code(400).send({ error: 'PROVIDER_ALREADY_EXISTS' });
+        }
+
+        if (result.error instanceof InvalidCifError) {
+            return reply.code(400).send({ error: 'INVALID_CIF' });
+        }
+
+        if (result.error instanceof PortError) {
+            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
         }
 
         return reply.code(500).send({ error: 'INTERNAL_ERROR' });
