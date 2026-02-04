@@ -31,6 +31,12 @@ const expectedEndpoints: Array<{ path: string; method: HttpMethod }> = [
     { path: '/admin/users/{userId}/status', method: 'PATCH' },
     { path: '/admin/users/{userId}/sessions/revoke', method: 'POST' },
     { path: '/users/me', method: 'PATCH' },
+    { path: '/providers', method: 'POST' },
+    { path: '/providers', method: 'GET' },
+    { path: '/providers/{providerId}', method: 'GET' },
+    { path: '/providers/{providerId}', method: 'PUT' },
+    { path: '/providers/{providerId}/status', method: 'PATCH' },
+    { path: '/providers/{providerId}', method: 'DELETE' },
 ];
 
 const escapeRegExp = (value: string): string =>
@@ -227,6 +233,72 @@ const run = async (): Promise<void> => {
         adminTokens.accessToken,
     );
     logResult('DELETE /admin/users/{userId}', deleteUserResult);
+
+    const generatedCif = `B${Date.now().toString().slice(-8)}`;
+    const createProviderResult = await requestJson(
+        'POST',
+        '/providers',
+        {
+            razonSocial: `Proveedor Smoke ${uniqueSuffix}`,
+            cif: generatedCif,
+            direccion: 'Calle Smoke 1',
+            poblacion: 'Madrid',
+            provincia: 'Madrid',
+            pais: 'ES',
+            status: 'ACTIVE',
+        },
+        adminTokens.accessToken,
+    );
+    logResult('POST /providers', createProviderResult);
+
+    const createProviderPayload = parseJson<{ providerId: string }>(createProviderResult.bodyText);
+    const createdProviderId = createProviderPayload?.providerId ?? 'provider-1';
+    if (!createProviderPayload?.providerId) {
+        console.log('Create provider failed, falling back to provider-1');
+    }
+
+    const listProvidersResult = await requestJson(
+        'GET',
+        '/providers',
+        undefined,
+        adminTokens.accessToken,
+    );
+    logResult('GET /providers', listProvidersResult);
+
+    const getProviderResult = await requestJson(
+        'GET',
+        `/providers/${createdProviderId}`,
+        undefined,
+        adminTokens.accessToken,
+    );
+    logResult('GET /providers/{providerId}', getProviderResult);
+
+    const updateProviderResult = await requestJson(
+        'PUT',
+        `/providers/${createdProviderId}`,
+        {
+            razonSocial: `Proveedor Smoke Updated ${uniqueSuffix}`,
+            direccion: 'Calle Smoke 2',
+        },
+        adminTokens.accessToken,
+    );
+    logResult('PUT /providers/{providerId}', updateProviderResult);
+
+    const updateProviderStatusResult = await requestJson(
+        'PATCH',
+        `/providers/${createdProviderId}/status`,
+        { status: 'INACTIVE' },
+        adminTokens.accessToken,
+    );
+    logResult('PATCH /providers/{providerId}/status', updateProviderStatusResult);
+
+    const deleteProviderResult = await requestJson(
+        'DELETE',
+        `/providers/${createdProviderId}`,
+        undefined,
+        adminTokens.accessToken,
+    );
+    logResult('DELETE /providers/{providerId}', deleteProviderResult);
 
     const refreshResult = await requestJson(
         'POST',
