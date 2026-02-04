@@ -131,6 +131,7 @@ export class PostgresProviderRepository implements ProviderRepository {
                     deleted_at
                 from providers
                 where (${filters.status ?? null}::text is null or status = ${filters.status ?? null})
+                  and (${filters.status ?? null}::text = ${ProviderStatus.Deleted} or deleted_at is null)
                   and (${normalizedQuery}::text is null or razon_social_normalized like ${normalizedQuery ? `%${normalizedQuery}%` : null})
                 order by created_at desc
                 limit ${filters.pageSize}
@@ -141,6 +142,7 @@ export class PostgresProviderRepository implements ProviderRepository {
                 select count(*)::int as count
                 from providers
                 where (${filters.status ?? null}::text is null or status = ${filters.status ?? null})
+                  and (${filters.status ?? null}::text = ${ProviderStatus.Deleted} or deleted_at is null)
                   and (${normalizedQuery}::text is null or razon_social_normalized like ${normalizedQuery ? `%${normalizedQuery}%` : null})
             `;
 

@@ -35,7 +35,11 @@ export class InMemoryProviderRepository implements ProviderRepository {
     async list(filters: ProviderListFilters): Promise<Result<ProviderListResult, PortError>> {
         const allProviders = Array.from(this.providersById.values());
         const filtered = allProviders.filter((provider) => {
-            if (filters.status && provider.status !== filters.status) {
+            if (filters.status !== undefined) {
+                if (provider.status !== filters.status) {
+                    return false;
+                }
+            } else if (provider.deletedAt) {
                 return false;
             }
             if (filters.q) {

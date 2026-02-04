@@ -1,0 +1,63 @@
+import { describe, expect, it } from 'vitest';
+import { InMemoryProviderRepository } from '../../../../src/infrastructure/persistence/in-memory/in-memory-provider.repository.js';
+import { Provider, ProviderStatus } from '../../../../src/domain/entities/provider.entity.js';
+import type { ProviderProps } from '../../../../src/domain/entities/provider.entity.js';
+import { Cif } from '../../../../src/domain/value-objects/cif.value-object.js';
+
+const fixedNow = new Date('2026-02-07T12:00:00.000Z');
+
+const createProvider = (overrides: Partial<ProviderProps> = {}): Provider =>
+    Provider.create({
+        id: 'provider-1',
+        razonSocial: 'Proveedor Uno',
+        cif: Cif.create('B12345678'),
+        direccion: 'Calle Falsa 123',
+        poblacion: 'Madrid',
+        provincia: 'Madrid',
+        pais: 'ES',
+        status: ProviderStatus.Active,
+        createdAt: fixedNow,
+        updatedAt: fixedNow,
+        ...overrides,
+    });
+
+describe('InMemoryProviderRepository', () => {
+    it('excludes deleted providers by default', async () => {
+        const activeProvider = createProvider({ id: 'provider-1' });
+        const deletedProvider = createProvider({
+            id: 'provider-2',
+            status: ProviderStatus.Deleted,
+            deletedAt: new Date('2026-02-01T00:00:00.000Z'),
+        });
+
+        const repository = new InMemoryProviderRepository([activeProvider, deletedProvider]);
+        const result = await repository.list({ page: 1, pageSize: 20 });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.value.items).toHaveLength(1);
+            expect(result.value.items[0]?.id).toBe('provider-1');
+        }
+    });
+
+    it('includes deleted providers when filtering by status deleted', async () => {
+        const deletedProvider = createProvider({
+            id: 'provider-2',
+            status: ProviderStatus.Deleted,
+            deletedAt: new Date('2026-02-01T00:00:00.000Z'),
+        });
+
+        const repository = new InMemoryProviderRepository([deletedProvider]);
+        const result = await repository.list({
+            page: 1,
+            pageSize: 20,
+            status: ProviderStatus.Deleted,
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.value.items).toHaveLength(1);
+            expect(result.value.items[0]?.id).toBe('provider-2');
+        }
+    });
+});

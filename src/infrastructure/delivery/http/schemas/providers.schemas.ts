@@ -245,4 +245,31 @@ export const providersSchemas = {
             },
         },
     },
+    softDelete: {
+        security: [{ bearerAuth: [] }],
+        params: {
+            type: 'object',
+            required: ['providerId'],
+            properties: {
+                providerId: { type: 'string' },
+            },
+        },
+        response: {
+            204: { type: 'null' },
+            401: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
 };

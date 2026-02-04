@@ -25,6 +25,7 @@ import { ListProvidersUseCase } from '../application/use-cases/list-providers.us
 import { GetProviderDetailUseCase } from '../application/use-cases/get-provider-detail.use-case.js';
 import { UpdateProviderUseCase } from '../application/use-cases/update-provider.use-case.js';
 import { UpdateProviderStatusUseCase } from '../application/use-cases/update-provider-status.use-case.js';
+import { SoftDeleteProviderUseCase } from '../application/use-cases/soft-delete-provider.use-case.js';
 import { User, UserStatus } from '../domain/entities/user.entity.js';
 import { Email } from '../domain/value-objects/email.value-object.js';
 import { UserRole } from '../domain/value-objects/user-role.value-object.js';
@@ -203,6 +204,12 @@ const updateProviderStatusUseCase = new UpdateProviderStatusUseCase({
     dateProvider,
 });
 
+const softDeleteProviderUseCase = new SoftDeleteProviderUseCase({
+    providerRepository,
+    auditLogger,
+    dateProvider,
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
@@ -229,6 +236,7 @@ export const compositionRoot = {
     getProviderDetailUseCase,
     updateProviderUseCase,
     updateProviderStatusUseCase,
+    softDeleteProviderUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,

@@ -60,4 +60,13 @@ export const registerProvidersRoutes = async (
         },
         async (request, reply) => controller.updateProviderStatus(request, reply),
     );
+
+    app.delete<{ Params: ProviderDetailParams }>(
+        '/providers/:providerId',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: providersSchemas.softDelete,
+        },
+        async (request, reply) => controller.softDeleteProvider(request, reply),
+    );
 };
