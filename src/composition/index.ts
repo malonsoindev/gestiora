@@ -29,6 +29,9 @@ import { DatabaseFactory } from '../infrastructure/database/database-factory.js'
 import { PostgresUserRepository } from '../infrastructure/persistence/postgres/postgres-user.repository.js';
 import { PostgresSessionRepository } from '../infrastructure/persistence/postgres/postgres-session.repository.js';
 import { PostgresLoginAttemptRepository } from '../infrastructure/persistence/postgres/postgres-login-attempt.repository.js';
+import { InMemoryProviderRepository } from '../infrastructure/persistence/in-memory/in-memory-provider.repository.js';
+import { PostgresProviderRepository } from '../infrastructure/persistence/postgres/postgres-provider.repository.js';
+import { CreateProviderUseCase } from '../application/use-cases/create-provider.use-case.js';
 
 const ACCESS_TOKEN_TTL_SECONDS = 900;
 const REFRESH_TOKEN_TTL_SECONDS = 2_592_000;
@@ -60,6 +63,9 @@ const sessionRepository = usePostgres && sqlClient
 const loginAttemptRepository = usePostgres && sqlClient
     ? new PostgresLoginAttemptRepository(sqlClient)
     : new InMemoryLoginAttemptRepository();
+const providerRepository = usePostgres && sqlClient
+    ? new PostgresProviderRepository(sqlClient)
+    : new InMemoryProviderRepository();
 const auditLogger = new InMemoryAuditLogger();
 const dateProvider = new SystemDateProvider();
 const passwordHasher = new BcryptPasswordHasher();
@@ -164,10 +170,17 @@ const revokeUserSessionsUseCase = new RevokeUserSessionsUseCase({
     sessionRepository,
 });
 
+const createProviderUseCase = new CreateProviderUseCase({
+    providerRepository,
+    auditLogger,
+    dateProvider,
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
     loginAttemptRepository,
+    providerRepository,
     auditLogger,
     dateProvider,
     passwordHasher,
@@ -184,6 +197,7 @@ export const compositionRoot = {
     softDeleteUserUseCase,
     updateOwnProfileUseCase,
     revokeUserSessionsUseCase,
+    createProviderUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,

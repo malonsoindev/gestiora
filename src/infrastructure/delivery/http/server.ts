@@ -9,10 +9,12 @@ import { AuthController } from './controllers/auth.controller.js';
 import { AdminController } from './controllers/admin.controller.js';
 import { AdminUsersController } from './controllers/admin-users.controller.js';
 import { UsersController } from './controllers/users.controller.js';
+import { ProvidersController } from './controllers/providers.controller.js';
 import { registerAuthRoutes } from './routes/auth.routes.js';
 import { registerAdminRoutes } from './routes/admin.routes.js';
 import { registerAdminUsersRoutes } from './routes/admin-users.routes.js';
 import { registerUsersRoutes } from './routes/users.routes.js';
+import { registerProvidersRoutes } from './routes/providers.routes.js';
 import { compositionRoot } from '../../../composition/index.js';
 import { config, isDevelopment, isProduction } from '../../../config/env.js';
 
@@ -113,11 +115,13 @@ export const buildServer = async (): Promise<FastifyInstance> => {
         compositionRoot.revokeUserSessionsUseCase,
     );
     const usersController = new UsersController(compositionRoot.updateOwnProfileUseCase);
+    const providersController = new ProvidersController(compositionRoot.createProviderUseCase);
 
     await registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);
     await registerAdminRoutes(app, adminController, compositionRoot.authorizeRequestUseCase);
     await registerAdminUsersRoutes(app, adminUsersController, compositionRoot.authorizeRequestUseCase);
     await registerUsersRoutes(app, usersController, compositionRoot.authorizeRequestUseCase);
+    await registerProvidersRoutes(app, providersController, compositionRoot.authorizeRequestUseCase);
 
     return app;
 };
