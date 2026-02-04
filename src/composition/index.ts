@@ -34,8 +34,7 @@ import { DatabaseFactory } from '../infrastructure/database/database-factory.js'
 import { PostgresUserRepository } from '../infrastructure/persistence/postgres/postgres-user.repository.js';
 import { PostgresSessionRepository } from '../infrastructure/persistence/postgres/postgres-session.repository.js';
 import { PostgresLoginAttemptRepository } from '../infrastructure/persistence/postgres/postgres-login-attempt.repository.js';
-import { Provider } from '../domain/entities/provider.entity.js';
-import { ProviderStatus } from '../domain/entities/provider.entity.js';
+import { Provider, ProviderStatus } from '../domain/entities/provider.entity.js';
 import { Cif } from '../domain/value-objects/cif.value-object.js';
 import { InMemoryProviderRepository } from '../infrastructure/persistence/in-memory/in-memory-provider.repository.js';
 import { PostgresProviderRepository } from '../infrastructure/persistence/postgres/postgres-provider.repository.js';
