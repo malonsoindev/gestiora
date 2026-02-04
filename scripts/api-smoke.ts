@@ -33,15 +33,23 @@ const expectedEndpoints: Array<{ path: string; method: HttpMethod }> = [
     { path: '/users/me', method: 'PATCH' },
 ];
 
+const escapeRegExp = (value: string): string =>
+    value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const assertOpenApiCoverage = async (): Promise<void> => {
     const specText = await readFile(OPENAPI_PATH, 'utf-8');
     const missing: string[] = [];
 
     for (const endpoint of expectedEndpoints) {
-        const pathPattern = `\n  ${endpoint.path}:`;
-        const hasPath = specText.includes(pathPattern);
-        const methodPattern = `${pathPattern}\n    ${endpoint.method.toLowerCase()}:`;
-        const hasMethod = specText.includes(methodPattern);
+        const escapedPath = escapeRegExp(endpoint.path);
+        const pathRegex = new RegExp(`^\\s{2}${escapedPath}:\\s*$`, 'm');
+        const methodRegex = new RegExp(
+            `^\\s{2}${escapedPath}:\\s*$[\\s\\S]*?^\\s{4}${endpoint.method.toLowerCase()}:\\s*$`,
+            'm',
+        );
+
+        const hasPath = pathRegex.test(specText);
+        const hasMethod = methodRegex.test(specText);
 
         if (!hasPath || !hasMethod) {
             missing.push(`${endpoint.method} ${endpoint.path}`);
@@ -94,6 +102,24 @@ const parseJson = <T>(text: string): T | null => {
     }
 };
 
+const decodeJwtPayload = (token: string): Record<string, unknown> | null => {
+    const segments = token.split('.');
+    if (segments.length !== 3) {
+        return null;
+    }
+
+    const payload = segments[1];
+    const padded = payload.padEnd(payload.length + ((4 - (payload.length % 4)) % 4), '=');
+    const base64 = padded.replace(/-/g, '+').replace(/_/g, '/');
+
+    try {
+        const json = Buffer.from(base64, 'base64').toString('utf-8');
+        return JSON.parse(json) as Record<string, unknown>;
+    } catch {
+        return null;
+    }
+};
+
 const logResult = (label: string, result: RequestResult): void => {
     const summary = result.bodyText ? result.bodyText : '[no body]';
     console.log(`${label} -> ${result.status} ${summary}`);
@@ -116,9 +142,15 @@ const run = async (): Promise<void> => {
 
     const adminTokens = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
 
+    const adminPayload = decodeJwtPayload(adminTokens.accessToken);
+    const adminRoles = Array.isArray(adminPayload?.roles) ? adminPayload?.roles : [];
+    if (!adminRoles.includes('ADMIN')) {
+        throw new Error('Admin token missing ADMIN role');
+    }
+
     const uniqueSuffix = Date.now().toString(36);
     const userEmail = `smoke-${uniqueSuffix}@example.com`;
-    const userPassword = 'TestPass1!a';
+    const userPassword = 'TestPass1!aa1';
 
     const createUserResult = await requestJson(
         'POST',
@@ -221,5 +253,5 @@ const run = async (): Promise<void> => {
 await run().catch((error) => {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error(`Smoke test failed: ${message}`);
-    process.exit(1);
+    process.exitCode = 1;
 });
