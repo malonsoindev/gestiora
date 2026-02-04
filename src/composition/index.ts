@@ -24,6 +24,7 @@ import { CreateUserUseCase } from '../application/use-cases/create-user.use-case
 import { ListProvidersUseCase } from '../application/use-cases/list-providers.use-case.js';
 import { GetProviderDetailUseCase } from '../application/use-cases/get-provider-detail.use-case.js';
 import { UpdateProviderUseCase } from '../application/use-cases/update-provider.use-case.js';
+import { UpdateProviderStatusUseCase } from '../application/use-cases/update-provider-status.use-case.js';
 import { User, UserStatus } from '../domain/entities/user.entity.js';
 import { Email } from '../domain/value-objects/email.value-object.js';
 import { UserRole } from '../domain/value-objects/user-role.value-object.js';
@@ -32,6 +33,9 @@ import { DatabaseFactory } from '../infrastructure/database/database-factory.js'
 import { PostgresUserRepository } from '../infrastructure/persistence/postgres/postgres-user.repository.js';
 import { PostgresSessionRepository } from '../infrastructure/persistence/postgres/postgres-session.repository.js';
 import { PostgresLoginAttemptRepository } from '../infrastructure/persistence/postgres/postgres-login-attempt.repository.js';
+import { Provider } from '../domain/entities/provider.entity.js';
+import { ProviderStatus } from '../domain/entities/provider.entity.js';
+import { Cif } from '../domain/value-objects/cif.value-object.js';
 import { InMemoryProviderRepository } from '../infrastructure/persistence/in-memory/in-memory-provider.repository.js';
 import { PostgresProviderRepository } from '../infrastructure/persistence/postgres/postgres-provider.repository.js';
 import { CreateProviderUseCase } from '../application/use-cases/create-provider.use-case.js';
@@ -193,6 +197,12 @@ const updateProviderUseCase = new UpdateProviderUseCase({
     dateProvider,
 });
 
+const updateProviderStatusUseCase = new UpdateProviderStatusUseCase({
+    providerRepository,
+    auditLogger,
+    dateProvider,
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
@@ -218,6 +228,7 @@ export const compositionRoot = {
     listProvidersUseCase,
     getProviderDetailUseCase,
     updateProviderUseCase,
+    updateProviderStatusUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,
@@ -258,4 +269,36 @@ export const seedUsers = async (): Promise<void> => {
             name: 'Regular User'
         }),
     );
+
+    if (providerRepository instanceof InMemoryProviderRepository) {
+        providerRepository.add(
+            Provider.create({
+                id: 'provider-1',
+                razonSocial: 'Proveedor Alpha SL',
+                cif: Cif.create('B12345678'),
+                direccion: 'Calle Mayor 1',
+                poblacion: 'Madrid',
+                provincia: 'Madrid',
+                pais: 'ES',
+                status: ProviderStatus.Active,
+                createdAt: now,
+                updatedAt: now,
+            }),
+        );
+
+        providerRepository.add(
+            Provider.create({
+                id: 'provider-2',
+                razonSocial: 'Proveedor Beta SL',
+                cif: Cif.create('A87654321'),
+                direccion: 'Avenida Diagonal 100',
+                poblacion: 'Barcelona',
+                provincia: 'Barcelona',
+                pais: 'ES',
+                status: ProviderStatus.Active,
+                createdAt: now,
+                updatedAt: now,
+            }),
+        );
+    }
 };

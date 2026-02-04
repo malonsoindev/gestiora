@@ -6,6 +6,7 @@ import type {
     ProvidersListQuery,
     ProviderDetailParams,
     UpdateProviderBody,
+    UpdateProviderStatusBody,
 } from '../controllers/providers.controller.js';
 import { buildAuthorizeMiddleware } from '../middlewares/authorize.middleware.js';
 import { providersSchemas } from '../schemas/providers.schemas.js';
@@ -49,5 +50,14 @@ export const registerProvidersRoutes = async (
             schema: providersSchemas.update,
         },
         async (request, reply) => controller.updateProvider(request, reply),
+    );
+
+    app.patch<{ Params: ProviderDetailParams; Body: UpdateProviderStatusBody }>(
+        '/providers/:providerId/status',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: providersSchemas.updateStatus,
+        },
+        async (request, reply) => controller.updateProviderStatus(request, reply),
     );
 };
