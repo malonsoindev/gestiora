@@ -67,6 +67,8 @@ export const adminUsersSchemas = {
                             properties: {
                                 userId: { type: 'string' },
                                 email: { type: 'string', format: 'email' },
+                                name: { type: 'string' },
+                                avatar: { type: 'string' },
                                 status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
                                 roles: {
                                     type: 'array',

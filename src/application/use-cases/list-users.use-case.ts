@@ -26,6 +26,8 @@ export class ListUsersUseCase {
         const items = result.value.items.map((user): UserSummary => ({
             userId: user.id,
             email: user.email,
+            ...(user.name ? { name: user.name } : {}),
+            ...(user.avatar ? { avatar: user.avatar } : {}),
             status: user.status,
             roles: user.roles,
             createdAt: user.createdAt,

@@ -4,6 +4,8 @@ import type { UserStatus } from '../../domain/entities/user.entity.js';
 export type UserSummary = {
     userId: string;
     email: string;
+    name?: string;
+    avatar?: string;
     status: UserStatus;
     roles: UserRole[];
     createdAt: Date;

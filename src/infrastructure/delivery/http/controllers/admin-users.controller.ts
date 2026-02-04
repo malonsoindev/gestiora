@@ -130,6 +130,8 @@ export class AdminUsersController {
                 items: result.value.items.map((item) => ({
                     userId: item.userId,
                     email: item.email,
+                    ...(item.name ? { name: item.name } : {}),
+                    ...(item.avatar ? { avatar: item.avatar } : {}),
                     status: this.mapStatusToApi(item.status),
                     roles: item.roles.map((r) => this.mapRoleToApi(r)),
                     createdAt: item.createdAt.toISOString(),

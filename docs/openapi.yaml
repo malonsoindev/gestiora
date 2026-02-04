@@ -1142,6 +1142,10 @@ components:
         email:
           type: string
           format: email
+        name:
+          type: string
+        avatar:
+          type: string
         status:
           $ref: '#/components/schemas/UserStatus'
         roles:
