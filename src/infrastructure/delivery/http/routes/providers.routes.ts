@@ -1,6 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import type { AuthorizeRequestUseCase } from '../../../../application/use-cases/authorize-request.use-case.js';
-import type { ProvidersController, CreateProviderBody } from '../controllers/providers.controller.js';
+import type {
+    ProvidersController,
+    CreateProviderBody,
+    ProvidersListQuery,
+    ProviderDetailParams,
+} from '../controllers/providers.controller.js';
 import { buildAuthorizeMiddleware } from '../middlewares/authorize.middleware.js';
 import { providersSchemas } from '../schemas/providers.schemas.js';
 
@@ -16,5 +21,23 @@ export const registerProvidersRoutes = async (
             schema: providersSchemas.create,
         },
         async (request, reply) => controller.createProvider(request, reply),
+    );
+
+    app.get<{ Querystring: ProvidersListQuery }>(
+        '/providers',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: providersSchemas.list,
+        },
+        async (request, reply) => controller.listProviders(request, reply),
+    );
+
+    app.get<{ Params: ProviderDetailParams }>(
+        '/providers/:providerId',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: providersSchemas.detail,
+        },
+        async (request, reply) => controller.getProviderDetail(request, reply),
     );
 };

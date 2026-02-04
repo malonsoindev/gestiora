@@ -1,10 +1,10 @@
 import type { Cif } from '../value-objects/cif.value-object.js';
 
 export enum ProviderStatus {
-    Activo = 'ACTIVO',
-    Inactivo = 'INACTIVO',
-    Eliminado = 'ELIMINADO',
-    Borrador = 'BORRADOR',
+    Active = 'ACTIVE',
+    Inactive = 'INACTIVE',
+    Deleted = 'DELETED',
+    Draft = 'DRAFT',
 }
 
 export type ProviderProps = {

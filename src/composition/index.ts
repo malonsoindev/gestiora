@@ -21,6 +21,8 @@ import { SoftDeleteUserUseCase } from '../application/use-cases/soft-delete-user
 import { UpdateOwnProfileUseCase } from '../application/use-cases/update-own-profile.use-case.js';
 import { RevokeUserSessionsUseCase } from '../application/use-cases/revoke-user-sessions.use-case.js';
 import { CreateUserUseCase } from '../application/use-cases/create-user.use-case.js';
+import { ListProvidersUseCase } from '../application/use-cases/list-providers.use-case.js';
+import { GetProviderDetailUseCase } from '../application/use-cases/get-provider-detail.use-case.js';
 import { User, UserStatus } from '../domain/entities/user.entity.js';
 import { Email } from '../domain/value-objects/email.value-object.js';
 import { UserRole } from '../domain/value-objects/user-role.value-object.js';
@@ -176,6 +178,14 @@ const createProviderUseCase = new CreateProviderUseCase({
     dateProvider,
 });
 
+const listProvidersUseCase = new ListProvidersUseCase({
+    providerRepository,
+});
+
+const getProviderDetailUseCase = new GetProviderDetailUseCase({
+    providerRepository,
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
@@ -198,6 +208,8 @@ export const compositionRoot = {
     updateOwnProfileUseCase,
     revokeUserSessionsUseCase,
     createProviderUseCase,
+    listProvidersUseCase,
+    getProviderDetailUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,

@@ -72,7 +72,7 @@ const createProviderEntity = (): Provider =>
         poblacion: 'Madrid',
         provincia: 'Madrid',
         pais: 'ES',
-        status: ProviderStatus.Activo,
+        status: ProviderStatus.Active,
         createdAt: fixedNow,
         updatedAt: fixedNow,
     });
@@ -102,7 +102,7 @@ describe('CreateProviderUseCase', () => {
         expect(providerRepository.createdProvider).not.toBeNull();
         expect(providerRepository.createdProvider?.razonSocial).toBe('Proveedor Uno');
         expect(providerRepository.createdProvider?.cif).toBe('B12345678');
-        expect(providerRepository.createdProvider?.status).toBe(ProviderStatus.Activo);
+        expect(providerRepository.createdProvider?.status).toBe(ProviderStatus.Active);
         expect(providerRepository.createdProvider?.createdAt).toBe(fixedNow);
         expect(providerRepository.createdProvider?.updatedAt).toBe(fixedNow);
         expect(auditLogger.events.some((event) => event.action === 'PROVIDER_CREATED')).toBe(true);

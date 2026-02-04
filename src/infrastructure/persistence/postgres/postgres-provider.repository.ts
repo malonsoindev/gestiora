@@ -242,16 +242,16 @@ export class PostgresProviderRepository implements ProviderRepository {
 
     private mapStatus(value: string): ProviderStatus {
         switch (value) {
-            case ProviderStatus.Activo:
-                return ProviderStatus.Activo;
-            case ProviderStatus.Inactivo:
-                return ProviderStatus.Inactivo;
-            case ProviderStatus.Eliminado:
-                return ProviderStatus.Eliminado;
-            case ProviderStatus.Borrador:
-                return ProviderStatus.Borrador;
+            case ProviderStatus.Active:
+                return ProviderStatus.Active;
+            case ProviderStatus.Inactive:
+                return ProviderStatus.Inactive;
+            case ProviderStatus.Deleted:
+                return ProviderStatus.Deleted;
+            case ProviderStatus.Draft:
+                return ProviderStatus.Draft;
             default:
-                return ProviderStatus.Activo;
+                return ProviderStatus.Active;
         }
     }
 }

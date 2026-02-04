@@ -14,7 +14,7 @@ const createProvider = (overrides: Partial<ProviderProps> = {}): Provider =>
         poblacion: 'Madrid',
         provincia: 'Madrid',
         pais: 'ES',
-        status: ProviderStatus.Activo,
+        status: ProviderStatus.Active,
         createdAt: baseDate,
         updatedAt: baseDate,
         ...overrides,
@@ -45,7 +45,7 @@ describe('Provider', () => {
             poblacion: 'Sevilla',
             provincia: 'Sevilla',
             pais: 'ES',
-            status: ProviderStatus.Inactivo,
+            status: ProviderStatus.Inactive,
             updatedAt: now,
         });
 
@@ -56,7 +56,7 @@ describe('Provider', () => {
         expect(updated.poblacion).toBe('Sevilla');
         expect(updated.provincia).toBe('Sevilla');
         expect(updated.pais).toBe('ES');
-        expect(updated.status).toBe(ProviderStatus.Inactivo);
+        expect(updated.status).toBe(ProviderStatus.Inactive);
         expect(updated.updatedAt).toBe(now);
         expect(updated.createdAt).toBe(provider.createdAt);
     });

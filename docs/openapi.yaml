@@ -1055,7 +1055,7 @@ components:
 
     ProviderStatus:
       type: string
-      enum: [ACTIVO, INACTIVO, ELIMINADO, BORRADOR]
+      enum: [ACTIVE, INACTIVE, DELETED, DRAFT]
 
     LoginRequest:
       type: object

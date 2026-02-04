@@ -115,7 +115,11 @@ export const buildServer = async (): Promise<FastifyInstance> => {
         compositionRoot.revokeUserSessionsUseCase,
     );
     const usersController = new UsersController(compositionRoot.updateOwnProfileUseCase);
-    const providersController = new ProvidersController(compositionRoot.createProviderUseCase);
+    const providersController = new ProvidersController(
+        compositionRoot.createProviderUseCase,
+        compositionRoot.listProvidersUseCase,
+        compositionRoot.getProviderDetailUseCase,
+    );
 
     await registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);
     await registerAdminRoutes(app, adminController, compositionRoot.authorizeRequestUseCase);

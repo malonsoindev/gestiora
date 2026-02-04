@@ -67,8 +67,8 @@ export class CreateProviderUseCase {
             }
         }
 
-        const status = request.status ?? ProviderStatus.Activo;
-        if (status === ProviderStatus.Eliminado) {
+        const status = request.status ?? ProviderStatus.Active;
+        if (status === ProviderStatus.Deleted) {
             return fail(new InvalidProviderStatusError());
         }
 
