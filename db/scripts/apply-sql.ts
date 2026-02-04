@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import postgres from 'postgres';
 
 import { config } from '../../src/config/env.js';
@@ -13,10 +13,26 @@ if (!databaseUrl) {
 const run = async () => {
     const sql = postgres(databaseUrl);
     try {
-        const filePath = new URL('../migrations/001-initial.sql', import.meta.url);
-        const script = await readFile(filePath, 'utf-8');
-        await sql.unsafe(script);
-        console.log('Database schema applied');
+        const migrationsDir = new URL('../migrations/', import.meta.url);
+        const entries = await readdir(migrationsDir, { withFileTypes: true });
+        const migrationFiles = entries
+            .filter((entry) => entry.isFile() && entry.name.endsWith('.sql'))
+            .map((entry) => entry.name)
+            .sort();
+
+        if (migrationFiles.length === 0) {
+            console.log('No migration files found');
+            return;
+        }
+
+        for (const fileName of migrationFiles) {
+            const filePath = new URL(`../migrations/${fileName}`, import.meta.url);
+            const script = await readFile(filePath, 'utf-8');
+            await sql.unsafe(script);
+            console.log(`Applied migration: ${fileName}`);
+        }
+
+        console.log('Database migrations applied');
     } finally {
         await sql.end();
     }

@@ -19,7 +19,8 @@
     "dev:watch": "tsx watch main.ts",
     "test": "vitest run",
     "db:apply": "tsx db/scripts/apply-sql.ts",
-    "db:seed": "tsx db/scripts/seed-users.ts"
+    "db:seed": "tsx db/scripts/seed-users.ts",
+    "api:smoke": "tsx scripts/api-smoke.ts"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
