@@ -58,7 +58,7 @@ export class UpdateProviderUseCase {
                 }
             }
         } else if (request.razonSocial !== undefined && !existingProvider.cif) {
-            const normalized = request.razonSocial.trim().toLowerCase().replace(/\s+/g, ' ');
+            const normalized = request.razonSocial.trim().toLowerCase().replaceAll(/\s+/g, ' ');
             const duplicate = await this.dependencies.providerRepository.findByRazonSocialNormalized(normalized);
             if (!duplicate.success) {
                 return fail(duplicate.error);
@@ -74,12 +74,12 @@ export class UpdateProviderUseCase {
         }
 
         const updatedProvider = existingProvider.updateInfo({
-            ...(request.razonSocial !== undefined ? { razonSocial: request.razonSocial } : {}),
+            ...(request.razonSocial === undefined ? {} : { razonSocial: request.razonSocial }),
             ...(cif ? { cif } : {}),
-            ...(request.direccion !== undefined ? { direccion: request.direccion } : {}),
-            ...(request.poblacion !== undefined ? { poblacion: request.poblacion } : {}),
-            ...(request.provincia !== undefined ? { provincia: request.provincia } : {}),
-            ...(request.pais !== undefined ? { pais: request.pais } : {}),
+            ...(request.direccion === undefined ? {} : { direccion: request.direccion }),
+            ...(request.poblacion === undefined ? {} : { poblacion: request.poblacion }),
+            ...(request.provincia === undefined ? {} : { provincia: request.provincia }),
+            ...(request.pais === undefined ? {} : { pais: request.pais }),
             updatedAt: nowResult.value,
         });
 
