@@ -20,3 +20,6 @@
 ## Types
 - Replace repeated inline union types with type aliases for reuse and readability.
 - Avoid stringifying unknown objects; only convert to string after checking for `string | number`.
+
+## Security
+- Avoid `Math.random()` for IDs; prefer `crypto.randomUUID()` or `randomBytes`.
