@@ -3,6 +3,7 @@ import { CreateUserUseCase } from '../../../src/application/use-cases/create-use
 import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
 import type { DateProvider } from '../../../src/application/ports/date-provider.js';
 import type { PasswordHasher } from '../../../src/application/ports/password-hasher.js';
+import type { UserIdGenerator } from '../../../src/application/ports/user-id-generator.js';
 import type { UserRepository } from '../../../src/application/ports/user.repository.js';
 import { InvalidPasswordError } from '../../../src/domain/errors/invalid-password.error.js';
 import { InvalidUserRolesError } from '../../../src/domain/errors/invalid-user-roles.error.js';
@@ -40,6 +41,14 @@ class AuditLoggerSpy implements AuditLogger {
     async log(event: AuditEvent) {
         this.events.push(event);
         return ok(undefined);
+    }
+}
+
+class UserIdGeneratorStub implements UserIdGenerator {
+    constructor(private readonly id: string) {}
+
+    generate(): string {
+        return this.id;
     }
 }
 
@@ -87,12 +96,14 @@ describe('CreateUserUseCase', () => {
     it('creates a user and audits the action', async () => {
         const userRepository = new UserRepositorySpy();
         const auditLogger = new AuditLoggerSpy();
+        const userIdGenerator = new UserIdGeneratorStub('user-fixed');
 
         const useCase = new CreateUserUseCase({
             userRepository,
             passwordHasher: new PasswordHasherStub(),
             auditLogger,
             dateProvider: new DateProviderStub(),
+            userIdGenerator,
         });
 
         const result = await useCase.execute({
@@ -106,6 +117,7 @@ describe('CreateUserUseCase', () => {
 
         expect(result.success).toBe(true);
         expect(userRepository.createdUser).not.toBeNull();
+        expect(userRepository.createdUser?.id).toBe('user-fixed');
         expect(userRepository.createdUser?.email).toBe('new@example.com');
         expect(userRepository.createdUser?.passwordHash).toBe('hashed:StrongPass1!a');
         expect(userRepository.createdUser?.status).toBe(UserStatus.Active);
@@ -118,12 +130,14 @@ describe('CreateUserUseCase', () => {
     it('rejects when user already exists', async () => {
         const userRepository = new UserRepositorySpy(createUserEntity());
         const auditLogger = new AuditLoggerSpy();
+        const userIdGenerator = new UserIdGeneratorStub('user-fixed');
 
         const useCase = new CreateUserUseCase({
             userRepository,
             passwordHasher: new PasswordHasherStub(),
             auditLogger,
             dateProvider: new DateProviderStub(),
+            userIdGenerator,
         });
 
         const result = await useCase.execute({
@@ -144,12 +158,14 @@ describe('CreateUserUseCase', () => {
     it('rejects invalid passwords', async () => {
         const userRepository = new UserRepositorySpy();
         const auditLogger = new AuditLoggerSpy();
+        const userIdGenerator = new UserIdGeneratorStub('user-fixed');
 
         const useCase = new CreateUserUseCase({
             userRepository,
             passwordHasher: new PasswordHasherStub(),
             auditLogger,
             dateProvider: new DateProviderStub(),
+            userIdGenerator,
         });
 
         const result = await useCase.execute({
@@ -170,12 +186,14 @@ describe('CreateUserUseCase', () => {
     it('rejects invalid emails', async () => {
         const userRepository = new UserRepositorySpy();
         const auditLogger = new AuditLoggerSpy();
+        const userIdGenerator = new UserIdGeneratorStub('user-fixed');
 
         const useCase = new CreateUserUseCase({
             userRepository,
             passwordHasher: new PasswordHasherStub(),
             auditLogger,
             dateProvider: new DateProviderStub(),
+            userIdGenerator,
         });
 
         const result = await useCase.execute({
@@ -196,12 +214,14 @@ describe('CreateUserUseCase', () => {
     it('rejects when roles are empty', async () => {
         const userRepository = new UserRepositorySpy();
         const auditLogger = new AuditLoggerSpy();
+        const userIdGenerator = new UserIdGeneratorStub('user-fixed');
 
         const useCase = new CreateUserUseCase({
             userRepository,
             passwordHasher: new PasswordHasherStub(),
             auditLogger,
             dateProvider: new DateProviderStub(),
+            userIdGenerator,
         });
 
         const result = await useCase.execute({
@@ -222,12 +242,14 @@ describe('CreateUserUseCase', () => {
     it('rejects deleted status on creation', async () => {
         const userRepository = new UserRepositorySpy();
         const auditLogger = new AuditLoggerSpy();
+        const userIdGenerator = new UserIdGeneratorStub('user-fixed');
 
         const useCase = new CreateUserUseCase({
             userRepository,
             passwordHasher: new PasswordHasherStub(),
             auditLogger,
             dateProvider: new DateProviderStub(),
+            userIdGenerator,
         });
 
         const result = await useCase.execute({

@@ -24,6 +24,8 @@ Frontend is **out of scope** for this version.
 
 Authoritative project documentation is located in the `/docs` directory.
 
+Additional agent rules derived from code quality fixes live in `RULES.md` and must be consulted.
+
 The `/docs` folder contains:
 
 * **Architecture Decision Records (ADR)** — architectural decisions and rationale

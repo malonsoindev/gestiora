@@ -1,6 +1,7 @@
 import type { CreateProviderRequest } from '../dto/create-provider.request.js';
 import type { CreateProviderResponse } from '../dto/create-provider.response.js';
 import type { ProviderRepository } from '../ports/provider.repository.js';
+import type { ProviderIdGenerator } from '../ports/provider-id-generator.js';
 import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
@@ -13,6 +14,7 @@ import { ok, fail, type Result } from '../../shared/result.js';
 
 export type CreateProviderDependencies = {
     providerRepository: ProviderRepository;
+    providerIdGenerator: ProviderIdGenerator;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
 };
@@ -36,44 +38,25 @@ export class CreateProviderUseCase {
 
         const now = nowResult.value;
 
-        let cif: Cif | undefined;
-        if (request.cif) {
-            try {
-                cif = Cif.create(request.cif);
-            } catch (error) {
-                if (error instanceof InvalidCifError) {
-                    return fail(error);
-                }
-                throw error;
-            }
+        const cifResult = this.buildCif(request);
+        if (!cifResult.success) {
+            return fail(cifResult.error);
+        }
+        const cif = cifResult.value;
+
+        const uniquenessResult = await this.ensureProviderNotExists(cif, request.razonSocial);
+        if (!uniquenessResult.success) {
+            return fail(uniquenessResult.error);
         }
 
-        if (cif) {
-            const existing = await this.dependencies.providerRepository.findByCif(cif.getValue());
-            if (!existing.success) {
-                return fail(existing.error);
-            }
-            if (existing.value) {
-                return fail(new ProviderAlreadyExistsError());
-            }
-        } else {
-            const normalized = request.razonSocial.trim().toLowerCase().replace(/\s+/g, ' ');
-            const existing = await this.dependencies.providerRepository.findByRazonSocialNormalized(normalized);
-            if (!existing.success) {
-                return fail(existing.error);
-            }
-            if (existing.value) {
-                return fail(new ProviderAlreadyExistsError());
-            }
+        const statusResult = this.validateStatus(request.status ?? ProviderStatus.Active);
+        if (!statusResult.success) {
+            return fail(statusResult.error);
         }
-
-        const status = request.status ?? ProviderStatus.Active;
-        if (status === ProviderStatus.Deleted) {
-            return fail(new InvalidProviderStatusError());
-        }
+        const status = statusResult.value;
 
         const provider = Provider.create({
-            id: generateProviderId(now),
+            id: this.dependencies.providerIdGenerator.generate(),
             razonSocial: request.razonSocial,
             ...(cif ? { cif } : {}),
             ...(request.direccion ? { direccion: request.direccion } : {}),
@@ -106,9 +89,56 @@ export class CreateProviderUseCase {
 
         return ok({ providerId: provider.id });
     }
-}
 
-const generateProviderId = (date: Date): string => {
-    const randomPart = Math.floor(Math.random() * 1_000_000_000).toString(36);
-    return `provider-${date.getTime()}-${randomPart}`;
-};
+    private buildCif(request: CreateProviderRequest): Result<Cif | undefined, InvalidCifError> {
+        if (!request.cif) {
+            return ok(undefined);
+        }
+
+        try {
+            return ok(Cif.create(request.cif));
+        } catch (error) {
+            if (error instanceof InvalidCifError) {
+                return fail(error);
+            }
+            throw error;
+        }
+    }
+
+    private async ensureProviderNotExists(
+        cif: Cif | undefined,
+        razonSocial: string,
+    ): Promise<Result<void, ProviderAlreadyExistsError | PortError>> {
+        if (cif) {
+            const existing = await this.dependencies.providerRepository.findByCif(cif.getValue());
+            if (!existing.success) {
+                return fail(existing.error);
+            }
+            if (existing.value) {
+                return fail(new ProviderAlreadyExistsError());
+            }
+            return ok(undefined);
+        }
+
+        const normalized = this.normalizeRazonSocial(razonSocial);
+        const existing = await this.dependencies.providerRepository.findByRazonSocialNormalized(normalized);
+        if (!existing.success) {
+            return fail(existing.error);
+        }
+        if (existing.value) {
+            return fail(new ProviderAlreadyExistsError());
+        }
+        return ok(undefined);
+    }
+
+    private normalizeRazonSocial(value: string): string {
+        return value.trim().toLowerCase().replaceAll(/\s+/g, ' ');
+    }
+
+    private validateStatus(status: ProviderStatus): Result<ProviderStatus, InvalidProviderStatusError> {
+        if (status === ProviderStatus.Deleted) {
+            return fail(new InvalidProviderStatusError());
+        }
+        return ok(status);
+    }
+}

@@ -7,6 +7,7 @@ import type { UserRepository } from '../ports/user.repository.js';
 import type { RefreshAccessTokenRequest } from '../dto/refresh-access-token.request.js';
 import type { RefreshAccessTokenResponse } from '../dto/refresh-access-token.response.js';
 import { Session, SessionStatus } from '../../domain/entities/session.entity.js';
+import type { User } from '../../domain/entities/user.entity.js';
 import { AuthInvalidRefreshTokenError } from '../../domain/errors/auth-invalid-refresh-token.error.js';
 import { fail, ok, type Result } from '../../shared/result.js';
 import type { PortError } from '../errors/port.error.js';
@@ -29,12 +30,65 @@ export class RefreshAccessTokenUseCase {
     async execute(
         request: RefreshAccessTokenRequest,
     ): Promise<Result<RefreshAccessTokenResponse, AuthInvalidRefreshTokenError | PortError>> {
-        const nowResult = this.dependencies.dateProvider.now();
+        const nowResult = this.getNow();
         if (!nowResult.success) {
             return fail(nowResult.error);
         }
         const now = nowResult.value;
 
+        const sessionResult = await this.loadSessionByRefreshToken(request, now);
+        if (!sessionResult.success) {
+            return fail(sessionResult.error);
+        }
+        const session = sessionResult.value;
+
+        const userResult = await this.loadUserFromSession(session, now);
+        if (!userResult.success) {
+            return fail(userResult.error);
+        }
+        const user = userResult.value;
+
+        const accessTokenResult = this.createAccessToken(user);
+        if (!accessTokenResult.success) {
+            return fail(accessTokenResult.error);
+        }
+        const accessToken = accessTokenResult.value;
+
+        const result: RefreshAccessTokenResponse = {
+            accessToken,
+            expiresIn: this.dependencies.accessTokenTtlSeconds,
+        };
+
+        const rotateResult = await this.rotateRefreshTokenIfNeeded(session, now);
+        if (!rotateResult.success) {
+            return fail(rotateResult.error);
+        }
+        if (rotateResult.value) {
+            result.refreshToken = rotateResult.value;
+        }
+
+        const auditResult = await this.dependencies.auditLogger.log({
+            action: 'REFRESH_SUCCESS',
+            actorUserId: user.id,
+            targetUserId: user.id,
+            metadata: {},
+            createdAt: now,
+        });
+        if (!auditResult.success) {
+            return fail(auditResult.error);
+        }
+
+        return ok(result);
+    }
+
+    private getNow(): Result<Date, PortError> {
+        return this.dependencies.dateProvider.now();
+    }
+
+    private async loadSessionByRefreshToken(
+        request: RefreshAccessTokenRequest,
+        now: Date,
+    ): Promise<Result<Session, AuthInvalidRefreshTokenError | PortError>> {
         const refreshTokenHashResult = this.dependencies.refreshTokenHasher.hash(
             request.refreshToken,
         );
@@ -58,6 +112,13 @@ export class RefreshAccessTokenUseCase {
             return fail(new AuthInvalidRefreshTokenError());
         }
 
+        return ok(session);
+    }
+
+    private async loadUserFromSession(
+        session: Session,
+        now: Date,
+    ): Promise<Result<User, AuthInvalidRefreshTokenError | PortError>> {
         const userResult = await this.dependencies.userRepository.findById(session.userId);
         if (!userResult.success) {
             return fail(userResult.error);
@@ -71,6 +132,10 @@ export class RefreshAccessTokenUseCase {
             return fail(new AuthInvalidRefreshTokenError());
         }
 
+        return ok(user);
+    }
+
+    private createAccessToken(user: User): Result<string, PortError> {
         const accessTokenResult = this.dependencies.tokenService.createAccessToken({
             userId: user.id,
             roles: user.roles,
@@ -78,56 +143,43 @@ export class RefreshAccessTokenUseCase {
         if (!accessTokenResult.success) {
             return fail(accessTokenResult.error);
         }
-        const accessToken = accessTokenResult.value;
+        return ok(accessTokenResult.value);
+    }
 
-        const result: RefreshAccessTokenResponse = {
-            accessToken,
-            expiresIn: this.dependencies.accessTokenTtlSeconds,
-        };
-
-        if (this.dependencies.rotateRefreshTokens) {
-            const newRefreshTokenResult = this.dependencies.tokenService.createRefreshToken({
-                sessionId: session.id,
-                userId: session.userId,
-            });
-            if (!newRefreshTokenResult.success) {
-                return fail(newRefreshTokenResult.error);
-            }
-            const newRefreshToken = newRefreshTokenResult.value;
-
-            const newRefreshHashResult = this.dependencies.refreshTokenHasher.hash(
-                newRefreshToken,
-            );
-            if (!newRefreshHashResult.success) {
-                return fail(newRefreshHashResult.error);
-            }
-            const newRefreshHash = newRefreshHashResult.value;
-            const updatedSession = updateSessionRefresh(
-                session,
-                newRefreshHash,
-                now,
-                this.dependencies.refreshTokenTtlSeconds,
-            );
-
-            const updateResult = await this.dependencies.sessionRepository.update(updatedSession);
-            if (!updateResult.success) {
-                return fail(updateResult.error);
-            }
-            result.refreshToken = newRefreshToken;
+    private async rotateRefreshTokenIfNeeded(
+        session: Session,
+        now: Date,
+    ): Promise<Result<string | null, PortError>> {
+        if (!this.dependencies.rotateRefreshTokens) {
+            return ok(null);
         }
 
-        const auditResult = await this.dependencies.auditLogger.log({
-            action: 'REFRESH_SUCCESS',
-            actorUserId: user.id,
-            targetUserId: user.id,
-            metadata: {},
-            createdAt: now,
+        const newRefreshTokenResult = this.dependencies.tokenService.createRefreshToken({
+            sessionId: session.id,
+            userId: session.userId,
         });
-        if (!auditResult.success) {
-            return fail(auditResult.error);
+        if (!newRefreshTokenResult.success) {
+            return fail(newRefreshTokenResult.error);
         }
+        const newRefreshToken = newRefreshTokenResult.value;
 
-        return ok(result);
+        const newRefreshHashResult = this.dependencies.refreshTokenHasher.hash(newRefreshToken);
+        if (!newRefreshHashResult.success) {
+            return fail(newRefreshHashResult.error);
+        }
+        const newRefreshHash = newRefreshHashResult.value;
+        const updatedSession = updateSessionRefresh(
+            session,
+            newRefreshHash,
+            now,
+            this.dependencies.refreshTokenTtlSeconds,
+        );
+
+        const updateResult = await this.dependencies.sessionRepository.update(updatedSession);
+        if (!updateResult.success) {
+            return fail(updateResult.error);
+        }
+        return ok(newRefreshToken);
     }
 
     private isSessionValid(session: Session, now: Date): boolean {

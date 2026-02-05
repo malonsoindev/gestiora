@@ -179,36 +179,16 @@ export class ProvidersController {
         const result = await this.updateProviderUseCase.execute({
             actorUserId,
             providerId: request.params.providerId,
-            ...(request.body.razonSocial !== undefined ? { razonSocial: request.body.razonSocial } : {}),
-            ...(request.body.cif !== undefined ? { cif: request.body.cif } : {}),
-            ...(request.body.direccion !== undefined ? { direccion: request.body.direccion } : {}),
-            ...(request.body.poblacion !== undefined ? { poblacion: request.body.poblacion } : {}),
-            ...(request.body.provincia !== undefined ? { provincia: request.body.provincia } : {}),
-            ...(request.body.pais !== undefined ? { pais: request.body.pais } : {}),
+            ...(request.body.razonSocial === undefined ? {} : { razonSocial: request.body.razonSocial }),
+            ...(request.body.cif === undefined ? {} : { cif: request.body.cif }),
+            ...(request.body.direccion === undefined ? {} : { direccion: request.body.direccion }),
+            ...(request.body.poblacion === undefined ? {} : { poblacion: request.body.poblacion }),
+            ...(request.body.provincia === undefined ? {} : { provincia: request.body.provincia }),
+            ...(request.body.pais === undefined ? {} : { pais: request.body.pais }),
         });
 
         if (result.success) {
-            const detail = await this.getProviderDetailUseCase.execute({
-                providerId: request.params.providerId,
-            });
-
-            if (detail.success) {
-                return reply.code(200).send({
-                    providerId: detail.value.providerId,
-                    razonSocial: detail.value.razonSocial,
-                    ...(detail.value.cif ? { cif: detail.value.cif } : {}),
-                    ...(detail.value.direccion ? { direccion: detail.value.direccion } : {}),
-                    ...(detail.value.poblacion ? { poblacion: detail.value.poblacion } : {}),
-                    ...(detail.value.provincia ? { provincia: detail.value.provincia } : {}),
-                    ...(detail.value.pais ? { pais: detail.value.pais } : {}),
-                    status: this.mapStatusToApi(detail.value.status),
-                    createdAt: detail.value.createdAt.toISOString(),
-                    updatedAt: detail.value.updatedAt.toISOString(),
-                    deletedAt: detail.value.deletedAt ? detail.value.deletedAt.toISOString() : null,
-                });
-            }
-
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return this.respondWithProviderDetail(reply, request.params.providerId);
         }
 
         if (result.error instanceof ProviderNotFoundError) {
@@ -251,27 +231,7 @@ export class ProvidersController {
         });
 
         if (result.success) {
-            const detail = await this.getProviderDetailUseCase.execute({
-                providerId: request.params.providerId,
-            });
-
-            if (detail.success) {
-                return reply.code(200).send({
-                    providerId: detail.value.providerId,
-                    razonSocial: detail.value.razonSocial,
-                    ...(detail.value.cif ? { cif: detail.value.cif } : {}),
-                    ...(detail.value.direccion ? { direccion: detail.value.direccion } : {}),
-                    ...(detail.value.poblacion ? { poblacion: detail.value.poblacion } : {}),
-                    ...(detail.value.provincia ? { provincia: detail.value.provincia } : {}),
-                    ...(detail.value.pais ? { pais: detail.value.pais } : {}),
-                    status: this.mapStatusToApi(detail.value.status),
-                    createdAt: detail.value.createdAt.toISOString(),
-                    updatedAt: detail.value.updatedAt.toISOString(),
-                    deletedAt: detail.value.deletedAt ? detail.value.deletedAt.toISOString() : null,
-                });
-            }
-
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return this.respondWithProviderDetail(reply, request.params.providerId);
         }
 
         if (result.error instanceof ProviderNotFoundError) {
@@ -346,5 +306,27 @@ export class ProvidersController {
             default:
                 return 'ACTIVE';
         }
+    }
+
+    private async respondWithProviderDetail(reply: FastifyReply, providerId: string) {
+        const detail = await this.getProviderDetailUseCase.execute({ providerId });
+
+        if (detail.success) {
+            return reply.code(200).send({
+                providerId: detail.value.providerId,
+                razonSocial: detail.value.razonSocial,
+                ...(detail.value.cif ? { cif: detail.value.cif } : {}),
+                ...(detail.value.direccion ? { direccion: detail.value.direccion } : {}),
+                ...(detail.value.poblacion ? { poblacion: detail.value.poblacion } : {}),
+                ...(detail.value.provincia ? { provincia: detail.value.provincia } : {}),
+                ...(detail.value.pais ? { pais: detail.value.pais } : {}),
+                status: this.mapStatusToApi(detail.value.status),
+                createdAt: detail.value.createdAt.toISOString(),
+                updatedAt: detail.value.updatedAt.toISOString(),
+                deletedAt: detail.value.deletedAt ? detail.value.deletedAt.toISOString() : null,
+            });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
     }
 }

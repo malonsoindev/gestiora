@@ -1,8 +1,7 @@
 import { ok, type Result } from '../../../shared/result.js';
 import { PortError } from '../../../application/errors/port.error.js';
 import type { SessionRepository } from '../../../application/ports/session.repository.js';
-import { Session } from '../../../domain/entities/session.entity.js';
-import { SessionStatus } from '../../../domain/entities/session.entity.js';
+import { Session, SessionStatus } from '../../../domain/entities/session.entity.js';
 
 export class InMemorySessionRepository implements SessionRepository {
     private readonly sessionsById = new Map<string, Session>();
@@ -47,9 +46,9 @@ export class InMemorySessionRepository implements SessionRepository {
                 lastUsedAt: session.lastUsedAt,
                 expiresAt: session.expiresAt,
                 revokedAt: now,
-                ...(session.revokedBy !== undefined ? { revokedBy: session.revokedBy } : {}),
-                ...(session.ip !== undefined ? { ip: session.ip } : {}),
-                ...(session.userAgent !== undefined ? { userAgent: session.userAgent } : {}),
+                ...(session.revokedBy === undefined ? {} : { revokedBy: session.revokedBy }),
+                ...(session.ip === undefined ? {} : { ip: session.ip }),
+                ...(session.userAgent === undefined ? {} : { userAgent: session.userAgent }),
             });
 
             this.sessionsById.set(session.id, revoked);

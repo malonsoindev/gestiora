@@ -1,5 +1,4 @@
-import type { Provider } from '../../domain/entities/provider.entity.js';
-import type { ProviderStatus } from '../../domain/entities/provider.entity.js';
+import type { Provider, ProviderStatus } from '../../domain/entities/provider.entity.js';
 import type { Result } from '../../shared/result.js';
 import type { PortError } from '../errors/port.error.js';
 

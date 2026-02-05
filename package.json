@@ -17,6 +17,7 @@
   "scripts": {
     "dev": "tsx main.ts",
     "dev:watch": "tsx watch main.ts",
+    "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "db:apply": "tsx db/scripts/apply-sql.ts",
     "db:seed": "tsx db/scripts/seed-users.ts && tsx db/scripts/seed-providers.ts",

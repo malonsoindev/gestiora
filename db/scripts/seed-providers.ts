@@ -9,7 +9,7 @@ if (!databaseUrl) {
     process.exit(1);
 }
 
-const normalizeText = (value: string): string => value.trim().toLowerCase().replace(/\s+/g, ' ');
+const normalizeText = (value: string): string => value.trim().toLowerCase().replaceAll(/\s+/g, ' ');
 
 const run = async () => {
     const sql = postgres(databaseUrl);

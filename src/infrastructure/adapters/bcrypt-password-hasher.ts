@@ -11,7 +11,8 @@ export class BcryptPasswordHasher implements PasswordHasher {
             const match = await bcrypt.compare(plainText, hash);
             return ok(match);
         } catch (error) {
-            return ok(false);
+            const cause = error instanceof Error ? error : new Error('Unknown error');
+            return fail(new PortError('PasswordHasher', 'Failed to verify password', cause));
         }
     }
 

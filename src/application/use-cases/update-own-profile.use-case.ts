@@ -28,8 +28,8 @@ export class UpdateOwnProfileUseCase {
         }
 
         const updated = existingUser.updateInfo({
-            ...(request.name !== undefined ? { name: request.name } : {}),
-            ...(request.avatar !== undefined ? { avatar: request.avatar } : {}),
+            ...(request.name === undefined ? {} : { name: request.name }),
+            ...(request.avatar === undefined ? {} : { avatar: request.avatar }),
             updatedAt: this.dependencies.now(),
         });
 

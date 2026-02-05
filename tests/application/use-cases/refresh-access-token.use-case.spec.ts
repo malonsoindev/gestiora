@@ -35,13 +35,16 @@ class SessionRepositorySpy implements SessionRepository {
         return ok(undefined);
     }
 
-    async findByRefreshTokenHash(hash: string) {
-        void hash;
+    async findByRefreshTokenHash(_hash: string) {
         return ok(this.session);
     }
 
     async update(session: Session) {
         this.updated = session;
+        return ok(undefined);
+    }
+
+    async revokeByUserId(_userId: string) {
         return ok(undefined);
     }
 }

@@ -3,6 +3,7 @@ import type { DateProvider } from '../ports/date-provider.js';
 import type { LoginRateLimiter } from '../ports/login-rate-limiter.js';
 import type { PasswordHasher } from '../ports/password-hasher.js';
 import type { RefreshTokenHasher } from '../ports/refresh-token-hasher.js';
+import type { SessionIdGenerator } from '../ports/session-id-generator.js';
 import type { SessionRepository } from '../ports/session.repository.js';
 import type { TokenService } from '../ports/token.service.js';
 import type { UserRepository } from '../ports/user.repository.js';
@@ -11,6 +12,7 @@ import type { LoginUserResponse } from '../dto/login-user.response.js';
 import { fail, ok, type Result } from '../../shared/result.js';
 import type { PortError } from '../errors/port.error.js';
 import { Session, SessionStatus } from '../../domain/entities/session.entity.js';
+import type { User } from '../../domain/entities/user.entity.js';
 import { AuthInvalidCredentialsError } from '../../domain/errors/auth-invalid-credentials.error.js';
 import { AuthRateLimitedError } from '../../domain/errors/auth-rate-limited.error.js';
 import { AuthUserDisabledError } from '../../domain/errors/auth-user-disabled.error.js';
@@ -22,6 +24,7 @@ export type LoginUserDependencies = {
     passwordHasher: PasswordHasher;
     tokenService: TokenService;
     refreshTokenHasher: RefreshTokenHasher;
+    sessionIdGenerator: SessionIdGenerator;
     auditLogger: AuditLogger;
     loginRateLimiter: LoginRateLimiter;
     dateProvider: DateProvider;
@@ -40,12 +43,65 @@ export class LoginUserUseCase {
     constructor(private readonly dependencies: LoginUserDependencies) {}
 
     async execute(request: LoginUserRequest): Promise<Result<LoginUserResponse, LoginUserError>> {
-        const nowResult = this.dependencies.dateProvider.now();
+        const nowResult = this.getNow();
         if (!nowResult.success) {
             return fail(nowResult.error);
         }
         const now = nowResult.value;
 
+        const rateLimitResult = await this.assertRateLimit(request, now);
+        if (!rateLimitResult.success) {
+            return fail(rateLimitResult.error);
+        }
+
+        const userResult = await this.loadUser(request, now);
+        if (!userResult.success) {
+            return fail(userResult.error);
+        }
+        const user = userResult.value;
+
+        const statusResult = await this.assertUserStatus(user, request, now);
+        if (!statusResult.success) {
+            return fail(statusResult.error);
+        }
+
+        const passwordResult = await this.assertPasswordValid(user, request, now);
+        if (!passwordResult.success) {
+            return fail(passwordResult.error);
+        }
+
+        const sessionResult = await this.createSession(user, request, now);
+        if (!sessionResult.success) {
+            return fail(sessionResult.error);
+        }
+        const { refreshToken } = sessionResult.value;
+
+        const accessTokenResult = this.createAccessToken(user);
+        if (!accessTokenResult.success) {
+            return fail(accessTokenResult.error);
+        }
+        const accessToken = accessTokenResult.value;
+
+        const auditResult = await this.logSuccess(user.id, request, now);
+        if (!auditResult.success) {
+            return fail(auditResult.error);
+        }
+
+        return ok({
+            accessToken,
+            refreshToken,
+            expiresIn: this.dependencies.accessTokenTtlSeconds,
+        });
+    }
+
+    private getNow(): Result<Date, PortError> {
+        return this.dependencies.dateProvider.now();
+    }
+
+    private async assertRateLimit(
+        request: LoginUserRequest,
+        now: Date,
+    ): Promise<Result<void, AuthRateLimitedError | PortError>> {
         const rateLimitResult = await this.dependencies.loginRateLimiter.assertAllowed(
             request.email,
             request.ip,
@@ -57,7 +113,13 @@ export class LoginUserUseCase {
             }
             return fail(rateLimitResult.error);
         }
+        return ok(undefined);
+    }
 
+    private async loadUser(
+        request: LoginUserRequest,
+        now: Date,
+    ): Promise<Result<User, LoginUserError>> {
         const userResult = await this.dependencies.userRepository.findByEmail(request.email);
         if (!userResult.success) {
             return fail(userResult.error);
@@ -70,7 +132,14 @@ export class LoginUserUseCase {
             }
             return fail(new AuthInvalidCredentialsError());
         }
+        return ok(user);
+    }
 
+    private async assertUserStatus(
+        user: User,
+        request: LoginUserRequest,
+        now: Date,
+    ): Promise<Result<void, AuthUserDisabledError | AuthUserLockedError | PortError>> {
         if (!user.isActive()) {
             const logResult = await this.logFailure(request, now, user.id);
             if (!logResult.success) {
@@ -87,6 +156,14 @@ export class LoginUserUseCase {
             return fail(new AuthUserLockedError());
         }
 
+        return ok(undefined);
+    }
+
+    private async assertPasswordValid(
+        user: User,
+        request: LoginUserRequest,
+        now: Date,
+    ): Promise<Result<void, AuthInvalidCredentialsError | PortError>> {
         const passwordResult = await this.dependencies.passwordHasher.verify(
             request.password,
             user.passwordHash,
@@ -104,7 +181,15 @@ export class LoginUserUseCase {
             return fail(new AuthInvalidCredentialsError());
         }
 
-        const sessionId = generateSessionId(now);
+        return ok(undefined);
+    }
+
+    private async createSession(
+        user: User,
+        request: LoginUserRequest,
+        now: Date,
+    ): Promise<Result<{ sessionId: string; refreshToken: string }, PortError>> {
+        const sessionId = this.dependencies.sessionIdGenerator.generate();
         const refreshTokenResult = this.dependencies.tokenService.createRefreshToken({
             sessionId,
             userId: user.id,
@@ -138,6 +223,12 @@ export class LoginUserUseCase {
             return fail(sessionResult.error);
         }
 
+        return ok({ sessionId, refreshToken });
+    }
+
+    private createAccessToken(
+        user: User,
+    ): Result<string, PortError> {
         const accessTokenResult = this.dependencies.tokenService.createAccessToken({
             userId: user.id,
             roles: user.roles,
@@ -145,23 +236,20 @@ export class LoginUserUseCase {
         if (!accessTokenResult.success) {
             return fail(accessTokenResult.error);
         }
-        const accessToken = accessTokenResult.value;
+        return ok(accessTokenResult.value);
+    }
 
-        const auditResult = await this.dependencies.auditLogger.log({
+    private async logSuccess(
+        userId: string,
+        request: LoginUserRequest,
+        now: Date,
+    ): Promise<Result<void, PortError>> {
+        return this.dependencies.auditLogger.log({
             action: 'LOGIN_SUCCESS',
-            actorUserId: user.id,
-            targetUserId: user.id,
+            actorUserId: userId,
+            targetUserId: userId,
             metadata: buildMetadata(request),
             createdAt: now,
-        });
-        if (!auditResult.success) {
-            return fail(auditResult.error);
-        }
-
-        return ok({
-            accessToken,
-            refreshToken,
-            expiresIn: this.dependencies.accessTokenTtlSeconds,
         });
     }
 
@@ -183,11 +271,6 @@ export class LoginUserUseCase {
 
 const addSeconds = (date: Date, seconds: number): Date =>
     new Date(date.getTime() + seconds * 1000);
-
-const generateSessionId = (date: Date): string => {
-    const randomPart = Math.floor(Math.random() * 1_000_000_000).toString(36);
-    return `session-${date.getTime()}-${randomPart}`;
-};
 
 const buildMetadata = (request: LoginUserRequest): Record<string, string> => {
     const metadata: Record<string, string> = {};

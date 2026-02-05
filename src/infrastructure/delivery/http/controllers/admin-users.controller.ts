@@ -33,6 +33,18 @@ export type AdminUpdateUserBody = {
     avatar?: string;
 };
 
+type AdminUserStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED';
+type AdminUserRole = 'Usuario' | 'Administrador';
+type AdminListUsersQuery = {
+    status?: AdminUserStatus;
+    role?: AdminUserRole;
+    page?: number;
+    pageSize?: number;
+};
+type AdminUpdateUserStatusBody = {
+    status: AdminUserStatus;
+};
+
 export class AdminUsersController {
     constructor(
         private readonly createUserUseCase: CreateUserUseCase,
@@ -95,14 +107,7 @@ export class AdminUsersController {
     }
 
     async listUsers(
-        request: FastifyRequest<{
-            Querystring: {
-                status?: 'ACTIVE' | 'INACTIVE' | 'DELETED';
-                role?: 'Usuario' | 'Administrador';
-                page?: number;
-                pageSize?: number;
-            };
-        }>,
+        request: FastifyRequest<{ Querystring: AdminListUsersQuery }>,
         reply: FastifyReply,
     ) {
         const role = request.query.role ? this.mapRole(request.query.role) : undefined;
@@ -188,36 +193,14 @@ export class AdminUsersController {
 
         const result = await this.updateUserUseCase.execute({
             userId: request.params.userId,
-            ...(request.body.name !== undefined ? { name: request.body.name } : {}),
-            ...(request.body.avatar !== undefined ? { avatar: request.body.avatar } : {}),
+            ...(request.body.name === undefined ? {} : { name: request.body.name }),
+            ...(request.body.avatar === undefined ? {} : { avatar: request.body.avatar }),
             ...(roles ? { roles } : {}),
             ...(status ? { status } : {}),
         });
 
         if (result.success) {
-            const detail = await this.getUserDetailUseCase.execute({
-                userId: request.params.userId,
-            });
-
-            if (detail.success) {
-                return reply.code(200).send({
-                    userId: detail.value.userId,
-                    email: detail.value.email,
-                    ...(detail.value.name ? { name: detail.value.name } : {}),
-                    ...(detail.value.avatar ? { avatar: detail.value.avatar } : {}),
-                    status: this.mapStatusToApi(detail.value.status),
-                    roles: detail.value.roles.map((role) => this.mapRoleToApi(role)),
-                    createdAt: detail.value.createdAt.toISOString(),
-                    updatedAt: detail.value.updatedAt.toISOString(),
-                    deletedAt: detail.value.deletedAt ? detail.value.deletedAt.toISOString() : null,
-                });
-            }
-
-            if (detail.error instanceof UserNotFoundError) {
-                return reply.code(404).send({ error: 'NOT_FOUND' });
-            }
-
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return this.respondWithUserDetail(reply, request.params.userId);
         }
 
         if (result.error instanceof UserNotFoundError) {
@@ -235,7 +218,7 @@ export class AdminUsersController {
     }
 
     async updateUserStatus(
-        request: FastifyRequest<{ Params: { userId: string }; Body: { status: 'ACTIVE' | 'INACTIVE' | 'DELETED' } }>,
+        request: FastifyRequest<{ Params: { userId: string }; Body: AdminUpdateUserStatusBody }>,
         reply: FastifyReply,
     ) {
         const status = this.mapStatus(request.body.status);
@@ -249,29 +232,7 @@ export class AdminUsersController {
         });
 
         if (result.success) {
-            const detail = await this.getUserDetailUseCase.execute({
-                userId: request.params.userId,
-            });
-
-            if (detail.success) {
-                return reply.code(200).send({
-                    userId: detail.value.userId,
-                    email: detail.value.email,
-                    ...(detail.value.name ? { name: detail.value.name } : {}),
-                    ...(detail.value.avatar ? { avatar: detail.value.avatar } : {}),
-                    status: this.mapStatusToApi(detail.value.status),
-                    roles: detail.value.roles.map((role) => this.mapRoleToApi(role)),
-                    createdAt: detail.value.createdAt.toISOString(),
-                    updatedAt: detail.value.updatedAt.toISOString(),
-                    deletedAt: detail.value.deletedAt ? detail.value.deletedAt.toISOString() : null,
-                });
-            }
-
-            if (detail.error instanceof UserNotFoundError) {
-                return reply.code(404).send({ error: 'NOT_FOUND' });
-            }
-
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return this.respondWithUserDetail(reply, request.params.userId);
         }
 
         if (result.error instanceof UserNotFoundError) {
@@ -345,11 +306,35 @@ export class AdminUsersController {
             }
         });
 
-        if (roles.some((role) => role === null)) {
+        if (roles.includes(null)) {
             return null;
         }
 
         return roles as UserRole[];
+    }
+
+    private async respondWithUserDetail(reply: FastifyReply, userId: string) {
+        const detail = await this.getUserDetailUseCase.execute({ userId });
+
+        if (detail.success) {
+            return reply.code(200).send({
+                userId: detail.value.userId,
+                email: detail.value.email,
+                ...(detail.value.name ? { name: detail.value.name } : {}),
+                ...(detail.value.avatar ? { avatar: detail.value.avatar } : {}),
+                status: this.mapStatusToApi(detail.value.status),
+                roles: detail.value.roles.map((role) => this.mapRoleToApi(role)),
+                createdAt: detail.value.createdAt.toISOString(),
+                updatedAt: detail.value.updatedAt.toISOString(),
+                deletedAt: detail.value.deletedAt ? detail.value.deletedAt.toISOString() : null,
+            });
+        }
+
+        if (detail.error instanceof UserNotFoundError) {
+            return reply.code(404).send({ error: 'NOT_FOUND' });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
     }
 
     private mapRole(value: 'Usuario' | 'Administrador'): UserRole | null {

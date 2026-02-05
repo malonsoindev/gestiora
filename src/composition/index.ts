@@ -8,6 +8,9 @@ import { BcryptPasswordHasher } from '../infrastructure/adapters/bcrypt-password
 import { SimpleRefreshTokenHasher } from '../infrastructure/adapters/simple-refresh-token-hasher.js';
 import { JwtTokenService } from '../infrastructure/adapters/jwt-token.service.js';
 import { InMemoryLoginRateLimiter } from '../infrastructure/adapters/in-memory/in-memory-login-rate-limiter.js';
+import { TimestampProviderIdGenerator } from '../infrastructure/adapters/timestamp-provider-id-generator.js';
+import { TimestampUserIdGenerator } from '../infrastructure/adapters/timestamp-user-id-generator.js';
+import { TimestampSessionIdGenerator } from '../infrastructure/adapters/timestamp-session-id-generator.js';
 import { LoginUserUseCase } from '../application/use-cases/login-user.use-case.js';
 import { RefreshAccessTokenUseCase } from '../application/use-cases/refresh-access-token.use-case.js';
 import { LogoutUserUseCase } from '../application/use-cases/logout-user.use-case.js';
@@ -75,6 +78,9 @@ const providerRepository = usePostgres && sqlClient
     : new InMemoryProviderRepository();
 const auditLogger = new InMemoryAuditLogger();
 const dateProvider = new SystemDateProvider();
+const userIdGenerator = new TimestampUserIdGenerator();
+const providerIdGenerator = new TimestampProviderIdGenerator();
+const sessionIdGenerator = new TimestampSessionIdGenerator();
 const passwordHasher = new BcryptPasswordHasher();
 const refreshTokenHasher = new SimpleRefreshTokenHasher();
 const tokenService = new JwtTokenService(
@@ -95,6 +101,7 @@ const loginUserUseCase = new LoginUserUseCase({
     passwordHasher,
     tokenService,
     refreshTokenHasher,
+    sessionIdGenerator,
     auditLogger,
     loginRateLimiter,
     dateProvider,
@@ -139,6 +146,7 @@ const antiBruteForceUseCase = new AntiBruteForceUseCase({
 const createUserUseCase = new CreateUserUseCase({
     userRepository,
     passwordHasher,
+    userIdGenerator,
     auditLogger,
     dateProvider,
 });
@@ -179,6 +187,7 @@ const revokeUserSessionsUseCase = new RevokeUserSessionsUseCase({
 
 const createProviderUseCase = new CreateProviderUseCase({
     providerRepository,
+    providerIdGenerator,
     auditLogger,
     dateProvider,
 });
@@ -216,11 +225,13 @@ export const compositionRoot = {
     providerRepository,
     auditLogger,
     dateProvider,
+    userIdGenerator,
     passwordHasher,
     refreshTokenHasher,
     tokenService,
     loginRateLimiter,
     unitOfWork,
+    sessionIdGenerator,
     loginUserUseCase,
     createUserUseCase,
     listUsersUseCase,

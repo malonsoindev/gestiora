@@ -77,4 +77,4 @@ export class InMemoryProviderRepository implements ProviderRepository {
     }
 }
 
-const normalizeText = (value: string): string => value.trim().toLowerCase().replace(/\s+/g, ' ');
+const normalizeText = (value: string): string => value.trim().toLowerCase().replaceAll(/\s+/g, ' ');

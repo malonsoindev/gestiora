@@ -5,6 +5,7 @@ import type { DateProvider } from '../../../src/application/ports/date-provider.
 import type { LoginRateLimiter } from '../../../src/application/ports/login-rate-limiter.js';
 import type { PasswordHasher } from '../../../src/application/ports/password-hasher.js';
 import type { RefreshTokenHasher } from '../../../src/application/ports/refresh-token-hasher.js';
+import type { SessionIdGenerator } from '../../../src/application/ports/session-id-generator.js';
 import type { SessionRepository } from '../../../src/application/ports/session.repository.js';
 import type { AccessTokenPayload, RefreshTokenPayload, TokenService } from '../../../src/application/ports/token.service.js';
 import type { UserRepository } from '../../../src/application/ports/user.repository.js';
@@ -67,6 +68,10 @@ class SessionRepositorySpy implements SessionRepository {
         this.updated = session;
         return ok(undefined);
     }
+
+    async revokeByUserId() {
+        return ok(undefined);
+    }
 }
 
 class AuditLoggerSpy implements AuditLogger {
@@ -100,9 +105,7 @@ class TokenServiceStub implements TokenService {
 class PasswordHasherStub implements PasswordHasher {
     constructor(private readonly valid: boolean) {}
 
-    async verify(plainText: string, hash: string) {
-        void plainText;
-        void hash;
+    async verify(_plainText: string, _hash: string) {
         return ok(this.valid);
     }
 
@@ -118,9 +121,7 @@ class RefreshTokenHasherStub implements RefreshTokenHasher {
 }
 
 class AllowAllRateLimiter implements LoginRateLimiter {
-    async assertAllowed(email: string, ip?: string) {
-        void email;
-        void ip;
+    async assertAllowed(_email: string, _ip?: string) {
         return ok(undefined);
     }
 }
@@ -128,6 +129,14 @@ class AllowAllRateLimiter implements LoginRateLimiter {
 class BlockingRateLimiter implements LoginRateLimiter {
     async assertAllowed() {
         return fail(new AuthRateLimitedError());
+    }
+}
+
+class SessionIdGeneratorStub implements SessionIdGenerator {
+    constructor(private readonly id: string) {}
+
+    generate(): string {
+        return this.id;
     }
 }
 
@@ -140,6 +149,7 @@ type UseCaseDependencies = {
     auditLogger: AuditLogger;
     loginRateLimiter: LoginRateLimiter;
     dateProvider: DateProvider;
+    sessionIdGenerator: SessionIdGenerator;
     accessTokenTtlSeconds: number;
     refreshTokenTtlSeconds: number;
 };
@@ -163,6 +173,7 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
         auditLogger,
         loginRateLimiter: new AllowAllRateLimiter(),
         dateProvider: new FixedDateProvider(fixedNow),
+        sessionIdGenerator: new SessionIdGeneratorStub('session-fixed'),
         accessTokenTtlSeconds: 900,
         refreshTokenTtlSeconds: 2_592_000,
         ...dependencies,
@@ -197,6 +208,7 @@ describe('LoginUserUseCase', () => {
             expect(result.value.expiresIn).toBe(900);
         }
         expect(sessionRepository.created).not.toBeNull();
+        expect(sessionRepository.created?.id).toBe('session-fixed');
         expect(sessionRepository.created?.refreshTokenHash).toBe('hashed:refresh-token');
         expect(tokenService.accessPayloads[0]?.userId).toBe(user.id);
         expect(tokenService.accessPayloads[0]?.roles).toHaveLength(1);

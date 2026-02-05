@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AuthorizeRequestUseCase } from '../../../src/application/use-cases/authorize-request.use-case.js';
-import type { TokenService } from '../../../src/application/ports/token.service.js';
-import type { AccessTokenPayload } from '../../../src/application/ports/token.service.js';
+import type { TokenService, AccessTokenPayload } from '../../../src/application/ports/token.service.js';
 import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
 import type { DateProvider } from '../../../src/application/ports/date-provider.js';
 import { PortError } from '../../../src/application/errors/port.error.js';

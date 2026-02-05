@@ -22,7 +22,7 @@ export class UpdateUserUseCase {
     constructor(private readonly dependencies: UpdateUserDependencies) {}
 
     async execute(request: UpdateUserRequest): Promise<Result<void, UpdateUserError>> {
-        if (request.roles && request.roles.length === 0) {
+        if (request.roles?.length === 0) {
             return fail(new InvalidUserRolesError());
         }
 
@@ -41,8 +41,8 @@ export class UpdateUserUseCase {
         }
 
         const updatedUser = existingUser.updateInfo({
-            ...(request.name !== undefined ? { name: request.name } : {}),
-            ...(request.avatar !== undefined ? { avatar: request.avatar } : {}),
+            ...(request.name === undefined ? {} : { name: request.name }),
+            ...(request.avatar === undefined ? {} : { avatar: request.avatar }),
             ...(request.roles ? { roles: request.roles } : {}),
             ...(request.status ? { status: request.status } : {}),
             updatedAt: this.dependencies.now(),

@@ -39,8 +39,7 @@ const expectedEndpoints: Array<{ path: string; method: HttpMethod }> = [
     { path: '/providers/{providerId}', method: 'DELETE' },
 ];
 
-const escapeRegExp = (value: string): string =>
-    value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escapeRegExp = (value: string): string => value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 
 const assertOpenApiCoverage = async (): Promise<void> => {
     const specText = await readFile(OPENAPI_PATH, 'utf-8');
@@ -48,9 +47,9 @@ const assertOpenApiCoverage = async (): Promise<void> => {
 
     for (const endpoint of expectedEndpoints) {
         const escapedPath = escapeRegExp(endpoint.path);
-        const pathRegex = new RegExp(`^\\s{2}${escapedPath}:\\s*$`, 'm');
+        const pathRegex = new RegExp(String.raw`^\s{2}${escapedPath}:\s*$`, 'm');
         const methodRegex = new RegExp(
-            `^\\s{2}${escapedPath}:\\s*$[\\s\\S]*?^\\s{4}${endpoint.method.toLowerCase()}:\\s*$`,
+            String.raw`^\s{2}${escapedPath}:\s*$[\s\S]*?^\s{4}${endpoint.method.toLowerCase()}:\s*$`,
             'm',
         );
 
@@ -86,11 +85,12 @@ const requestJson = async <T>(
         headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    const response = await fetch(`${BASE_URL}${path}`, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined,
-    });
+    const requestInit: RequestInit = { method, headers };
+    if (body) {
+        requestInit.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(`${BASE_URL}${path}`, requestInit);
 
     const bodyText = await response.text();
     return { status: response.status, bodyText };
@@ -115,8 +115,12 @@ const decodeJwtPayload = (token: string): Record<string, unknown> | null => {
     }
 
     const payload = segments[1];
+    if (!payload) {
+        return null;
+    }
+
     const padded = payload.padEnd(payload.length + ((4 - (payload.length % 4)) % 4), '=');
-    const base64 = padded.replace(/-/g, '+').replace(/_/g, '/');
+    const base64 = padded.replaceAll('-', '+').replaceAll('_', '/');
 
     try {
         const json = Buffer.from(base64, 'base64').toString('utf-8');

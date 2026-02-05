@@ -40,7 +40,7 @@ export class LogoutUserUseCase {
         }
 
         const session = sessionResult.value;
-        if (session && session.status === SessionStatus.Active) {
+        if (session?.status === SessionStatus.Active) {
             const revokedSession = this.revokeSession(session, now);
             const updateResult = await this.dependencies.sessionRepository.update(revokedSession);
             if (!updateResult.success) {

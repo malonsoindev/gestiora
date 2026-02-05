@@ -40,7 +40,8 @@ export class JwtTokenService implements TokenService {
             );
             return ok(token);
         } catch (error) {
-            return fail(new PortError('TokenService', 'Failed to create access token'));
+            const cause = error instanceof Error ? error : new Error('Unknown error');
+            return fail(new PortError('TokenService', 'Failed to create access token', cause));
         }
     }
 
@@ -58,7 +59,8 @@ export class JwtTokenService implements TokenService {
             );
             return ok(token);
         } catch (error) {
-            return fail(new PortError('TokenService', 'Failed to create refresh token'));
+            const cause = error instanceof Error ? error : new Error('Unknown error');
+            return fail(new PortError('TokenService', 'Failed to create refresh token', cause));
         }
     }
 
@@ -72,7 +74,8 @@ export class JwtTokenService implements TokenService {
                 roles: roles.map((role) => (role === 'ADMIN' ? UserRole.admin() : UserRole.user())),
             });
         } catch (error) {
-            return fail(new PortError('TokenService', 'Invalid access token'));
+            const cause = error instanceof Error ? error : new Error('Unknown error');
+            return fail(new PortError('TokenService', 'Invalid access token', cause));
         }
     }
 }

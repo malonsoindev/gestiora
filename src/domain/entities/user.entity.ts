@@ -107,9 +107,9 @@ export class User {
             roles: update.roles ?? this.props.roles,
             status: update.status ?? this.props.status,
             updatedAt: update.updatedAt,
-            ...(update.name !== undefined ? { name: update.name } : {}),
-            ...(update.avatar !== undefined ? { avatar: update.avatar } : {}),
-            ...(update.deletedAt !== undefined ? { deletedAt: update.deletedAt } : {}),
+            ...(update.name === undefined ? {} : { name: update.name }),
+            ...(update.avatar === undefined ? {} : { avatar: update.avatar }),
+            ...(update.deletedAt === undefined ? {} : { deletedAt: update.deletedAt }),
         });
     }
 }

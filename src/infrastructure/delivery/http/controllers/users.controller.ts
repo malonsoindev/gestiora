@@ -22,8 +22,8 @@ export class UsersController {
 
         const result = await this.updateOwnProfileUseCase.execute({
             actorUserId,
-            ...(request.body.name !== undefined ? { name: request.body.name } : {}),
-            ...(request.body.avatar !== undefined ? { avatar: request.body.avatar } : {}),
+            ...(request.body.name === undefined ? {} : { name: request.body.name }),
+            ...(request.body.avatar === undefined ? {} : { avatar: request.body.avatar }),
         });
 
         if (result.success) {

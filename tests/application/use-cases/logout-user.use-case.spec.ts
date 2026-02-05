@@ -22,18 +22,20 @@ class SessionRepositorySpy implements SessionRepository {
     updated: Session | null = null;
     session: Session | null = null;
 
-    async create(session: Session) {
-        void session;
+    async create(_session: Session) {
         return ok(undefined);
     }
 
-    async findByRefreshTokenHash(hash: string) {
-        void hash;
+    async findByRefreshTokenHash(_hash: string) {
         return ok(this.session);
     }
 
     async update(session: Session) {
         this.updated = session;
+        return ok(undefined);
+    }
+
+    async revokeByUserId(_userId: string) {
         return ok(undefined);
     }
 }

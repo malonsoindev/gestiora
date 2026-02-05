@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CreateProviderUseCase } from '../../../src/application/use-cases/create-provider.use-case.js';
 import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
 import type { DateProvider } from '../../../src/application/ports/date-provider.js';
+import type { ProviderIdGenerator } from '../../../src/application/ports/provider-id-generator.js';
 import type { ProviderRepository } from '../../../src/application/ports/provider.repository.js';
 import type { PortError } from '../../../src/application/errors/port.error.js';
 import { InvalidCifError } from '../../../src/domain/errors/invalid-cif.error.js';
@@ -15,6 +16,14 @@ const fixedNow = new Date('2026-02-03T10:00:00.000Z');
 class DateProviderStub implements DateProvider {
     now(): Result<Date, PortError> {
         return ok(fixedNow);
+    }
+}
+
+class ProviderIdGeneratorStub implements ProviderIdGenerator {
+    constructor(private readonly id: string) {}
+
+    generate(): string {
+        return this.id;
     }
 }
 
@@ -81,11 +90,13 @@ describe('CreateProviderUseCase', () => {
     it('creates a provider and audits the action', async () => {
         const providerRepository = new ProviderRepositorySpy();
         const auditLogger = new AuditLoggerSpy();
+        const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
 
         const useCase = new CreateProviderUseCase({
             providerRepository,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            providerIdGenerator,
         });
 
         const result = await useCase.execute({
@@ -100,6 +111,7 @@ describe('CreateProviderUseCase', () => {
 
         expect(result.success).toBe(true);
         expect(providerRepository.createdProvider).not.toBeNull();
+        expect(providerRepository.createdProvider?.id).toBe('provider-fixed');
         expect(providerRepository.createdProvider?.razonSocial).toBe('Proveedor Uno');
         expect(providerRepository.createdProvider?.cif).toBe('B12345678');
         expect(providerRepository.createdProvider?.status).toBe(ProviderStatus.Active);
@@ -111,11 +123,13 @@ describe('CreateProviderUseCase', () => {
     it('rejects invalid cif', async () => {
         const providerRepository = new ProviderRepositorySpy();
         const auditLogger = new AuditLoggerSpy();
+        const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
 
         const useCase = new CreateProviderUseCase({
             providerRepository,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            providerIdGenerator,
         });
 
         const result = await useCase.execute({
@@ -135,11 +149,13 @@ describe('CreateProviderUseCase', () => {
     it('rejects duplicate provider by cif', async () => {
         const providerRepository = new ProviderRepositorySpy({ duplicateByCif: createProviderEntity() });
         const auditLogger = new AuditLoggerSpy();
+        const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
 
         const useCase = new CreateProviderUseCase({
             providerRepository,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            providerIdGenerator,
         });
 
         const result = await useCase.execute({
@@ -159,11 +175,13 @@ describe('CreateProviderUseCase', () => {
     it('rejects duplicate provider by normalized razonSocial when cif is missing', async () => {
         const providerRepository = new ProviderRepositorySpy({ duplicateByRazon: createProviderEntity() });
         const auditLogger = new AuditLoggerSpy();
+        const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
 
         const useCase = new CreateProviderUseCase({
             providerRepository,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            providerIdGenerator,
         });
 
         const result = await useCase.execute({
