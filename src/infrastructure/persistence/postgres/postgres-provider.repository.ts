@@ -223,18 +223,25 @@ export class PostgresProviderRepository implements ProviderRepository {
     }
 
     private mapRowToProvider(row: Record<string, unknown>): Provider {
+        const toOptionalString = (value: unknown): string | undefined =>
+            typeof value === 'string' || typeof value === 'number' ? String(value) : undefined;
         const statusValue = String(row.status);
         const status = this.mapStatus(statusValue);
-        const cif = row.cif ? Cif.create(String(row.cif)) : undefined;
+        const cifValue = toOptionalString(row.cif);
+        const cif = cifValue ? Cif.create(cifValue) : undefined;
+        const direccion = toOptionalString(row.direccion);
+        const poblacion = toOptionalString(row.poblacion);
+        const provincia = toOptionalString(row.provincia);
+        const pais = toOptionalString(row.pais);
 
         return Provider.create({
             id: String(row.id),
             razonSocial: String(row.razon_social),
             ...(cif ? { cif } : {}),
-            ...(row.direccion ? { direccion: String(row.direccion) } : {}),
-            ...(row.poblacion ? { poblacion: String(row.poblacion) } : {}),
-            ...(row.provincia ? { provincia: String(row.provincia) } : {}),
-            ...(row.pais ? { pais: String(row.pais) } : {}),
+            ...(direccion ? { direccion } : {}),
+            ...(poblacion ? { poblacion } : {}),
+            ...(provincia ? { provincia } : {}),
+            ...(pais ? { pais } : {}),
             status,
             createdAt: toDate(row.created_at),
             updatedAt: toDate(row.updated_at),

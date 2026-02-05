@@ -27,19 +27,17 @@ export const buildAuthorizeMiddleware = (
 
                 if (result.error instanceof AuthorizationError) {
                     const status = result.error.code === 'FORBIDDEN' ? 403 : 401;
-                    void reply.code(status).send({ error: result.error.code });
-                    return;
+                    return reply.code(status).send({ error: result.error.code });
                 }
 
                 if (result.error instanceof PortError) {
-                    void reply.code(500).send({ error: 'INTERNAL_ERROR' });
-                    return;
+                    return reply.code(500).send({ error: 'INTERNAL_ERROR' });
                 }
 
-                void reply.code(500).send({ error: 'INTERNAL_ERROR' });
+                return reply.code(500).send({ error: 'INTERNAL_ERROR' });
             })
             .catch(() => {
-                void reply.code(500).send({ error: 'INTERNAL_ERROR' });
+                return reply.code(500).send({ error: 'INTERNAL_ERROR' });
             });
     };
 };

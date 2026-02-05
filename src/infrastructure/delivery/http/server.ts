@@ -46,7 +46,7 @@ export const buildServer = async (): Promise<FastifyInstance> => {
 
     if (!isProduction() || corsOrigin !== undefined) {
         if (corsOrigin !== undefined) {
-            void app.register(fastifyCors, { origin: corsOrigin });
+            await app.register(fastifyCors, { origin: corsOrigin });
         }
     }
 
@@ -84,11 +84,10 @@ export const buildServer = async (): Promise<FastifyInstance> => {
         const message = isObject(error) && typeof error.message === 'string' ? error.message : 'Internal error';
 
         if (statusCode === 400 && isObject(error) && 'validation' in error) {
-            void reply.code(400).send({ error: 'VALIDATION_ERROR', message });
-            return;
+            return reply.code(400).send({ error: 'VALIDATION_ERROR', message });
         }
 
-        void reply.code(statusCode).send({ error: 'INTERNAL_ERROR' });
+        return reply.code(statusCode).send({ error: 'INTERNAL_ERROR' });
     });
 
     await app.register(fastifyStatic, {
