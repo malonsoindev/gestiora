@@ -11,6 +11,7 @@ import { InMemoryLoginRateLimiter } from '../infrastructure/adapters/in-memory/i
 import { TimestampProviderIdGenerator } from '../infrastructure/adapters/timestamp-provider-id-generator.js';
 import { TimestampUserIdGenerator } from '../infrastructure/adapters/timestamp-user-id-generator.js';
 import { TimestampSessionIdGenerator } from '../infrastructure/adapters/timestamp-session-id-generator.js';
+import { TimestampInvoiceIdGenerator } from '../infrastructure/adapters/timestamp-invoice-id-generator.js';
 import { LoginUserUseCase } from '../application/use-cases/login-user.use-case.js';
 import { RefreshAccessTokenUseCase } from '../application/use-cases/refresh-access-token.use-case.js';
 import { LogoutUserUseCase } from '../application/use-cases/logout-user.use-case.js';
@@ -42,6 +43,8 @@ import { Cif } from '../domain/value-objects/cif.value-object.js';
 import { InMemoryProviderRepository } from '../infrastructure/persistence/in-memory/in-memory-provider.repository.js';
 import { PostgresProviderRepository } from '../infrastructure/persistence/postgres/postgres-provider.repository.js';
 import { CreateProviderUseCase } from '../application/use-cases/create-provider.use-case.js';
+import { InMemoryInvoiceRepository } from '../infrastructure/persistence/in-memory/in-memory-invoice.repository.js';
+import { CreateManualInvoiceUseCase } from '../application/use-cases/create-manual-invoice.use-case.js';
 
 const ACCESS_TOKEN_TTL_SECONDS = 900;
 const REFRESH_TOKEN_TTL_SECONDS = 2_592_000;
@@ -76,10 +79,12 @@ const loginAttemptRepository = usePostgres && sqlClient
 const providerRepository = usePostgres && sqlClient
     ? new PostgresProviderRepository(sqlClient)
     : new InMemoryProviderRepository();
+const invoiceRepository = new InMemoryInvoiceRepository();
 const auditLogger = new InMemoryAuditLogger();
 const dateProvider = new SystemDateProvider();
 const userIdGenerator = new TimestampUserIdGenerator();
 const providerIdGenerator = new TimestampProviderIdGenerator();
+const invoiceIdGenerator = new TimestampInvoiceIdGenerator();
 const sessionIdGenerator = new TimestampSessionIdGenerator();
 const passwordHasher = new BcryptPasswordHasher();
 const refreshTokenHasher = new SimpleRefreshTokenHasher();
@@ -218,14 +223,24 @@ const softDeleteProviderUseCase = new SoftDeleteProviderUseCase({
     dateProvider,
 });
 
+const createManualInvoiceUseCase = new CreateManualInvoiceUseCase({
+    providerRepository,
+    invoiceRepository,
+    auditLogger,
+    dateProvider,
+    invoiceIdGenerator,
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
     loginAttemptRepository,
     providerRepository,
+    invoiceRepository,
     auditLogger,
     dateProvider,
     userIdGenerator,
+    invoiceIdGenerator,
     passwordHasher,
     refreshTokenHasher,
     tokenService,
@@ -247,6 +262,7 @@ export const compositionRoot = {
     updateProviderUseCase,
     updateProviderStatusUseCase,
     softDeleteProviderUseCase,
+    createManualInvoiceUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,
