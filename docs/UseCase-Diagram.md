@@ -16,22 +16,22 @@ flowchart TB
     UC_Prov_Delete["Eliminar proveedor"]
     UC_Prov_Draft["Revisar borrador de proveedor (IA)"]
 
-    %% Documentos / Facturas
-    UC_Docs["Gestionar documentos"]
-    UC_Doc_Create_Manual["Crear documento manual"]
+    %% Facturas
+    UC_Docs["Gestionar facturas"]
+    UC_Doc_Create_Manual["Crear factura manual"]
     UC_Doc_Upload["Subir factura PDF"]
-    UC_Doc_List["Listar documentos"]
-    UC_Doc_View["Consultar/Descargar documento"]
+    UC_Doc_List["Listar facturas"]
+    UC_Doc_View["Consultar/Descargar factura"]
     UC_Doc_Update["Actualizar metadatos"]
-    UC_Doc_Delete["Eliminar documento"]
+    UC_Doc_Delete["Eliminar factura"]
 
-    %% IA Extracción
+    %% IA Extraccion
     UC_Extract["Extraer información con IA"]
     UC_Extract_Review["Revisar/Corregir datos extraídos"]
 
     %% Búsqueda RAG
     UC_Search["Buscar en documentos con lenguaje natural"]
-    UC_Search_Evidence["Ver evidencias y enlace al documento"]
+    UC_Search_Evidence["Ver evidencias y enlace a la factura"]
 
     %% Administración usuarios
     UC_Users["Administrar usuarios"]
@@ -78,7 +78,7 @@ flowchart TB
 
   %% RAG: siempre muestra evidencias; ver documento es accesible desde evidencias
   UC_Search -. include .-> UC_Search_Evidence
-  UC_Search_Evidence -. include .-> UC_Doc_View
+    UC_Search_Evidence -. include .-> UC_Doc_View
 
   %% Admin users
   UC_Users -. include .-> UC_User_Create

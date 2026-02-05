@@ -24,6 +24,7 @@ class Proveedor {
 
 class Factura {
   +UUID uuid
+  +String status
   +String numero
   +Date fechaOperacion
   +Date fechaVencimiento
@@ -78,6 +79,6 @@ Empresa "1" --> "0..*" Usuario
 
 Factura "1" --> "1" Proveedor : supplierId
 Factura "1" *-- "1..*" Movimiento : movimientos
-Factura "1" --> "1" FileRef : file
+Factura "1" --> "0..1" FileRef : file
 
 Usuario "0..*" -- "0..*" Rol : roles
