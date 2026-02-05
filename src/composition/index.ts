@@ -12,6 +12,7 @@ import { TimestampProviderIdGenerator } from '../infrastructure/adapters/timesta
 import { TimestampUserIdGenerator } from '../infrastructure/adapters/timestamp-user-id-generator.js';
 import { TimestampSessionIdGenerator } from '../infrastructure/adapters/timestamp-session-id-generator.js';
 import { TimestampInvoiceIdGenerator } from '../infrastructure/adapters/timestamp-invoice-id-generator.js';
+import { TimestampInvoiceMovementIdGenerator } from '../infrastructure/adapters/timestamp-invoice-movement-id-generator.js';
 import { LoginUserUseCase } from '../application/use-cases/login-user.use-case.js';
 import { RefreshAccessTokenUseCase } from '../application/use-cases/refresh-access-token.use-case.js';
 import { LogoutUserUseCase } from '../application/use-cases/logout-user.use-case.js';
@@ -85,6 +86,7 @@ const dateProvider = new SystemDateProvider();
 const userIdGenerator = new TimestampUserIdGenerator();
 const providerIdGenerator = new TimestampProviderIdGenerator();
 const invoiceIdGenerator = new TimestampInvoiceIdGenerator();
+const invoiceMovementIdGenerator = new TimestampInvoiceMovementIdGenerator();
 const sessionIdGenerator = new TimestampSessionIdGenerator();
 const passwordHasher = new BcryptPasswordHasher();
 const refreshTokenHasher = new SimpleRefreshTokenHasher();
@@ -229,6 +231,7 @@ const createManualInvoiceUseCase = new CreateManualInvoiceUseCase({
     auditLogger,
     dateProvider,
     invoiceIdGenerator,
+    invoiceMovementIdGenerator,
 });
 
 export const compositionRoot = {
@@ -241,6 +244,7 @@ export const compositionRoot = {
     dateProvider,
     userIdGenerator,
     invoiceIdGenerator,
+    invoiceMovementIdGenerator,
     passwordHasher,
     refreshTokenHasher,
     tokenService,

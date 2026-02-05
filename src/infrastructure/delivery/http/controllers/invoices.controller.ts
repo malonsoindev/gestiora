@@ -16,7 +16,6 @@ export type CreateManualInvoiceBody = {
         iva?: number;
         total?: number;
         movements: Array<{
-            id: string;
             concepto: string;
             cantidad: number;
             precio: number;

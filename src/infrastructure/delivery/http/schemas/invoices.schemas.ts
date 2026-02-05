@@ -24,10 +24,9 @@ export const invoicesSchemas = {
                             minItems: 1,
                             items: {
                                 type: 'object',
-                                required: ['id', 'concepto', 'cantidad', 'precio', 'total'],
+                                required: ['concepto', 'cantidad', 'precio', 'total'],
                                 additionalProperties: false,
                                 properties: {
-                                    id: { type: 'string' },
                                     concepto: { type: 'string' },
                                     cantidad: { type: 'number' },
                                     precio: { type: 'number' },

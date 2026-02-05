@@ -3,6 +3,7 @@ import { CreateManualInvoiceUseCase } from '../../../src/application/use-cases/c
 import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
 import type { DateProvider } from '../../../src/application/ports/date-provider.js';
 import type { InvoiceIdGenerator } from '../../../src/application/ports/invoice-id-generator.js';
+import type { InvoiceMovementIdGenerator } from '../../../src/application/ports/invoice-movement-id-generator.js';
 import type { InvoiceRepository } from '../../../src/application/ports/invoice.repository.js';
 import type { ProviderRepository } from '../../../src/application/ports/provider.repository.js';
 import type { PortError } from '../../../src/application/errors/port.error.js';
@@ -25,6 +26,19 @@ class InvoiceIdGeneratorStub implements InvoiceIdGenerator {
 
     generate(): string {
         return this.id;
+    }
+}
+
+class InvoiceMovementIdGeneratorStub implements InvoiceMovementIdGenerator {
+    private readonly ids: string[];
+
+    constructor(ids: string[]) {
+        this.ids = [...ids];
+    }
+
+    generate(): string {
+        const id = this.ids.shift();
+        return id ?? 'movement-fallback';
     }
 }
 
@@ -92,6 +106,7 @@ describe('CreateManualInvoiceUseCase', () => {
         const invoiceRepository = new InvoiceRepositorySpy();
         const auditLogger = new AuditLoggerSpy();
         const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
+        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
 
         const useCase = new CreateManualInvoiceUseCase({
             providerRepository,
@@ -99,6 +114,7 @@ describe('CreateManualInvoiceUseCase', () => {
             auditLogger,
             dateProvider: new DateProviderStub(),
             invoiceIdGenerator,
+            invoiceMovementIdGenerator,
         });
 
         const result = await useCase.execute({
@@ -113,7 +129,6 @@ describe('CreateManualInvoiceUseCase', () => {
                 total: 363,
                 movements: [
                     {
-                        id: 'movement-1',
                         concepto: 'Servicio',
                         cantidad: 1,
                         precio: 300,
@@ -138,6 +153,7 @@ describe('CreateManualInvoiceUseCase', () => {
         const invoiceRepository = new InvoiceRepositorySpy();
         const auditLogger = new AuditLoggerSpy();
         const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
+        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
 
         const useCase = new CreateManualInvoiceUseCase({
             providerRepository,
@@ -145,6 +161,7 @@ describe('CreateManualInvoiceUseCase', () => {
             auditLogger,
             dateProvider: new DateProviderStub(),
             invoiceIdGenerator,
+            invoiceMovementIdGenerator,
         });
 
         const result = await useCase.execute({
@@ -156,7 +173,6 @@ describe('CreateManualInvoiceUseCase', () => {
                 total: 100,
                 movements: [
                     {
-                        id: 'movement-1',
                         concepto: 'Servicio',
                         cantidad: 1,
                         precio: 100,
@@ -175,6 +191,7 @@ describe('CreateManualInvoiceUseCase', () => {
         const invoiceRepository = new InvoiceRepositorySpy();
         const auditLogger = new AuditLoggerSpy();
         const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
+        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
 
         const useCase = new CreateManualInvoiceUseCase({
             providerRepository,
@@ -182,6 +199,7 @@ describe('CreateManualInvoiceUseCase', () => {
             auditLogger,
             dateProvider: new DateProviderStub(),
             invoiceIdGenerator,
+            invoiceMovementIdGenerator,
         });
 
         const result = await useCase.execute({
@@ -191,7 +209,6 @@ describe('CreateManualInvoiceUseCase', () => {
                 total: 100,
                 movements: [
                     {
-                        id: 'movement-1',
                         concepto: 'Servicio',
                         cantidad: 1,
                         precio: 100,
@@ -214,6 +231,7 @@ describe('CreateManualInvoiceUseCase', () => {
         const invoiceRepository = new InvoiceRepositorySpy();
         const auditLogger = new AuditLoggerSpy();
         const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
+        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
 
         const useCase = new CreateManualInvoiceUseCase({
             providerRepository,
@@ -221,6 +239,7 @@ describe('CreateManualInvoiceUseCase', () => {
             auditLogger,
             dateProvider: new DateProviderStub(),
             invoiceIdGenerator,
+            invoiceMovementIdGenerator,
         });
 
         const result = await useCase.execute({
@@ -230,7 +249,6 @@ describe('CreateManualInvoiceUseCase', () => {
                 total: 100,
                 movements: [
                     {
-                        id: 'movement-1',
                         concepto: 'Servicio',
                         cantidad: 1,
                         precio: 100,
@@ -253,6 +271,7 @@ describe('CreateManualInvoiceUseCase', () => {
         const invoiceRepository = new InvoiceRepositorySpy();
         const auditLogger = new AuditLoggerSpy();
         const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
+        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
 
         const useCase = new CreateManualInvoiceUseCase({
             providerRepository,
@@ -260,6 +279,7 @@ describe('CreateManualInvoiceUseCase', () => {
             auditLogger,
             dateProvider: new DateProviderStub(),
             invoiceIdGenerator,
+            invoiceMovementIdGenerator,
         });
 
         const result = await useCase.execute({
@@ -269,7 +289,6 @@ describe('CreateManualInvoiceUseCase', () => {
                 total: 100,
                 movements: [
                     {
-                        id: 'movement-1',
                         concepto: 'Servicio',
                         cantidad: 1,
                         precio: 100,

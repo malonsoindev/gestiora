@@ -3,6 +3,7 @@ import type { CreateManualInvoiceResponse } from '../dto/create-manual-invoice.r
 import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { InvoiceIdGenerator } from '../ports/invoice-id-generator.js';
+import type { InvoiceMovementIdGenerator } from '../ports/invoice-movement-id-generator.js';
 import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { ProviderRepository } from '../ports/provider.repository.js';
 import type { PortError } from '../errors/port.error.js';
@@ -24,6 +25,7 @@ export type CreateManualInvoiceDependencies = {
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
     invoiceIdGenerator: InvoiceIdGenerator;
+    invoiceMovementIdGenerator: InvoiceMovementIdGenerator;
 };
 
 export type CreateManualInvoiceError = InvalidProviderStatusError | InvalidCifError | ProviderNotFoundError | PortError;
@@ -64,7 +66,7 @@ export class CreateManualInvoiceUseCase {
             ...(request.invoice.total === undefined ? {} : { total: Money.create(request.invoice.total) }),
             movements: request.invoice.movements.map((movement) =>
                 InvoiceMovement.create({
-                    id: movement.id,
+                    id: this.dependencies.invoiceMovementIdGenerator.generate(),
                     concepto: movement.concepto,
                     cantidad: movement.cantidad,
                     precio: movement.precio,
