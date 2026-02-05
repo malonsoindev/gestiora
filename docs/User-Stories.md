@@ -852,11 +852,100 @@ Precondiciones:
 
 ---
 
+## US-D09 — Creación manual de documento (factura sin PDF)
+
+**Como** usuario  
+**quiero** crear una factura de manera manual con cabecera y movimientos  
+**para** registrar documentos sin necesidad de adjuntar un PDF en el momento.
+
+### Criterios de aceptación (GWT)
+
+**Escenario 1: Creación manual exitosa sin PDF**
+- **Given** un usuario autenticado
+- **And** un proveedor activo existente
+- **When** el usuario crea la factura con cabecera y movimientos
+- **Then** el sistema crea un documento en estado **DRAFT**
+- **And** persiste cabecera y movimientos en una sola operación
+- **And** registra la acción en auditoría
+
+**Escenario 2: Proveedor inactivo o eliminado**
+- **Given** un usuario autenticado
+- **And** un proveedor inactivo o eliminado
+- **When** el usuario intenta crear la factura manual
+- **Then** el sistema rechaza la operación con error de validación
+
+**Escenario 3: Campos obligatorios o totales inválidos**
+- **Given** un usuario autenticado
+- **When** el usuario omite campos obligatorios o los totales no son coherentes
+- **Then** el sistema rechaza la operación con error de validación
+
+---
+
+## US-D10 — Adjuntar PDF a documento manual
+
+**Como** usuario  
+**quiero** adjuntar un PDF a un documento creado manualmente  
+**para** completar el registro con el archivo original.
+
+### Criterios de aceptación (GWT)
+
+**Escenario 1: Adjuntar PDF exitoso**
+- **Given** un usuario autenticado
+- **And** un documento en estado **DRAFT** existente
+- **When** el usuario adjunta un PDF válido
+- **Then** el sistema almacena el archivo de forma segura
+- **And** crea el FileRef asociado
+- **And** cambia el estado del documento a **ACTIVO**
+- **And** registra la acción en auditoría
+
+**Escenario 2: Documento inexistente o eliminado**
+- **Given** un usuario autenticado
+- **When** intenta adjuntar un PDF a un documento inexistente o eliminado
+- **Then** el sistema responde con **404** o error de validación
+
+**Escenario 3: PDF inválido o tamaño excedido**
+- **Given** un usuario autenticado
+- **When** adjunta un archivo no permitido o demasiado grande
+- **Then** el sistema rechaza la operación con error de validación
+
+---
+
+## US-D11 — Modificación de factura manual (cabecera y movimientos)
+
+**Como** usuario  
+**quiero** modificar la cabecera y movimientos de una factura manual  
+**para** corregir o actualizar la información registrada.
+
+### Criterios de aceptación (GWT)
+
+**Escenario 1: Modificación exitosa**
+- **Given** un usuario autenticado
+- **And** un documento manual existente y no eliminado
+- **When** el usuario actualiza cabecera y movimientos
+- **Then** el sistema persiste los cambios como conjunto
+- **And** registra la acción en auditoría
+
+**Escenario 2: Documento eliminado**
+- **Given** un usuario autenticado
+- **And** un documento eliminado
+- **When** intenta modificar la factura
+- **Then** el sistema rechaza la operación
+
+**Escenario 3: Inconsistencias de datos**
+- **Given** un usuario autenticado
+- **When** los movimientos no cuadran con los totales o faltan campos
+- **Then** el sistema rechaza la operación con error de validación
+
+---
+
 ## Notas técnicas
 - El documento es una **entidad del dominio**.
 - El archivo (PDF) y los metadatos se gestionan de forma separada.
 - El documento original nunca se modifica.
 - La extracción automática y búsqueda semántica se abordan en épicas posteriores.
+- Se permite crear documentos manuales en estado **DRAFT** sin PDF asociado.
+- La factura manual incluye cabecera y movimientos en una sola llamada.
+- Los documentos manuales forman parte de la fuente de conocimiento.
 
 
 # Épica E — Extracción de Información mediante Inteligencia Artificial

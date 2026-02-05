@@ -627,7 +627,7 @@ paths:
   /documents:
     post:
       tags: [Documents]
-      summary: Upload document (PDF)
+      summary: Upload document (PDF only, auto extraction)
       security:
         - bearerAuth: []
       requestBody:
@@ -700,6 +700,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DocumentListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/manual:
+    post:
+      tags: [Documents]
+      summary: Create manual document (invoice with movements)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateManualDocumentRequest'
+      responses:
+        '201':
+          description: Manual document created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateManualDocumentResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Unauthorized
           content:
@@ -797,11 +829,53 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Documents]
+      summary: Attach PDF to manual document
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: documentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DocumentUploadRequest'
+      responses:
+        '200':
+          description: File attached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentDetail'
+        '400':
+          description: Invalid file format or size
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /documents/{documentId}/invoice:
     put:
       tags: [Documents]
-      summary: Update invoice metadata
+      summary: Update invoice metadata and movements
       security:
         - bearerAuth: []
       parameters:
@@ -1338,10 +1412,8 @@ components:
 
     DocumentUploadRequest:
       type: object
-      required: [providerId, file]
+      required: [file]
       properties:
-        providerId:
-          type: string
         file:
           type: string
           format: binary
@@ -1353,6 +1425,48 @@ components:
         documentId:
           type: string
 
+    CreateManualDocumentRequest:
+      type: object
+      required: [providerId, invoice]
+      properties:
+        providerId:
+          type: string
+        invoice:
+          $ref: '#/components/schemas/ManualInvoiceRequest'
+
+    CreateManualDocumentResponse:
+      type: object
+      required: [documentId, invoiceId]
+      properties:
+        documentId:
+          type: string
+        invoiceId:
+          type: string
+
+    ManualInvoiceRequest:
+      type: object
+      required: [movements]
+      properties:
+        numeroFactura:
+          type: string
+        fechaOperacion:
+          type: string
+          format: date
+        fechaVencimiento:
+          type: string
+          format: date
+        baseImponible:
+          type: number
+        iva:
+          type: number
+        total:
+          type: number
+        movements:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/InvoiceMovement'
+
     DocumentSummary:
       type: object
       required: [documentId, providerId, status, createdAt]
@@ -1363,7 +1477,7 @@ components:
           type: string
         status:
           type: string
-          enum: [ACTIVO, ELIMINADO]
+          enum: [DRAFT, ACTIVO, ELIMINADO]
         createdAt:
           type: string
           format: date-time
@@ -1378,7 +1492,7 @@ components:
           type: string
         status:
           type: string
-          enum: [ACTIVO, ELIMINADO]
+          enum: [DRAFT, ACTIVO, ELIMINADO]
         fileRef:
           $ref: '#/components/schemas/FileRef'
         createdAt:
@@ -1422,6 +1536,23 @@ components:
         checksum:
           type: string
 
+    InvoiceMovement:
+      type: object
+      required: [concepto, cantidad, precio, total]
+      properties:
+        concepto:
+          type: string
+        cantidad:
+          type: number
+        precio:
+          type: number
+        baseImponible:
+          type: number
+        iva:
+          type: number
+        total:
+          type: number
+
     InvoiceUpdateRequest:
       type: object
       properties:
@@ -1439,6 +1570,10 @@ components:
           type: number
         total:
           type: number
+        movements:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceMovement'
 
     InvoiceDetail:
       type: object
@@ -1461,6 +1596,10 @@ components:
           type: number
         total:
           type: number
+        movements:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceMovement'
 
     ExtractionStatus:
       type: string
