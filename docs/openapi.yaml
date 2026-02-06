@@ -655,6 +655,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Provider not found with extracted data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractionProviderNotFoundResponse'
     get:
       tags: [Documents]
       summary: List invoices
@@ -1102,6 +1108,26 @@ components:
         error:
           type: string
       required: [error]
+
+    ExtractionProviderNotFoundResponse:
+      type: object
+      required: [error, extracted]
+      properties:
+        error:
+          type: string
+          enum: [PROVIDER_NOT_FOUND]
+        extracted:
+          type: object
+          required: [invoice, missingFields]
+          properties:
+            providerCif:
+              type: string
+            invoice:
+              $ref: '#/components/schemas/ManualInvoiceRequest'
+            missingFields:
+              type: array
+              items:
+                type: string
 
     ValidationError:
       type: object

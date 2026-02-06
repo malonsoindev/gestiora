@@ -43,6 +43,40 @@ export const invoicesSchemas = {
             },
         },
     },
+    upload: {
+        security: [{ bearerAuth: [] }],
+        response: {
+            201: {
+                type: 'object',
+                required: ['invoiceId'],
+                properties: {
+                    invoiceId: { type: 'string' },
+                },
+            },
+            400: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            401: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error', 'extracted'],
+                properties: {
+                    error: { type: 'string' },
+                    extracted: { type: 'object' },
+                },
+            },
+        },
+    },
     detail: {
         security: [{ bearerAuth: [] }],
         params: {

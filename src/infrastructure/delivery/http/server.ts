@@ -135,6 +135,7 @@ export const buildServer = async (): Promise<FastifyInstance> => {
         compositionRoot.getInvoiceDetailUseCase,
         compositionRoot.softDeleteInvoiceUseCase,
         compositionRoot.getInvoiceFileUseCase,
+        compositionRoot.uploadInvoiceDocumentUseCase,
     );
 
     await registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);

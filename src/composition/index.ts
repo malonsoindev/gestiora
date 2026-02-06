@@ -52,6 +52,9 @@ import { ListInvoicesUseCase } from '../application/use-cases/list-invoices.use-
 import { GetInvoiceDetailUseCase } from '../application/use-cases/get-invoice-detail.use-case.js';
 import { SoftDeleteInvoiceUseCase } from '../application/use-cases/soft-delete-invoice.use-case.js';
 import { GetInvoiceFileUseCase } from '../application/use-cases/get-invoice-file.use-case.js';
+import { UploadInvoiceDocumentUseCase } from '../application/use-cases/upload-invoice-document.use-case.js';
+import { StubInvoiceExtractionAgent } from '../infrastructure/adapters/invoice-extraction/stub-invoice-extraction-agent.js';
+import { StubErrorInvoiceExtractionAgent } from '../infrastructure/adapters/invoice-extraction/stub-error-invoice-extraction-agent.js';
 import { InMemoryFileStorage } from '../infrastructure/adapters/in-memory/in-memory-file-storage.js';
 import { LocalFileStorage } from '../infrastructure/adapters/local/local-file-storage.js';
 
@@ -278,6 +281,21 @@ const getInvoiceFileUseCase = new GetInvoiceFileUseCase({
     fileStorage,
 });
 
+const extractionAgent = config.AI_AGENT_TYPE === 'stub-error'
+    ? new StubErrorInvoiceExtractionAgent()
+    : new StubInvoiceExtractionAgent();
+
+const uploadInvoiceDocumentUseCase = new UploadInvoiceDocumentUseCase({
+    providerRepository,
+    invoiceRepository,
+    fileStorage,
+    extractionAgent,
+    auditLogger,
+    dateProvider,
+    invoiceIdGenerator,
+    invoiceMovementIdGenerator,
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
@@ -318,6 +336,7 @@ export const compositionRoot = {
     getInvoiceDetailUseCase,
     softDeleteInvoiceUseCase,
     getInvoiceFileUseCase,
+    uploadInvoiceDocumentUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,

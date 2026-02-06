@@ -50,6 +50,15 @@ export const registerInvoicesRoutes = async (
         async (request, reply) => controller.listInvoices(request, reply),
     );
 
+    app.post(
+        '/documents',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: invoicesSchemas.upload,
+        },
+        async (request, reply) => controller.uploadInvoiceDocument(request, reply),
+    );
+
     app.get<{ Params: { invoiceId: string } }>(
         '/documents/:invoiceId',
         {
