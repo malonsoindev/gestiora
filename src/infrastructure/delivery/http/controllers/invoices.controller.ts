@@ -82,7 +82,7 @@ export class InvoicesController {
             return reply.code(401).send({ error: 'UNAUTHORIZED' });
         }
 
-        const file = (await request.file()) as MultipartFile | undefined;
+        const file = await request.file();
         if (!file) {
             return reply.code(400).send({ error: 'INVALID_FILE' });
         }
