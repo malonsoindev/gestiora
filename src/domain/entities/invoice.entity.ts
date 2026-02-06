@@ -166,4 +166,54 @@ export class Invoice {
             updatedAt: deletedAt,
         });
     }
+
+    isTotalsConsistent(): boolean {
+        return (
+            this.areMovementTotalsConsistent() &&
+            this.isInvoiceSumConsistent('baseImponible') &&
+            this.isInvoiceSumConsistent('iva') &&
+            this.isInvoiceTotalConsistent()
+        );
+    }
+
+    private areMovementTotalsConsistent(): boolean {
+        return this.movements.every((movement) => this.isMovementConsistent(movement));
+    }
+
+    private isMovementConsistent(movement: InvoiceMovement): boolean {
+        const isBaseValid =
+            movement.baseImponible === undefined ||
+            movement.baseImponible === movement.cantidad * movement.precio;
+
+        const isTotalValid =
+            movement.baseImponible === undefined ||
+            movement.iva === undefined ||
+            movement.total === movement.baseImponible + movement.iva;
+
+        return isBaseValid && isTotalValid;
+    }
+
+    private isInvoiceSumConsistent(field: 'baseImponible' | 'iva'): boolean {
+        const invoiceValue = this[field];
+        if (invoiceValue === undefined) {
+            return true;
+        }
+
+        const allMovementsHaveField = this.movements.every((m) => m[field] !== undefined);
+        if (!allMovementsHaveField) {
+            return false;
+        }
+
+        const sum = this.movements.reduce((acc, m) => acc + (m[field] ?? 0), 0);
+        return sum === invoiceValue;
+    }
+
+    private isInvoiceTotalConsistent(): boolean {
+        if (this.total === undefined) {
+            return true;
+        }
+
+        const sum = this.movements.reduce((acc, m) => acc + m.total, 0);
+        return sum === this.total;
+    }
 }

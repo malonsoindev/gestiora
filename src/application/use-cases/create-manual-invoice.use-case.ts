@@ -13,6 +13,7 @@ import type { Provider } from '../../domain/entities/provider.entity.js';
 import { ProviderStatus } from '../../domain/entities/provider.entity.js';
 import { InvalidCifError } from '../../domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '../../domain/errors/invalid-provider-status.error.js';
+import { InvalidInvoiceTotalsError } from '../../domain/errors/invalid-invoice-totals.error.js';
 import { ProviderNotFoundError } from '../../domain/errors/provider-not-found.error.js';
 import { Cif } from '../../domain/value-objects/cif.value-object.js';
 import { InvoiceDate } from '../../domain/value-objects/invoice-date.value-object.js';
@@ -28,7 +29,12 @@ export type CreateManualInvoiceDependencies = {
     invoiceMovementIdGenerator: InvoiceMovementIdGenerator;
 };
 
-export type CreateManualInvoiceError = InvalidProviderStatusError | InvalidCifError | ProviderNotFoundError | PortError;
+export type CreateManualInvoiceError =
+    | InvalidProviderStatusError
+    | InvalidInvoiceTotalsError
+    | InvalidCifError
+    | ProviderNotFoundError
+    | PortError;
 
 export class CreateManualInvoiceUseCase {
     constructor(private readonly dependencies: CreateManualInvoiceDependencies) {}
@@ -54,6 +60,18 @@ export class CreateManualInvoiceUseCase {
             return fail(new InvalidProviderStatusError());
         }
 
+        const movements = request.invoice.movements.map((movement) =>
+            InvoiceMovement.create({
+                id: this.dependencies.invoiceMovementIdGenerator.generate(),
+                concepto: movement.concepto,
+                cantidad: movement.cantidad,
+                precio: movement.precio,
+                ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
+                ...(movement.iva === undefined ? {} : { iva: movement.iva }),
+                total: movement.total,
+            }),
+        );
+
         const invoice = Invoice.create({
             id: this.dependencies.invoiceIdGenerator.generate(),
             providerId: provider.id,
@@ -64,20 +82,18 @@ export class CreateManualInvoiceUseCase {
             ...(request.invoice.baseImponible === undefined ? {} : { baseImponible: Money.create(request.invoice.baseImponible) }),
             ...(request.invoice.iva === undefined ? {} : { iva: Money.create(request.invoice.iva) }),
             ...(request.invoice.total === undefined ? {} : { total: Money.create(request.invoice.total) }),
-            movements: request.invoice.movements.map((movement) =>
-                InvoiceMovement.create({
-                    id: this.dependencies.invoiceMovementIdGenerator.generate(),
-                    concepto: movement.concepto,
-                    cantidad: movement.cantidad,
-                    precio: movement.precio,
-                    ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
-                    ...(movement.iva === undefined ? {} : { iva: movement.iva }),
-                    total: movement.total,
-                }),
-            ),
+            movements,
             createdAt: now,
             updatedAt: now,
         });
+
+        if (!invoice.isTotalsConsistent()) {
+            return fail(new InvalidInvoiceTotalsError());
+        }
+
+        if (!invoice.isTotalsConsistent()) {
+            return fail(new InvalidInvoiceTotalsError());
+        }
 
         const createResult = await this.dependencies.invoiceRepository.create(invoice);
         if (!createResult.success) {
@@ -100,6 +116,7 @@ export class CreateManualInvoiceUseCase {
 
         return ok({ invoiceId: invoice.id });
     }
+
 
     private async loadProvider(
         request: CreateManualInvoiceRequest,

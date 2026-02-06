@@ -10,6 +10,7 @@ import { InvoiceStatus } from '../../domain/entities/invoice.entity.js';
 import { InvoiceMovement } from '../../domain/entities/invoice-movement.entity.js';
 import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '../../domain/errors/invalid-invoice-status.error.js';
+import { InvalidInvoiceTotalsError } from '../../domain/errors/invalid-invoice-totals.error.js';
 import { InvoiceDate } from '../../domain/value-objects/invoice-date.value-object.js';
 import { Money } from '../../domain/value-objects/money.value-object.js';
 import { ok, fail, type Result } from '../../shared/result.js';
@@ -21,7 +22,7 @@ export type UpdateManualInvoiceDependencies = {
     dateProvider: DateProvider;
 };
 
-export type UpdateManualInvoiceError = InvoiceNotFoundError | InvalidInvoiceStatusError | PortError;
+export type UpdateManualInvoiceError = InvoiceNotFoundError | InvalidInvoiceStatusError | InvalidInvoiceTotalsError | PortError;
 
 export class UpdateManualInvoiceUseCase {
     constructor(private readonly dependencies: UpdateManualInvoiceDependencies) {}
@@ -76,6 +77,10 @@ export class UpdateManualInvoiceUseCase {
             updatedAt: now,
         });
 
+        if (!updated.isTotalsConsistent()) {
+            return fail(new InvalidInvoiceTotalsError());
+        }
+
         const updateResult = await this.dependencies.invoiceRepository.update(updated);
         if (!updateResult.success) {
             return fail(updateResult.error);
@@ -96,6 +101,7 @@ export class UpdateManualInvoiceUseCase {
 
         return ok(this.mapResponse(updated));
     }
+
 
     private mapResponse(invoice: Invoice): UpdateManualInvoiceResponse {
         return {

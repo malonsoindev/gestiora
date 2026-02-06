@@ -8,6 +8,7 @@ import { InvalidProviderStatusError } from '../../../../domain/errors/invalid-pr
 import { ProviderNotFoundError } from '../../../../domain/errors/provider-not-found.error.js';
 import { InvoiceNotFoundError } from '../../../../domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '../../../../domain/errors/invalid-invoice-status.error.js';
+import { InvalidInvoiceTotalsError } from '../../../../domain/errors/invalid-invoice-totals.error.js';
 import { PortError } from '../../../../application/errors/port.error.js';
 
 export type CreateManualInvoiceBody = {
@@ -80,6 +81,10 @@ export class InvoicesController {
             return reply.code(400).send({ error: 'INVALID_PROVIDER_STATUS' });
         }
 
+        if (result.error instanceof InvalidInvoiceTotalsError) {
+            return reply.code(400).send({ error: 'INVALID_INVOICE_TOTALS' });
+        }
+
         if (result.error instanceof InvalidCifError) {
             return reply.code(400).send({ error: 'INVALID_CIF' });
         }
@@ -130,6 +135,10 @@ export class InvoicesController {
 
         if (result.error instanceof InvalidInvoiceStatusError) {
             return reply.code(400).send({ error: 'INVALID_INVOICE_STATUS' });
+        }
+
+        if (result.error instanceof InvalidInvoiceTotalsError) {
+            return reply.code(400).send({ error: 'INVALID_INVOICE_TOTALS' });
         }
 
         if (result.error instanceof PortError) {

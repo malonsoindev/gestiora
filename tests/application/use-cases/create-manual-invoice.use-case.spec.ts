@@ -10,6 +10,7 @@ import type { PortError } from '../../../src/application/errors/port.error.js';
 import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
 import { InvalidCifError } from '../../../src/domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '../../../src/domain/errors/invalid-provider-status.error.js';
+import { InvalidInvoiceTotalsError } from '../../../src/domain/errors/invalid-invoice-totals.error.js';
 import { ProviderNotFoundError } from '../../../src/domain/errors/provider-not-found.error.js';
 import { ok, type Result } from '../../../src/shared/result.js';
 
@@ -309,6 +310,94 @@ describe('CreateManualInvoiceUseCase', () => {
         expect(result.success).toBe(false);
         if (!result.success) {
             expect(result.error).toBeInstanceOf(InvalidCifError);
+        }
+        expect(invoiceRepository.createdInvoice).toBeNull();
+        expect(auditLogger.events).toHaveLength(0);
+    });
+
+    it('rejects when invoice totals do not match movements', async () => {
+        const providerRepository = new ProviderRepositoryStub(createProvider());
+        const invoiceRepository = new InvoiceRepositorySpy();
+        const auditLogger = new AuditLoggerSpy();
+        const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
+        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
+
+        const useCase = new CreateManualInvoiceUseCase({
+            providerRepository,
+            invoiceRepository,
+            auditLogger,
+            dateProvider: new DateProviderStub(),
+            invoiceIdGenerator,
+            invoiceMovementIdGenerator,
+        });
+
+        const result = await useCase.execute({
+            actorUserId: 'user-1',
+            providerId: 'provider-1',
+            invoice: {
+                baseImponible: 300,
+                iva: 63,
+                total: 999,
+                movements: [
+                    {
+                        concepto: 'Servicio',
+                        cantidad: 1,
+                        precio: 300,
+                        baseImponible: 300,
+                        iva: 63,
+                        total: 363,
+                    },
+                ],
+            },
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error).toBeInstanceOf(InvalidInvoiceTotalsError);
+        }
+        expect(invoiceRepository.createdInvoice).toBeNull();
+        expect(auditLogger.events).toHaveLength(0);
+    });
+
+    it('rejects when a movement base does not match cantidad * precio', async () => {
+        const providerRepository = new ProviderRepositoryStub(createProvider());
+        const invoiceRepository = new InvoiceRepositorySpy();
+        const auditLogger = new AuditLoggerSpy();
+        const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
+        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
+
+        const useCase = new CreateManualInvoiceUseCase({
+            providerRepository,
+            invoiceRepository,
+            auditLogger,
+            dateProvider: new DateProviderStub(),
+            invoiceIdGenerator,
+            invoiceMovementIdGenerator,
+        });
+
+        const result = await useCase.execute({
+            actorUserId: 'user-1',
+            providerId: 'provider-1',
+            invoice: {
+                baseImponible: 300,
+                iva: 63,
+                total: 363,
+                movements: [
+                    {
+                        concepto: 'Servicio',
+                        cantidad: 2,
+                        precio: 150,
+                        baseImponible: 200,
+                        iva: 63,
+                        total: 363,
+                    },
+                ],
+            },
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error).toBeInstanceOf(InvalidInvoiceTotalsError);
         }
         expect(invoiceRepository.createdInvoice).toBeNull();
         expect(auditLogger.events).toHaveLength(0);

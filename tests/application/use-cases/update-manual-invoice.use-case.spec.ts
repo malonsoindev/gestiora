@@ -12,6 +12,7 @@ import { InvoiceDate } from '../../../src/domain/value-objects/invoice-date.valu
 import { Money } from '../../../src/domain/value-objects/money.value-object.js';
 import { InvoiceNotFoundError } from '../../../src/domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '../../../src/domain/errors/invalid-invoice-status.error.js';
+import { InvalidInvoiceTotalsError } from '../../../src/domain/errors/invalid-invoice-totals.error.js';
 import { ok, type Result } from '../../../src/shared/result.js';
 
 const fixedNow = new Date('2026-02-18T10:00:00.000Z');
@@ -204,6 +205,86 @@ describe('UpdateManualInvoiceUseCase', () => {
         expect(result.success).toBe(false);
         if (!result.success) {
             expect(result.error).toBeInstanceOf(InvalidInvoiceStatusError);
+        }
+        expect(invoiceRepository.updatedInvoice).toBeNull();
+        expect(auditLogger.events).toHaveLength(0);
+    });
+
+    it('rejects when totals do not match movements', async () => {
+        const invoiceRepository = new InvoiceRepositoryStub(createInvoice());
+        const auditLogger = new AuditLoggerSpy();
+        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-2']);
+
+        const useCase = new UpdateManualInvoiceUseCase({
+            invoiceRepository,
+            auditLogger,
+            dateProvider: new DateProviderStub(),
+            invoiceMovementIdGenerator,
+        });
+
+        const result = await useCase.execute({
+            actorUserId: 'user-1',
+            invoiceId: 'invoice-1',
+            invoice: {
+                baseImponible: 200,
+                iva: 42,
+                total: 999,
+                movements: [
+                    {
+                        concepto: 'Servicio actualizado',
+                        cantidad: 1,
+                        precio: 200,
+                        baseImponible: 200,
+                        iva: 42,
+                        total: 242,
+                    },
+                ],
+            },
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error).toBeInstanceOf(InvalidInvoiceTotalsError);
+        }
+        expect(invoiceRepository.updatedInvoice).toBeNull();
+        expect(auditLogger.events).toHaveLength(0);
+    });
+
+    it('rejects when movement total does not match base plus iva', async () => {
+        const invoiceRepository = new InvoiceRepositoryStub(createInvoice());
+        const auditLogger = new AuditLoggerSpy();
+        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-2']);
+
+        const useCase = new UpdateManualInvoiceUseCase({
+            invoiceRepository,
+            auditLogger,
+            dateProvider: new DateProviderStub(),
+            invoiceMovementIdGenerator,
+        });
+
+        const result = await useCase.execute({
+            actorUserId: 'user-1',
+            invoiceId: 'invoice-1',
+            invoice: {
+                baseImponible: 200,
+                iva: 42,
+                total: 242,
+                movements: [
+                    {
+                        concepto: 'Servicio actualizado',
+                        cantidad: 1,
+                        precio: 200,
+                        baseImponible: 200,
+                        iva: 42,
+                        total: 999,
+                    },
+                ],
+            },
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error).toBeInstanceOf(InvalidInvoiceTotalsError);
         }
         expect(invoiceRepository.updatedInvoice).toBeNull();
         expect(auditLogger.events).toHaveLength(0);
