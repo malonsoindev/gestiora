@@ -1,4 +1,4 @@
-import type { InvoiceExtractionAgent } from '../ports/invoice-extraction-agent.js';
+import type { InvoiceExtractionAgent, InvoiceExtractionResult } from '../ports/invoice-extraction-agent.js';
 import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { FileStorage } from '../ports/file-storage.js';
 import type { InvoiceIdGenerator } from '../ports/invoice-id-generator.js';
@@ -7,12 +7,12 @@ import type { ProviderRepository } from '../ports/provider.repository.js';
 import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
-import { ProviderNotFoundError } from '../../domain/errors/provider-not-found.error.js';
 import { InvalidProviderStatusError } from '../../domain/errors/invalid-provider-status.error.js';
 import { InvalidInvoiceTotalsError } from '../../domain/errors/invalid-invoice-totals.error.js';
 import { Invoice, InvoiceStatus } from '../../domain/entities/invoice.entity.js';
 import { InvoiceMovement } from '../../domain/entities/invoice-movement.entity.js';
 import { ProviderStatus } from '../../domain/entities/provider.entity.js';
+import type { Provider } from '../../domain/entities/provider.entity.js';
 import { InvoiceDate } from '../../domain/value-objects/invoice-date.value-object.js';
 import { Money } from '../../domain/value-objects/money.value-object.js';
 import { FileRef } from '../../domain/value-objects/file-ref.value-object.js';
@@ -37,7 +37,6 @@ export type UploadInvoiceDocumentResponse = {
 };
 
 export type UploadInvoiceDocumentError =
-    | ProviderNotFoundError
     | ProviderNotFoundWithExtractionError
     | InvalidProviderStatusError
     | InvalidInvoiceTotalsError
@@ -73,6 +72,48 @@ export class UploadInvoiceDocumentUseCase {
         }
 
         const extracted = extractionResult.value;
+        const providerResult = await this.resolveProvider(extracted);
+        if (!providerResult.success) {
+            return fail(providerResult.error);
+        }
+        const provider = providerResult.value;
+
+        const fileRefResult = await this.storeFile(request.file);
+        if (!fileRefResult.success) {
+            return fail(fileRefResult.error);
+        }
+        const fileRef = fileRefResult.value;
+
+        const invoice = this.buildInvoice(provider.id, extracted, fileRef, now);
+        if (!invoice.isTotalsConsistent()) {
+            return fail(new InvalidInvoiceTotalsError());
+        }
+
+        const createResult = await this.dependencies.invoiceRepository.create(invoice);
+        if (!createResult.success) {
+            return fail(createResult.error);
+        }
+
+        const auditResult = await this.dependencies.auditLogger.log({
+            action: 'INVOICE_UPLOADED',
+            actorUserId: request.actorUserId,
+            targetUserId: invoice.id,
+            metadata: {
+                providerId: provider.id,
+                storageKey: fileRef.storageKey,
+            },
+            createdAt: now,
+        });
+        if (!auditResult.success) {
+            return fail(auditResult.error);
+        }
+
+        return ok({ invoiceId: invoice.id });
+    }
+
+    private async resolveProvider(
+        extracted: InvoiceExtractionResult,
+    ): Promise<Result<Provider, UploadInvoiceDocumentError>> {
         if (!extracted.providerCif) {
             return fail(new ProviderNotFoundWithExtractionError(extracted));
         }
@@ -99,12 +140,25 @@ export class UploadInvoiceDocumentUseCase {
             return fail(new InvalidProviderStatusError());
         }
 
-        const storeResult = await this.dependencies.fileStorage.store(request.file);
+        return ok(provider);
+    }
+
+    private async storeFile(
+        file: UploadInvoiceDocumentRequest['file'],
+    ): Promise<Result<FileRef, PortError>> {
+        const storeResult = await this.dependencies.fileStorage.store(file);
         if (!storeResult.success) {
             return fail(storeResult.error);
         }
-        const fileRef = FileRef.create(storeResult.value);
+        return ok(FileRef.create(storeResult.value));
+    }
 
+    private buildInvoice(
+        providerId: string,
+        extracted: InvoiceExtractionResult,
+        fileRef: FileRef,
+        now: Date,
+    ): Invoice {
         const movements = extracted.invoice.movements.map((movement) =>
             InvoiceMovement.create({
                 id: this.dependencies.invoiceMovementIdGenerator.generate(),
@@ -117,9 +171,9 @@ export class UploadInvoiceDocumentUseCase {
             }),
         );
 
-        const invoice = Invoice.create({
+        return Invoice.create({
             id: this.dependencies.invoiceIdGenerator.generate(),
-            providerId: provider.id,
+            providerId,
             status: InvoiceStatus.Active,
             ...(extracted.invoice.numeroFactura ? { numeroFactura: extracted.invoice.numeroFactura } : {}),
             ...(extracted.invoice.fechaOperacion ? { fechaOperacion: InvoiceDate.create(extracted.invoice.fechaOperacion) } : {}),
@@ -136,30 +190,5 @@ export class UploadInvoiceDocumentUseCase {
             createdAt: now,
             updatedAt: now,
         });
-
-        if (!invoice.isTotalsConsistent()) {
-            return fail(new InvalidInvoiceTotalsError());
-        }
-
-        const createResult = await this.dependencies.invoiceRepository.create(invoice);
-        if (!createResult.success) {
-            return fail(createResult.error);
-        }
-
-        const auditResult = await this.dependencies.auditLogger.log({
-            action: 'INVOICE_UPLOADED',
-            actorUserId: request.actorUserId,
-            targetUserId: invoice.id,
-            metadata: {
-                providerId: provider.id,
-                storageKey: fileRef.storageKey,
-            },
-            createdAt: now,
-        });
-        if (!auditResult.success) {
-            return fail(auditResult.error);
-        }
-
-        return ok({ invoiceId: invoice.id });
     }
 }

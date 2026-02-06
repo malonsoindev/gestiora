@@ -1,5 +1,4 @@
 import type { InvoiceExtractionAgent, InvoiceExtractionFile } from '../../../application/ports/invoice-extraction-agent.js';
-import type { PortError } from '../../../application/errors/port.error.js';
 import { ok } from '../../../shared/result.js';
 
 export class StubErrorInvoiceExtractionAgent implements InvoiceExtractionAgent {
