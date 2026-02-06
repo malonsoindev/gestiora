@@ -3,7 +3,7 @@ import type { PortError } from '../errors/port.error.js';
 import { ok, type Result } from '../../shared/result.js';
 
 export type ListInvoicesRequest = {
-    status?: 'DRAFT' | 'ACTIVO' | 'ELIMINADO';
+    status?: 'DRAFT' | 'ACTIVE' | 'DELETED';
     providerId?: string;
     page: number;
     pageSize: number;
@@ -13,7 +13,7 @@ export type ListInvoicesResponse = {
     items: Array<{
         invoiceId: string;
         providerId: string;
-        status: 'DRAFT' | 'ACTIVO' | 'ELIMINADO';
+        status: 'DRAFT' | 'ACTIVE' | 'DELETED';
         createdAt: Date;
     }>;
     page: number;

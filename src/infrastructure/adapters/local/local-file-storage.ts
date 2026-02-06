@@ -1,7 +1,7 @@
-import { mkdir, writeFile, unlink } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import type { FileStorage, FileToStore, StoredFile } from '../../../application/ports/file-storage.js';
+import type { FileStorage, FileToStore, StoredFile, StoredFileContent } from '../../../application/ports/file-storage.js';
 import { ok, fail, type Result } from '../../../shared/result.js';
 import { PortError } from '../../../application/errors/port.error.js';
 
@@ -37,6 +37,23 @@ export class LocalFileStorage implements FileStorage {
             return ok(undefined);
         } catch (error) {
             return fail(new PortError('FileStorage', 'Failed to delete file', error as Error));
+        }
+    }
+
+    async get(storageKey: string): Promise<Result<StoredFileContent, PortError>> {
+        try {
+            const normalized = storageKey.split('/').join(path.sep);
+            const fullPath = path.join(this.basePath, normalized);
+            const content = await readFile(fullPath);
+            return ok({
+                storageKey,
+                filename: path.basename(fullPath),
+                mimeType: 'application/pdf',
+                sizeBytes: content.length,
+                content,
+            });
+        } catch (error) {
+            return fail(new PortError('FileStorage', 'Failed to read file', error as Error));
         }
     }
 }

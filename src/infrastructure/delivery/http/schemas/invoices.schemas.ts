@@ -5,7 +5,7 @@ export const invoicesSchemas = {
             type: 'object',
             additionalProperties: false,
             properties: {
-                status: { type: 'string', enum: ['DRAFT', 'ACTIVO', 'ELIMINADO'] },
+                status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'DELETED'] },
                 providerId: { type: 'string' },
                 page: { type: 'integer', minimum: 1 },
                 pageSize: { type: 'integer', minimum: 1 },
@@ -24,7 +24,7 @@ export const invoicesSchemas = {
                             properties: {
                                 invoiceId: { type: 'string' },
                                 providerId: { type: 'string' },
-                                status: { type: 'string', enum: ['DRAFT', 'ACTIVO', 'ELIMINADO'] },
+                                status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'DELETED'] },
                                 createdAt: { type: 'string', format: 'date-time' },
                             },
                         },
@@ -59,7 +59,7 @@ export const invoicesSchemas = {
                 properties: {
                     invoiceId: { type: 'string' },
                     providerId: { type: 'string' },
-                    status: { type: 'string', enum: ['DRAFT', 'ACTIVO', 'ELIMINADO'] },
+                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'DELETED'] },
                     fileRef: {
                         type: 'object',
                         required: ['storageKey', 'filename', 'mimeType', 'sizeBytes', 'checksum'],
@@ -125,6 +125,40 @@ export const invoicesSchemas = {
         },
         response: {
             204: { type: 'null' },
+            401: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
+    file: {
+        security: [{ bearerAuth: [] }],
+        params: {
+            type: 'object',
+            required: ['invoiceId'],
+            properties: {
+                invoiceId: { type: 'string' },
+            },
+        },
+        response: {
+            200: { type: 'string' },
+            400: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
             401: {
                 type: 'object',
                 required: ['error'],
@@ -229,7 +263,7 @@ export const invoicesSchemas = {
                 properties: {
                     invoiceId: { type: 'string' },
                     providerId: { type: 'string' },
-                    status: { type: 'string', enum: ['DRAFT', 'ACTIVO', 'ELIMINADO'] },
+                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'DELETED'] },
                     fileRef: {
                         type: 'object',
                         required: ['storageKey', 'filename', 'mimeType', 'sizeBytes', 'checksum'],
@@ -337,7 +371,7 @@ export const invoicesSchemas = {
                 properties: {
                     invoiceId: { type: 'string' },
                     providerId: { type: 'string' },
-                    status: { type: 'string', enum: ['DRAFT', 'ACTIVO', 'ELIMINADO'] },
+                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'DELETED'] },
                     fileRef: {
                         type: 'object',
                         required: ['storageKey', 'filename', 'mimeType', 'sizeBytes', 'checksum'],

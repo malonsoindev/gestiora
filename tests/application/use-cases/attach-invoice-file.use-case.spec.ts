@@ -76,6 +76,16 @@ class FileStorageStub implements FileStorage {
         this.deletedStorageKey = storageKey;
         return ok(undefined);
     }
+
+    async get(storageKey: string) {
+        return ok({
+            storageKey,
+            filename: 'invoice-1.pdf',
+            mimeType: 'application/pdf',
+            sizeBytes: 1234,
+            content: Buffer.from('pdf-content'),
+        });
+    }
 }
 
 const createMovement = (): InvoiceMovement =>

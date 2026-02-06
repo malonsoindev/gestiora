@@ -34,7 +34,7 @@ export class InMemoryInvoiceRepository implements InvoiceRepository {
                 if (invoice.status !== filters.status) {
                     return false;
                 }
-            } else if (invoice.status === 'ELIMINADO') {
+            } else if (invoice.status === 'DELETED') {
                 return false;
             }
             if (filters.providerId !== undefined) {

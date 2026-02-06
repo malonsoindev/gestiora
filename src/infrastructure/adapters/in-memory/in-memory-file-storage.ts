@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { FileStorage, FileToStore, StoredFile } from '../../../application/ports/file-storage.js';
-import { ok, type Result } from '../../../shared/result.js';
-import type { PortError } from '../../../application/errors/port.error.js';
+import type { FileStorage, FileToStore, StoredFile, StoredFileContent } from '../../../application/ports/file-storage.js';
+import { ok, fail, type Result } from '../../../shared/result.js';
+import { PortError } from '../../../application/errors/port.error.js';
 
 export class InMemoryFileStorage implements FileStorage {
     private readonly files = new Map<string, { metadata: StoredFile; content: Buffer }>();
@@ -22,5 +22,19 @@ export class InMemoryFileStorage implements FileStorage {
     async delete(storageKey: string): Promise<Result<void, PortError>> {
         this.files.delete(storageKey);
         return ok(undefined);
+    }
+
+    async get(storageKey: string): Promise<Result<StoredFileContent, PortError>> {
+        const stored = this.files.get(storageKey);
+        if (!stored) {
+            return fail(new PortError('FileStorage', 'File not found'));
+        }
+        return ok({
+            storageKey,
+            filename: stored.metadata.filename,
+            mimeType: stored.metadata.mimeType,
+            sizeBytes: stored.metadata.sizeBytes,
+            content: stored.content,
+        });
     }
 }

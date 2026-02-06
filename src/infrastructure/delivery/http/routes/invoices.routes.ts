@@ -67,4 +67,13 @@ export const registerInvoicesRoutes = async (
         },
         async (request, reply) => controller.softDeleteInvoice(request, reply),
     );
+
+    app.get<{ Params: { invoiceId: string } }>(
+        '/documents/:invoiceId/file',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: invoicesSchemas.file,
+        },
+        async (request, reply) => controller.getInvoiceFile(request, reply),
+    );
 };

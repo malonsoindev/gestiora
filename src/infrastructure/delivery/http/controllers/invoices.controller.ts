@@ -6,6 +6,7 @@ import type { UpdateManualInvoiceUseCase } from '../../../../application/use-cas
 import type { ListInvoicesUseCase } from '../../../../application/use-cases/list-invoices.use-case.js';
 import type { GetInvoiceDetailUseCase } from '../../../../application/use-cases/get-invoice-detail.use-case.js';
 import type { SoftDeleteInvoiceUseCase } from '../../../../application/use-cases/soft-delete-invoice.use-case.js';
+import type { GetInvoiceFileUseCase } from '../../../../application/use-cases/get-invoice-file.use-case.js';
 import { InvalidCifError } from '../../../../domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '../../../../domain/errors/invalid-provider-status.error.js';
 import { ProviderNotFoundError } from '../../../../domain/errors/provider-not-found.error.js';
@@ -53,7 +54,7 @@ export type UpdateManualInvoiceBody = {
 };
 
 export type InvoicesListQuery = {
-    status?: 'DRAFT' | 'ACTIVO' | 'ELIMINADO';
+    status?: 'DRAFT' | 'ACTIVE' | 'DELETED';
     providerId?: string;
     page?: number;
     pageSize?: number;
@@ -67,6 +68,7 @@ export class InvoicesController {
         private readonly listInvoicesUseCase: ListInvoicesUseCase,
         private readonly getInvoiceDetailUseCase: GetInvoiceDetailUseCase,
         private readonly softDeleteInvoiceUseCase: SoftDeleteInvoiceUseCase,
+        private readonly getInvoiceFileUseCase: GetInvoiceFileUseCase,
     ) {}
 
     async createManualInvoice(request: FastifyRequest<{ Body: CreateManualInvoiceBody }>, reply: FastifyReply) {
@@ -273,6 +275,36 @@ export class InvoicesController {
 
         if (result.error instanceof InvoiceNotFoundError) {
             return reply.code(404).send({ error: 'NOT_FOUND' });
+        }
+
+        if (result.error instanceof PortError) {
+            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+    }
+
+    async getInvoiceFile(
+        request: FastifyRequest<{ Params: { invoiceId: string } }>,
+        reply: FastifyReply,
+    ) {
+        const result = await this.getInvoiceFileUseCase.execute({
+            invoiceId: request.params.invoiceId,
+        });
+
+        if (result.success) {
+            reply.header('Content-Type', result.value.mimeType);
+            reply.header('Content-Length', result.value.sizeBytes);
+            reply.header('Content-Disposition', `attachment; filename="${result.value.filename}"`);
+            return reply.code(200).send(result.value.content);
+        }
+
+        if (result.error instanceof InvoiceNotFoundError) {
+            return reply.code(404).send({ error: 'NOT_FOUND' });
+        }
+
+        if (result.error instanceof InvalidInvoiceStatusError) {
+            return reply.code(400).send({ error: 'INVALID_INVOICE_STATUS' });
         }
 
         if (result.error instanceof PortError) {

@@ -51,6 +51,7 @@ import { UpdateManualInvoiceUseCase } from '../application/use-cases/update-manu
 import { ListInvoicesUseCase } from '../application/use-cases/list-invoices.use-case.js';
 import { GetInvoiceDetailUseCase } from '../application/use-cases/get-invoice-detail.use-case.js';
 import { SoftDeleteInvoiceUseCase } from '../application/use-cases/soft-delete-invoice.use-case.js';
+import { GetInvoiceFileUseCase } from '../application/use-cases/get-invoice-file.use-case.js';
 import { InMemoryFileStorage } from '../infrastructure/adapters/in-memory/in-memory-file-storage.js';
 import { LocalFileStorage } from '../infrastructure/adapters/local/local-file-storage.js';
 
@@ -272,6 +273,11 @@ const softDeleteInvoiceUseCase = new SoftDeleteInvoiceUseCase({
     dateProvider,
 });
 
+const getInvoiceFileUseCase = new GetInvoiceFileUseCase({
+    invoiceRepository,
+    fileStorage,
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
@@ -311,6 +317,7 @@ export const compositionRoot = {
     listInvoicesUseCase,
     getInvoiceDetailUseCase,
     softDeleteInvoiceUseCase,
+    getInvoiceFileUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,

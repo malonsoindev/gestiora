@@ -1,7 +1,7 @@
 export type UpdateManualInvoiceResponse = {
     invoiceId: string;
     providerId: string;
-    status: 'DRAFT' | 'ACTIVO' | 'ELIMINADO';
+    status: 'DRAFT' | 'ACTIVE' | 'DELETED';
     fileRef?: {
         storageKey: string;
         filename: string;

@@ -3,7 +3,7 @@ import type { PortError } from '../errors/port.error.js';
 import type { Result } from '../../shared/result.js';
 
 export type InvoiceListFilters = {
-    status?: 'DRAFT' | 'ACTIVO' | 'ELIMINADO';
+    status?: 'DRAFT' | 'ACTIVE' | 'DELETED';
     providerId?: string;
     page: number;
     pageSize: number;
