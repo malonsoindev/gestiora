@@ -46,6 +46,8 @@ import { PostgresProviderRepository } from '../infrastructure/persistence/postgr
 import { CreateProviderUseCase } from '../application/use-cases/create-provider.use-case.js';
 import { InMemoryInvoiceRepository } from '../infrastructure/persistence/in-memory/in-memory-invoice.repository.js';
 import { CreateManualInvoiceUseCase } from '../application/use-cases/create-manual-invoice.use-case.js';
+import { AttachInvoiceFileUseCase } from '../application/use-cases/attach-invoice-file.use-case.js';
+import { InMemoryFileStorage } from '../infrastructure/adapters/in-memory/in-memory-file-storage.js';
 
 const ACCESS_TOKEN_TTL_SECONDS = 900;
 const REFRESH_TOKEN_TTL_SECONDS = 2_592_000;
@@ -81,6 +83,7 @@ const providerRepository = usePostgres && sqlClient
     ? new PostgresProviderRepository(sqlClient)
     : new InMemoryProviderRepository();
 const invoiceRepository = new InMemoryInvoiceRepository();
+const fileStorage = new InMemoryFileStorage();
 const auditLogger = new InMemoryAuditLogger();
 const dateProvider = new SystemDateProvider();
 const userIdGenerator = new TimestampUserIdGenerator();
@@ -234,12 +237,20 @@ const createManualInvoiceUseCase = new CreateManualInvoiceUseCase({
     invoiceMovementIdGenerator,
 });
 
+const attachInvoiceFileUseCase = new AttachInvoiceFileUseCase({
+    invoiceRepository,
+    fileStorage,
+    auditLogger,
+    dateProvider,
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
     loginAttemptRepository,
     providerRepository,
     invoiceRepository,
+    fileStorage,
     auditLogger,
     dateProvider,
     userIdGenerator,
@@ -267,6 +278,7 @@ export const compositionRoot = {
     updateProviderStatusUseCase,
     softDeleteProviderUseCase,
     createManualInvoiceUseCase,
+    attachInvoiceFileUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,

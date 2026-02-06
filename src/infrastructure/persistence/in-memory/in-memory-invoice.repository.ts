@@ -22,4 +22,9 @@ export class InMemoryInvoiceRepository implements InvoiceRepository {
     async findById(invoiceId: string): Promise<Result<Invoice | null, PortError>> {
         return ok(this.invoicesById.get(invoiceId) ?? null);
     }
+
+    async update(invoice: Invoice): Promise<Result<void, PortError>> {
+        this.invoicesById.set(invoice.id, invoice);
+        return ok(undefined);
+    }
 }

@@ -17,4 +17,13 @@ export const registerInvoicesRoutes = async (
         },
         async (request, reply) => controller.createManualInvoice(request, reply),
     );
+
+    app.put<{ Params: { invoiceId: string } }>(
+        '/documents/:invoiceId/file',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: invoicesSchemas.attachFile,
+        },
+        async (request, reply) => controller.attachInvoiceFile(request, reply),
+    );
 };

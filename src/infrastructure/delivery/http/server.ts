@@ -3,6 +3,7 @@ import Fastify from 'fastify';
 import type { FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
 import fastifyCors from '@fastify/cors';
+import fastifyMultipart from '@fastify/multipart';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { AuthController } from './controllers/auth.controller.js';
@@ -76,6 +77,8 @@ export const buildServer = async (): Promise<FastifyInstance> => {
         });
     }
 
+    await app.register(fastifyMultipart);
+
     // Añadimos un error handler personalizado para manejar errores de validación y otros errores generales
     // y devolver respuestas JSON consistentes.
     const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -124,7 +127,10 @@ export const buildServer = async (): Promise<FastifyInstance> => {
         compositionRoot.updateProviderStatusUseCase,
         compositionRoot.softDeleteProviderUseCase,
     );
-    const invoicesController = new InvoicesController(compositionRoot.createManualInvoiceUseCase);
+    const invoicesController = new InvoicesController(
+        compositionRoot.createManualInvoiceUseCase,
+        compositionRoot.attachInvoiceFileUseCase,
+    );
 
     await registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);
     await registerAdminRoutes(app, adminController, compositionRoot.authorizeRequestUseCase);

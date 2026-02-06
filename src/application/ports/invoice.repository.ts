@@ -4,4 +4,6 @@ import type { Result } from '../../shared/result.js';
 
 export interface InvoiceRepository {
     create(invoice: Invoice): Promise<Result<void, PortError>>;
+    findById(invoiceId: string): Promise<Result<Invoice | null, PortError>>;
+    update(invoice: Invoice): Promise<Result<void, PortError>>;
 }
