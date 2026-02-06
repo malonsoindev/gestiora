@@ -5,6 +5,7 @@ import type { AttachInvoiceFileUseCase } from '../../../../application/use-cases
 import type { UpdateManualInvoiceUseCase } from '../../../../application/use-cases/update-manual-invoice.use-case.js';
 import type { ListInvoicesUseCase } from '../../../../application/use-cases/list-invoices.use-case.js';
 import type { GetInvoiceDetailUseCase } from '../../../../application/use-cases/get-invoice-detail.use-case.js';
+import type { SoftDeleteInvoiceUseCase } from '../../../../application/use-cases/soft-delete-invoice.use-case.js';
 import { InvalidCifError } from '../../../../domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '../../../../domain/errors/invalid-provider-status.error.js';
 import { ProviderNotFoundError } from '../../../../domain/errors/provider-not-found.error.js';
@@ -65,6 +66,7 @@ export class InvoicesController {
         private readonly updateManualInvoiceUseCase: UpdateManualInvoiceUseCase,
         private readonly listInvoicesUseCase: ListInvoicesUseCase,
         private readonly getInvoiceDetailUseCase: GetInvoiceDetailUseCase,
+        private readonly softDeleteInvoiceUseCase: SoftDeleteInvoiceUseCase,
     ) {}
 
     async createManualInvoice(request: FastifyRequest<{ Body: CreateManualInvoiceBody }>, reply: FastifyReply) {
@@ -238,6 +240,35 @@ export class InvoicesController {
 
         if (result.success) {
             return reply.code(200).send(result.value);
+        }
+
+        if (result.error instanceof InvoiceNotFoundError) {
+            return reply.code(404).send({ error: 'NOT_FOUND' });
+        }
+
+        if (result.error instanceof PortError) {
+            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+    }
+
+    async softDeleteInvoice(
+        request: FastifyRequest<{ Params: { invoiceId: string } }>,
+        reply: FastifyReply,
+    ) {
+        const actorUserId = request.auth?.userId;
+        if (!actorUserId) {
+            return reply.code(401).send({ error: 'UNAUTHORIZED' });
+        }
+
+        const result = await this.softDeleteInvoiceUseCase.execute({
+            actorUserId,
+            invoiceId: request.params.invoiceId,
+        });
+
+        if (result.success) {
+            return reply.code(204).send();
         }
 
         if (result.error instanceof InvoiceNotFoundError) {

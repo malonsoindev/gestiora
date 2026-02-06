@@ -133,6 +133,7 @@ export const buildServer = async (): Promise<FastifyInstance> => {
         compositionRoot.updateManualInvoiceUseCase,
         compositionRoot.listInvoicesUseCase,
         compositionRoot.getInvoiceDetailUseCase,
+        compositionRoot.softDeleteInvoiceUseCase,
     );
 
     await registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);

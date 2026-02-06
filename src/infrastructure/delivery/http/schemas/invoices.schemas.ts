@@ -114,6 +114,33 @@ export const invoicesSchemas = {
             },
         },
     },
+    softDelete: {
+        security: [{ bearerAuth: [] }],
+        params: {
+            type: 'object',
+            required: ['invoiceId'],
+            properties: {
+                invoiceId: { type: 'string' },
+            },
+        },
+        response: {
+            204: { type: 'null' },
+            401: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
     createManual: {
         security: [{ bearerAuth: [] }],
         body: {
