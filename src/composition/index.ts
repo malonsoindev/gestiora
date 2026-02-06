@@ -48,6 +48,7 @@ import { InMemoryInvoiceRepository } from '../infrastructure/persistence/in-memo
 import { CreateManualInvoiceUseCase } from '../application/use-cases/create-manual-invoice.use-case.js';
 import { AttachInvoiceFileUseCase } from '../application/use-cases/attach-invoice-file.use-case.js';
 import { InMemoryFileStorage } from '../infrastructure/adapters/in-memory/in-memory-file-storage.js';
+import { LocalFileStorage } from '../infrastructure/adapters/local/local-file-storage.js';
 
 const ACCESS_TOKEN_TTL_SECONDS = 900;
 const REFRESH_TOKEN_TTL_SECONDS = 2_592_000;
@@ -83,7 +84,9 @@ const providerRepository = usePostgres && sqlClient
     ? new PostgresProviderRepository(sqlClient)
     : new InMemoryProviderRepository();
 const invoiceRepository = new InMemoryInvoiceRepository();
-const fileStorage = new InMemoryFileStorage();
+const fileStorage = config.STORAGE_TYPE === 'local'
+    ? new LocalFileStorage(config.STORAGE_PATH)
+    : new InMemoryFileStorage();
 const auditLogger = new InMemoryAuditLogger();
 const dateProvider = new SystemDateProvider();
 const userIdGenerator = new TimestampUserIdGenerator();

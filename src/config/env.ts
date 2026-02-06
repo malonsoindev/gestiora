@@ -45,6 +45,8 @@ const envSchema = z.object({
     JWT_REFRESH_SECRET: z.string().min(1),
     DATABASE_TYPE: z.enum(['in-memory', 'postgres']).default('in-memory'),
     DATABASE_URL: z.url().optional(),
+    STORAGE_TYPE: z.enum(['in-memory', 'local']).default('in-memory'),
+    STORAGE_PATH: z.string().default('storage'),
 }).refine(
     (data) => data.DATABASE_TYPE !== 'postgres' || Boolean(data.DATABASE_URL),
     {
