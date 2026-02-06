@@ -141,6 +141,10 @@ export class InvoicesController {
             return reply.code(400).send({ error: 'INVALID_INVOICE_TOTALS' });
         }
 
+        if (result.error instanceof InvalidInvoiceTotalsError) {
+            return reply.code(400).send({ error: 'INVALID_INVOICE_TOTALS' });
+        }
+
         if (result.error instanceof PortError) {
             return reply.code(500).send({ error: 'INTERNAL_ERROR' });
         }
