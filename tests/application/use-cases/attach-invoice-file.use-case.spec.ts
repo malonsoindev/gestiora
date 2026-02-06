@@ -10,6 +10,7 @@ import type { InvoiceProps } from '../../../src/domain/entities/invoice.entity.j
 import { InvoiceMovement } from '../../../src/domain/entities/invoice-movement.entity.js';
 import { InvoiceDate } from '../../../src/domain/value-objects/invoice-date.value-object.js';
 import { Money } from '../../../src/domain/value-objects/money.value-object.js';
+import { FileRef } from '../../../src/domain/value-objects/file-ref.value-object.js';
 import { InvoiceNotFoundError } from '../../../src/domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '../../../src/domain/errors/invalid-invoice-status.error.js';
 import { ok, type Result } from '../../../src/shared/result.js';
@@ -51,6 +52,8 @@ class InvoiceRepositoryStub implements InvoiceRepository {
 }
 
 class FileStorageStub implements FileStorage {
+    deletedStorageKey: string | null = null;
+
     async store() {
         return ok({
             storageKey: 'invoices/2026/02/invoice-1.pdf',
@@ -59,6 +62,11 @@ class FileStorageStub implements FileStorage {
             sizeBytes: 1234,
             checksum: 'checksum-1',
         });
+    }
+
+    async delete(storageKey: string) {
+        this.deletedStorageKey = storageKey;
+        return ok(undefined);
     }
 }
 
@@ -119,6 +127,45 @@ describe('AttachInvoiceFileUseCase', () => {
         expect(invoiceRepository.updatedInvoice?.status).toBe(InvoiceStatus.Active);
         expect(invoiceRepository.updatedInvoice?.fileRef?.storageKey).toBe('invoices/2026/02/invoice-1.pdf');
         expect(auditLogger.events.some((event) => event.action === 'INVOICE_FILE_ATTACHED')).toBe(true);
+    });
+
+    it('deletes previous file when invoice already has a fileRef', async () => {
+        const invoiceRepository = new InvoiceRepositoryStub(
+            createInvoice({
+                status: InvoiceStatus.Active,
+                fileRef: FileRef.create({
+                    storageKey: 'invoices/2026/01/old.pdf',
+                    filename: 'old.pdf',
+                    mimeType: 'application/pdf',
+                    sizeBytes: 100,
+                    checksum: 'old-checksum',
+                }),
+            }),
+        );
+        const auditLogger = new AuditLoggerSpy();
+        const fileStorage = new FileStorageStub();
+
+        const useCase = new AttachInvoiceFileUseCase({
+            invoiceRepository,
+            fileStorage,
+            auditLogger,
+            dateProvider: new DateProviderStub(),
+        });
+
+        const result = await useCase.execute({
+            actorUserId: 'user-1',
+            invoiceId: 'invoice-1',
+            file: {
+                filename: 'invoice-1.pdf',
+                mimeType: 'application/pdf',
+                sizeBytes: 1234,
+                checksum: 'checksum-1',
+                content: Buffer.from('pdf-content'),
+            },
+        });
+
+        expect(result.success).toBe(true);
+        expect(fileStorage.deletedStorageKey).toBe('invoices/2026/01/old.pdf');
     });
 
     it('rejects when invoice does not exist', async () => {

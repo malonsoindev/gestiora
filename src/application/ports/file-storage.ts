@@ -19,4 +19,5 @@ export type FileToStore = {
 
 export interface FileStorage {
     store(file: FileToStore): Promise<Result<StoredFile, PortError>>;
+    delete(storageKey: string): Promise<Result<void, PortError>>;
 }

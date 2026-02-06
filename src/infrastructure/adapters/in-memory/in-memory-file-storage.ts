@@ -18,4 +18,9 @@ export class InMemoryFileStorage implements FileStorage {
         this.files.set(storageKey, { metadata: stored, content: file.content });
         return ok(stored);
     }
+
+    async delete(storageKey: string): Promise<Result<void, PortError>> {
+        this.files.delete(storageKey);
+        return ok(undefined);
+    }
 }
