@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import type { MultipartFile } from '@fastify/multipart';
 import type { CreateManualInvoiceUseCase } from '../../../../application/use-cases/create-manual-invoice.use-case.js';
 import type { AttachInvoiceFileUseCase } from '../../../../application/use-cases/attach-invoice-file.use-case.js';
 import { InvalidCifError } from '../../../../domain/errors/invalid-cif.error.js';
