@@ -130,6 +130,7 @@ export const buildServer = async (): Promise<FastifyInstance> => {
     const invoicesController = new InvoicesController(
         compositionRoot.createManualInvoiceUseCase,
         compositionRoot.attachInvoiceFileUseCase,
+        compositionRoot.updateManualInvoiceUseCase,
     );
 
     await registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);

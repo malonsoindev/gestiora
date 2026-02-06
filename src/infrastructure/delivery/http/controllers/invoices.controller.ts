@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { CreateManualInvoiceUseCase } from '../../../../application/use-cases/create-manual-invoice.use-case.js';
 import type { AttachInvoiceFileUseCase } from '../../../../application/use-cases/attach-invoice-file.use-case.js';
+import type { UpdateManualInvoiceUseCase } from '../../../../application/use-cases/update-manual-invoice.use-case.js';
 import { InvalidCifError } from '../../../../domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '../../../../domain/errors/invalid-provider-status.error.js';
 import { ProviderNotFoundError } from '../../../../domain/errors/provider-not-found.error.js';
@@ -30,10 +31,28 @@ export type CreateManualInvoiceBody = {
     };
 };
 
+export type UpdateManualInvoiceBody = {
+    numeroFactura?: string;
+    fechaOperacion?: string;
+    fechaVencimiento?: string;
+    baseImponible?: number;
+    iva?: number;
+    total?: number;
+    movements: Array<{
+        concepto: string;
+        cantidad: number;
+        precio: number;
+        baseImponible?: number;
+        iva?: number;
+        total: number;
+    }>;
+};
+
 export class InvoicesController {
     constructor(
         private readonly createManualInvoiceUseCase: CreateManualInvoiceUseCase,
         private readonly attachInvoiceFileUseCase: AttachInvoiceFileUseCase,
+        private readonly updateManualInvoiceUseCase: UpdateManualInvoiceUseCase,
     ) {}
 
     async createManualInvoice(request: FastifyRequest<{ Body: CreateManualInvoiceBody }>, reply: FastifyReply) {
@@ -99,6 +118,40 @@ export class InvoicesController {
                 checksum,
                 content,
             },
+        });
+
+        if (result.success) {
+            return reply.code(200).send(result.value);
+        }
+
+        if (result.error instanceof InvoiceNotFoundError) {
+            return reply.code(404).send({ error: 'NOT_FOUND' });
+        }
+
+        if (result.error instanceof InvalidInvoiceStatusError) {
+            return reply.code(400).send({ error: 'INVALID_INVOICE_STATUS' });
+        }
+
+        if (result.error instanceof PortError) {
+            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+    }
+
+    async updateManualInvoice(
+        request: FastifyRequest<{ Params: { invoiceId: string }; Body: UpdateManualInvoiceBody }>,
+        reply: FastifyReply,
+    ) {
+        const actorUserId = request.auth?.userId;
+        if (!actorUserId) {
+            return reply.code(401).send({ error: 'UNAUTHORIZED' });
+        }
+
+        const result = await this.updateManualInvoiceUseCase.execute({
+            actorUserId,
+            invoiceId: request.params.invoiceId,
+            invoice: request.body,
         });
 
         if (result.success) {

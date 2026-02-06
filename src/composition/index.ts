@@ -47,6 +47,7 @@ import { CreateProviderUseCase } from '../application/use-cases/create-provider.
 import { InMemoryInvoiceRepository } from '../infrastructure/persistence/in-memory/in-memory-invoice.repository.js';
 import { CreateManualInvoiceUseCase } from '../application/use-cases/create-manual-invoice.use-case.js';
 import { AttachInvoiceFileUseCase } from '../application/use-cases/attach-invoice-file.use-case.js';
+import { UpdateManualInvoiceUseCase } from '../application/use-cases/update-manual-invoice.use-case.js';
 import { InMemoryFileStorage } from '../infrastructure/adapters/in-memory/in-memory-file-storage.js';
 import { LocalFileStorage } from '../infrastructure/adapters/local/local-file-storage.js';
 
@@ -247,6 +248,13 @@ const attachInvoiceFileUseCase = new AttachInvoiceFileUseCase({
     dateProvider,
 });
 
+const updateManualInvoiceUseCase = new UpdateManualInvoiceUseCase({
+    invoiceRepository,
+    invoiceMovementIdGenerator,
+    auditLogger,
+    dateProvider,
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
@@ -282,6 +290,7 @@ export const compositionRoot = {
     softDeleteProviderUseCase,
     createManualInvoiceUseCase,
     attachInvoiceFileUseCase,
+    updateManualInvoiceUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,
