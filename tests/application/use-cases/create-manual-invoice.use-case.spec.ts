@@ -98,6 +98,14 @@ class InvoiceRepositorySpy implements InvoiceRepository {
     async update() {
         return ok(undefined);
     }
+
+    async list() {
+        return ok({ items: [], total: 0 });
+    }
+
+    async getDetail() {
+        return ok(null);
+    }
 }
 
 const createProvider = (status: ProviderStatus = ProviderStatus.Active): Provider =>

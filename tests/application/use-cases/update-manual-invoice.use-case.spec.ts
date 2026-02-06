@@ -62,6 +62,14 @@ class InvoiceRepositoryStub implements InvoiceRepository {
         this.updatedInvoice = invoice;
         return ok(undefined);
     }
+
+    async list() {
+        return ok({ items: [], total: 0 });
+    }
+
+    async getDetail() {
+        return ok(null);
+    }
 }
 
 const createMovement = (id: string, total: number): InvoiceMovement =>

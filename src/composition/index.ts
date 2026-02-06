@@ -48,6 +48,8 @@ import { InMemoryInvoiceRepository } from '../infrastructure/persistence/in-memo
 import { CreateManualInvoiceUseCase } from '../application/use-cases/create-manual-invoice.use-case.js';
 import { AttachInvoiceFileUseCase } from '../application/use-cases/attach-invoice-file.use-case.js';
 import { UpdateManualInvoiceUseCase } from '../application/use-cases/update-manual-invoice.use-case.js';
+import { ListInvoicesUseCase } from '../application/use-cases/list-invoices.use-case.js';
+import { GetInvoiceDetailUseCase } from '../application/use-cases/get-invoice-detail.use-case.js';
 import { InMemoryFileStorage } from '../infrastructure/adapters/in-memory/in-memory-file-storage.js';
 import { LocalFileStorage } from '../infrastructure/adapters/local/local-file-storage.js';
 
@@ -255,6 +257,14 @@ const updateManualInvoiceUseCase = new UpdateManualInvoiceUseCase({
     dateProvider,
 });
 
+const listInvoicesUseCase = new ListInvoicesUseCase({
+    invoiceRepository,
+});
+
+const getInvoiceDetailUseCase = new GetInvoiceDetailUseCase({
+    invoiceRepository,
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
@@ -291,6 +301,8 @@ export const compositionRoot = {
     createManualInvoiceUseCase,
     attachInvoiceFileUseCase,
     updateManualInvoiceUseCase,
+    listInvoicesUseCase,
+    getInvoiceDetailUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,

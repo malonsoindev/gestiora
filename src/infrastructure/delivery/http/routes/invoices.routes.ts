@@ -4,6 +4,7 @@ import type {
     InvoicesController,
     CreateManualInvoiceBody,
     UpdateManualInvoiceBody,
+    InvoicesListQuery,
 } from '../controllers/invoices.controller.js';
 import { buildAuthorizeMiddleware } from '../middlewares/authorize.middleware.js';
 import { invoicesSchemas } from '../schemas/invoices.schemas.js';
@@ -38,5 +39,23 @@ export const registerInvoicesRoutes = async (
             schema: invoicesSchemas.updateManual,
         },
         async (request, reply) => controller.updateManualInvoice(request, reply),
+    );
+
+    app.get<{ Querystring: InvoicesListQuery }>(
+        '/documents',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: invoicesSchemas.list,
+        },
+        async (request, reply) => controller.listInvoices(request, reply),
+    );
+
+    app.get<{ Params: { invoiceId: string } }>(
+        '/documents/:invoiceId',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: invoicesSchemas.detail,
+        },
+        async (request, reply) => controller.getInvoiceDetail(request, reply),
     );
 };

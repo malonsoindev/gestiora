@@ -3,6 +3,8 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { CreateManualInvoiceUseCase } from '../../../../application/use-cases/create-manual-invoice.use-case.js';
 import type { AttachInvoiceFileUseCase } from '../../../../application/use-cases/attach-invoice-file.use-case.js';
 import type { UpdateManualInvoiceUseCase } from '../../../../application/use-cases/update-manual-invoice.use-case.js';
+import type { ListInvoicesUseCase } from '../../../../application/use-cases/list-invoices.use-case.js';
+import type { GetInvoiceDetailUseCase } from '../../../../application/use-cases/get-invoice-detail.use-case.js';
 import { InvalidCifError } from '../../../../domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '../../../../domain/errors/invalid-provider-status.error.js';
 import { ProviderNotFoundError } from '../../../../domain/errors/provider-not-found.error.js';
@@ -49,11 +51,20 @@ export type UpdateManualInvoiceBody = {
     }>;
 };
 
+export type InvoicesListQuery = {
+    status?: 'DRAFT' | 'ACTIVO' | 'ELIMINADO';
+    providerId?: string;
+    page?: number;
+    pageSize?: number;
+};
+
 export class InvoicesController {
     constructor(
         private readonly createManualInvoiceUseCase: CreateManualInvoiceUseCase,
         private readonly attachInvoiceFileUseCase: AttachInvoiceFileUseCase,
         private readonly updateManualInvoiceUseCase: UpdateManualInvoiceUseCase,
+        private readonly listInvoicesUseCase: ListInvoicesUseCase,
+        private readonly getInvoiceDetailUseCase: GetInvoiceDetailUseCase,
     ) {}
 
     async createManualInvoice(request: FastifyRequest<{ Body: CreateManualInvoiceBody }>, reply: FastifyReply) {
@@ -177,6 +188,60 @@ export class InvoicesController {
 
         if (result.error instanceof InvalidInvoiceStatusError) {
             return reply.code(400).send({ error: 'INVALID_INVOICE_STATUS' });
+        }
+
+        if (result.error instanceof PortError) {
+            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+    }
+
+    async listInvoices(
+        request: FastifyRequest<{ Querystring: InvoicesListQuery }>,
+        reply: FastifyReply,
+    ) {
+        const page = request.query.page ?? 1;
+        const pageSize = request.query.pageSize ?? 20;
+
+        const result = await this.listInvoicesUseCase.execute({
+            page,
+            pageSize,
+            ...(request.query.status ? { status: request.query.status } : {}),
+            ...(request.query.providerId ? { providerId: request.query.providerId } : {}),
+        });
+
+        if (result.success) {
+            return reply.code(200).send({
+                items: result.value.items.map((item: { invoiceId: string; providerId: string; status: string; createdAt: Date }) => ({
+                    invoiceId: item.invoiceId,
+                    providerId: item.providerId,
+                    status: item.status,
+                    createdAt: item.createdAt.toISOString(),
+                })),
+                page: result.value.page,
+                pageSize: result.value.pageSize,
+                total: result.value.total,
+            });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+    }
+
+    async getInvoiceDetail(
+        request: FastifyRequest<{ Params: { invoiceId: string } }>,
+        reply: FastifyReply,
+    ) {
+        const result = await this.getInvoiceDetailUseCase.execute({
+            invoiceId: request.params.invoiceId,
+        });
+
+        if (result.success) {
+            return reply.code(200).send(result.value);
+        }
+
+        if (result.error instanceof InvoiceNotFoundError) {
+            return reply.code(404).send({ error: 'NOT_FOUND' });
         }
 
         if (result.error instanceof PortError) {
