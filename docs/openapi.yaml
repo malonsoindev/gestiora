@@ -13,7 +13,7 @@ tags:
   - name: Providers
     description: Supplier management
   - name: Documents
-    description: Document and invoice management
+    description: Invoice management (manual and PDF upload)
   - name: Extraction
     description: AI extraction workflows
   - name: Search
@@ -627,7 +627,7 @@ paths:
   /documents:
     post:
       tags: [Documents]
-      summary: Upload document (PDF only, auto extraction)
+      summary: Upload invoice (PDF only, auto extraction)
       security:
         - bearerAuth: []
       requestBody:
@@ -638,11 +638,11 @@ paths:
               $ref: '#/components/schemas/DocumentUploadRequest'
       responses:
         '201':
-          description: Document created
+          description: Invoice created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DocumentCreateResponse'
+                $ref: '#/components/schemas/InvoiceCreateResponse'
         '400':
           description: Invalid file format or size
           content:
@@ -655,9 +655,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Provider not found with extracted data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractionProviderNotFoundResponse'
     get:
       tags: [Documents]
-      summary: List documents
+      summary: List invoices
       security:
         - bearerAuth: []
       parameters:
@@ -695,11 +701,11 @@ paths:
             minimum: 1
       responses:
         '200':
-          description: Document list
+          description: Invoice list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DocumentListResponse'
+                $ref: '#/components/schemas/InvoiceListResponse'
         '401':
           description: Unauthorized
           content:
@@ -710,7 +716,7 @@ paths:
   /documents/manual:
     post:
       tags: [Documents]
-      summary: Create manual document (invoice with movements)
+      summary: Create manual invoice (with movements)
       security:
         - bearerAuth: []
       requestBody:
@@ -718,14 +724,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateManualDocumentRequest'
+              $ref: '#/components/schemas/CreateManualInvoiceRequest'
       responses:
         '201':
-          description: Manual document created
+          description: Manual invoice created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateManualDocumentResponse'
+                $ref: '#/components/schemas/CreateManualInvoiceResponse'
         '400':
           description: Validation error
           content:
@@ -739,25 +745,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /documents/{documentId}:
+  /documents/{invoiceId}:
     get:
       tags: [Documents]
-      summary: Get document detail
+      summary: Get invoice detail
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: documentId
+          name: invoiceId
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: Document detail
+          description: Invoice detail
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DocumentDetail'
+                $ref: '#/components/schemas/InvoiceDetail'
         '401':
           description: Unauthorized
           content:
@@ -772,18 +778,18 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
     delete:
       tags: [Documents]
-      summary: Soft delete document
+      summary: Soft delete invoice
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: documentId
+          name: invoiceId
           required: true
           schema:
             type: string
       responses:
         '204':
-          description: Document deleted
+          description: Invoice deleted
         '401':
           description: Unauthorized
           content:
@@ -797,15 +803,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /documents/{documentId}/file:
+  /documents/{invoiceId}/file:
     get:
       tags: [Documents]
-      summary: Download document file
+      summary: Download invoice file
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: documentId
+          name: invoiceId
           required: true
           schema:
             type: string
@@ -831,12 +837,12 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
     put:
       tags: [Documents]
-      summary: Attach PDF to manual document
+      summary: Attach PDF to manual invoice
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: documentId
+          name: invoiceId
           required: true
           schema:
             type: string
@@ -852,7 +858,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DocumentDetail'
+                $ref: '#/components/schemas/InvoiceDetail'
         '400':
           description: Invalid file format or size
           content:
@@ -872,7 +878,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /documents/{documentId}/invoice:
+  /documents/{invoiceId}/invoice:
     put:
       tags: [Documents]
       summary: Update invoice metadata and movements
@@ -880,7 +886,7 @@ paths:
         - bearerAuth: []
       parameters:
         - in: path
-          name: documentId
+          name: invoiceId
           required: true
           schema:
             type: string
@@ -916,7 +922,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /documents/{documentId}/extraction:
+  /documents/{invoiceId}/extraction:
     get:
       tags: [Extraction]
       summary: Get extraction status and result
@@ -924,7 +930,7 @@ paths:
         - bearerAuth: []
       parameters:
         - in: path
-          name: documentId
+          name: invoiceId
           required: true
           schema:
             type: string
@@ -948,7 +954,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /documents/{documentId}/extraction/reprocess:
+  /documents/{invoiceId}/extraction/reprocess:
     post:
       tags: [Extraction]
       summary: Reprocess extraction
@@ -956,7 +962,7 @@ paths:
         - bearerAuth: []
       parameters:
         - in: path
-          name: documentId
+          name: invoiceId
           required: true
           schema:
             type: string
@@ -980,7 +986,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /documents/{documentId}/extraction/fields:
+  /documents/{invoiceId}/extraction/fields:
     put:
       tags: [Extraction]
       summary: Review or correct extracted fields
@@ -988,7 +994,7 @@ paths:
         - bearerAuth: []
       parameters:
         - in: path
-          name: documentId
+          name: invoiceId
           required: true
           schema:
             type: string
@@ -1102,6 +1108,26 @@ components:
         error:
           type: string
       required: [error]
+
+    ExtractionProviderNotFoundResponse:
+      type: object
+      required: [error, extracted]
+      properties:
+        error:
+          type: string
+          enum: [PROVIDER_NOT_FOUND]
+        extracted:
+          type: object
+          required: [invoice, missingFields]
+          properties:
+            providerCif:
+              type: string
+            invoice:
+              $ref: '#/components/schemas/ManualInvoiceRequest'
+            missingFields:
+              type: array
+              items:
+                type: string
 
     ValidationError:
       type: object
@@ -1418,14 +1444,14 @@ components:
           type: string
           format: binary
 
-    DocumentCreateResponse:
+    InvoiceCreateResponse:
       type: object
-      required: [documentId]
+      required: [invoiceId]
       properties:
-        documentId:
+        invoiceId:
           type: string
 
-    CreateManualDocumentRequest:
+    CreateManualInvoiceRequest:
       type: object
       required: [providerId, invoice]
       properties:
@@ -1434,12 +1460,10 @@ components:
         invoice:
           $ref: '#/components/schemas/ManualInvoiceRequest'
 
-    CreateManualDocumentResponse:
+    CreateManualInvoiceResponse:
       type: object
-      required: [documentId, invoiceId]
+      required: [invoiceId]
       properties:
-        documentId:
-          type: string
         invoiceId:
           type: string
 
@@ -1467,53 +1491,29 @@ components:
           items:
             $ref: '#/components/schemas/InvoiceMovement'
 
-    DocumentSummary:
+    InvoiceSummary:
       type: object
-      required: [documentId, providerId, status, createdAt]
+      required: [invoiceId, providerId, status, createdAt]
       properties:
-        documentId:
+        invoiceId:
           type: string
         providerId:
           type: string
         status:
           type: string
-          enum: [DRAFT, ACTIVO, ELIMINADO]
+          enum: [DRAFT, ACTIVE, DELETED]
         createdAt:
           type: string
           format: date-time
 
-    DocumentDetail:
-      type: object
-      required: [documentId, providerId, status, createdAt, updatedAt]
-      properties:
-        documentId:
-          type: string
-        providerId:
-          type: string
-        status:
-          type: string
-          enum: [DRAFT, ACTIVO, ELIMINADO]
-        fileRef:
-          $ref: '#/components/schemas/FileRef'
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-        deletedAt:
-          type: string
-          format: date-time
-          nullable: true
-
-    DocumentListResponse:
+    InvoiceListResponse:
       type: object
       required: [items]
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/DocumentSummary'
+            $ref: '#/components/schemas/InvoiceSummary'
         page:
           type: integer
         pageSize:
@@ -1540,6 +1540,8 @@ components:
       type: object
       required: [concepto, cantidad, precio, total]
       properties:
+        id:
+          type: string
         concepto:
           type: string
         cantidad:
@@ -1577,11 +1579,17 @@ components:
 
     InvoiceDetail:
       type: object
+      required: [invoiceId, providerId, status, createdAt, updatedAt]
       properties:
         invoiceId:
           type: string
-        documentId:
+        providerId:
           type: string
+        status:
+          type: string
+          enum: [DRAFT, ACTIVE, DELETED]
+        fileRef:
+          $ref: '#/components/schemas/FileRef'
         numeroFactura:
           type: string
         fechaOperacion:
@@ -1596,6 +1604,16 @@ components:
           type: number
         total:
           type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
         movements:
           type: array
           items:

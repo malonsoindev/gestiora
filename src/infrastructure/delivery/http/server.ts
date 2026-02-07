@@ -3,6 +3,7 @@ import Fastify from 'fastify';
 import type { FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
 import fastifyCors from '@fastify/cors';
+import fastifyMultipart from '@fastify/multipart';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { AuthController } from './controllers/auth.controller.js';
@@ -10,11 +11,13 @@ import { AdminController } from './controllers/admin.controller.js';
 import { AdminUsersController } from './controllers/admin-users.controller.js';
 import { UsersController } from './controllers/users.controller.js';
 import { ProvidersController } from './controllers/providers.controller.js';
+import { InvoicesController } from './controllers/invoices.controller.js';
 import { registerAuthRoutes } from './routes/auth.routes.js';
 import { registerAdminRoutes } from './routes/admin.routes.js';
 import { registerAdminUsersRoutes } from './routes/admin-users.routes.js';
 import { registerUsersRoutes } from './routes/users.routes.js';
 import { registerProvidersRoutes } from './routes/providers.routes.js';
+import { registerInvoicesRoutes } from './routes/invoices.routes.js';
 import { compositionRoot } from '../../../composition/index.js';
 import { config, isDevelopment, isProduction } from '../../../config/env.js';
 
@@ -74,6 +77,8 @@ export const buildServer = async (): Promise<FastifyInstance> => {
         });
     }
 
+    await app.register(fastifyMultipart);
+
     // Añadimos un error handler personalizado para manejar errores de validación y otros errores generales
     // y devolver respuestas JSON consistentes.
     const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -122,12 +127,23 @@ export const buildServer = async (): Promise<FastifyInstance> => {
         compositionRoot.updateProviderStatusUseCase,
         compositionRoot.softDeleteProviderUseCase,
     );
+    const invoicesController = new InvoicesController(
+        compositionRoot.createManualInvoiceUseCase,
+        compositionRoot.attachInvoiceFileUseCase,
+        compositionRoot.updateManualInvoiceUseCase,
+        compositionRoot.listInvoicesUseCase,
+        compositionRoot.getInvoiceDetailUseCase,
+        compositionRoot.softDeleteInvoiceUseCase,
+        compositionRoot.getInvoiceFileUseCase,
+        compositionRoot.uploadInvoiceDocumentUseCase,
+    );
 
     await registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);
     await registerAdminRoutes(app, adminController, compositionRoot.authorizeRequestUseCase);
     await registerAdminUsersRoutes(app, adminUsersController, compositionRoot.authorizeRequestUseCase);
     await registerUsersRoutes(app, usersController, compositionRoot.authorizeRequestUseCase);
     await registerProvidersRoutes(app, providersController, compositionRoot.authorizeRequestUseCase);
+    await registerInvoicesRoutes(app, invoicesController, compositionRoot.authorizeRequestUseCase);
 
     return app;
 };

@@ -639,13 +639,13 @@ Precondiciones:
 # Épica D — Gestión Documental y Facturas (Manual)
 
 ## Contexto
-Esta épica define las funcionalidades necesarias para la **gestión manual de documentos y facturas** en Gestiora.
+Esta épica define las funcionalidades necesarias para la **gestión manual de facturas** en Gestiora.
 
 Principios:
 - El **documento original** es la fuente de verdad.
 - La gestión es **manual** en esta fase (sin IA).
-- Todo documento debe estar asociado a un **proveedor activo**.
-- El acceso a documentos está protegido por autenticación y permisos.
+- Toda factura debe estar asociada a un **proveedor activo**.
+- El acceso a facturas está protegido por autenticación y permisos.
 
 Precondiciones:
 - Usuario autenticado (Épica A).
@@ -653,10 +653,10 @@ Precondiciones:
 
 ---
 
-## US-D01 — Carga de documento (Factura PDF)
+## US-D01 — Carga de factura (PDF)
 
 **Como** usuario  
-**quiero** subir un documento de factura en formato PDF  
+**quiero** subir una factura en formato PDF  
 **para** almacenarlo y gestionarlo en la plataforma.
 
 ### Criterios de aceptación (GWT)
@@ -665,46 +665,46 @@ Precondiciones:
 - **Given** un usuario autenticado
 - **And** un archivo en formato PDF válido
 - **And** el tamaño del archivo está dentro del límite permitido
-- **When** el usuario sube el documento
+- **When** el usuario sube la factura
 - **Then** el sistema almacena el archivo de forma segura
-- **And** genera un identificador único para el documento
+- **And** genera un identificador único para la factura
 - **And** registra la carga en auditoría
 
 **Escenario 2: Formato no permitido**
 - **Given** un usuario autenticado
 - **When** intenta subir un archivo con formato no permitido
 - **Then** el sistema rechaza la operación con error de validación
-- **And** no almacena el documento
+- **And** no almacena la factura
 
 **Escenario 3: Tamaño excedido**
 - **Given** un usuario autenticado
 - **When** intenta subir un archivo que excede el tamaño máximo permitido
 - **Then** el sistema rechaza la operación con error de validación
-- **And** no almacena el documento
+- **And** no almacena la factura
 
 ---
 
-## US-D02 — Asociación de documento a proveedor
+## US-D02 — Asociación de factura a proveedor
 
 **Como** usuario  
-**quiero** asociar un documento a un proveedor  
-**para** mantener la trazabilidad de la factura.
+**quiero** asociar una factura a un proveedor  
+**para** mantener la trazabilidad.
 
 ### Criterios de aceptación (GWT)
 
 **Escenario 1: Asociación exitosa**
 - **Given** un usuario autenticado
-- **And** un documento existente
+- **And** una factura existente
 - **And** un proveedor activo existente
-- **When** el usuario asocia el documento al proveedor
+- **When** el usuario asocia la factura al proveedor
 - **Then** el sistema guarda la asociación
-- **And** el documento queda correctamente vinculado al proveedor
+- **And** la factura queda correctamente vinculada al proveedor
 - **And** registra la acción en auditoría
 
 **Escenario 2: Proveedor inactivo**
 - **Given** un usuario autenticado
 - **And** un proveedor inactivo o eliminado
-- **When** intenta asociar el documento a ese proveedor
+- **When** intenta asociar la factura a ese proveedor
 - **Then** el sistema rechaza la operación con error de validación
 - **And** no guarda la asociación
 
@@ -720,121 +720,121 @@ Precondiciones:
 
 **Escenario 1: Registro de metadatos**
 - **Given** un usuario autenticado
-- **And** un documento existente
+- **And** una factura existente
 - **When** el usuario introduce los datos de la factura
-- **Then** el sistema guarda los metadatos asociados al documento
+- **Then** el sistema guarda los metadatos de la factura
 - **And** valida los campos obligatorios
 - **And** registra la acción en auditoría
 
 **Escenario 2: Validación de campos obligatorios**
 - **Given** un usuario autenticado
-- **And** un documento existente
+- **And** una factura existente
 - **When** el usuario omite campos obligatorios
 - **Then** el sistema rechaza la operación con error de validación
 - **And** no guarda los cambios
 
 ---
 
-## US-D04 — Consulta y listado de documentos
+## US-D04 — Consulta y listado de facturas
 
 **Como** usuario  
-**quiero** listar y consultar documentos  
+**quiero** listar y consultar facturas  
 **para** localizar facturas existentes.
 
 ### Criterios de aceptación (GWT)
 
-**Escenario 1: Listado de documentos**
+**Escenario 1: Listado de facturas**
 - **Given** un usuario autenticado
-- **When** solicita el listado de documentos
-- **Then** el sistema devuelve la lista de documentos disponibles
+- **When** solicita el listado de facturas
+- **Then** el sistema devuelve la lista de facturas disponibles
 - **And** permite aplicar filtros básicos (proveedor, fechas, importe)
 
 **Escenario 2: Consulta de detalle**
 - **Given** un usuario autenticado
-- **And** un documento existente
-- **When** solicita el detalle del documento
+- **And** una factura existente
+- **When** solicita el detalle de la factura
 - **Then** el sistema devuelve los metadatos y la referencia al archivo
 
-**Escenario 3: Documento inexistente**
+**Escenario 3: Factura inexistente**
 - **Given** un usuario autenticado
-- **When** solicita un documento inexistente
+- **When** solicita una factura inexistente
 - **Then** el sistema responde **404**
 
 ---
 
-## US-D05 — Visualización y descarga de documento
+## US-D05 — Visualización y descarga de factura
 
 **Como** usuario  
-**quiero** visualizar y descargar un documento  
+**quiero** visualizar y descargar una factura  
 **para** revisar su contenido original.
 
 ### Criterios de aceptación (GWT)
 
 **Escenario 1: Visualización**
 - **Given** un usuario autenticado
-- **And** un documento existente
-- **When** solicita visualizar el documento
+- **And** una factura existente
+- **When** solicita visualizar la factura
 - **Then** el sistema permite el acceso al archivo
 
 **Escenario 2: Descarga**
 - **Given** un usuario autenticado
-- **And** un documento existente
-- **When** solicita descargar el documento
+- **And** una factura existente
+- **When** solicita descargar la factura
 - **Then** el sistema entrega el archivo original
 
 **Escenario 3: Acceso no autorizado**
 - **Given** un usuario no autenticado
-- **When** intenta acceder a un documento
+- **When** intenta acceder a una factura
 - **Then** el sistema responde **401**
 
 ---
 
-## US-D06 — Modificación de metadatos de documento
+## US-D06 — Modificación de metadatos de factura
 
 **Como** usuario  
-**quiero** modificar los metadatos de un documento  
+**quiero** modificar los metadatos de una factura  
 **para** corregir o actualizar información.
 
 ### Criterios de aceptación (GWT)
 
 **Escenario 1: Modificación exitosa**
 - **Given** un usuario autenticado
-- **And** un documento existente
+- **And** una factura existente
 - **When** el usuario modifica los metadatos permitidos
 - **Then** el sistema guarda los cambios
 - **And** registra la modificación en auditoría
 
-**Escenario 2: Documento eliminado**
+**Escenario 2: Factura eliminada**
 - **Given** un usuario autenticado
-- **And** un documento eliminado lógicamente
+- **And** una factura eliminada
 - **When** intenta modificar sus metadatos
 - **Then** el sistema rechaza la operación
 
 ---
 
-## US-D07 — Eliminación lógica de documento (Soft delete)
+## US-D07 — Eliminación lógica de factura (Soft delete)
 
 **Como** usuario  
-**quiero** eliminar documentos de forma lógica  
+**quiero** eliminar facturas de forma lógica  
 **para** mantener el sistema limpio sin perder trazabilidad.
 
 ### Criterios de aceptación (GWT)
 
 **Escenario 1: Eliminación lógica**
 - **Given** un usuario autenticado
-- **And** un documento existente
-- **When** el usuario elimina lógicamente el documento
-- **Then** el sistema marca el documento como eliminado
-- **And** el documento no aparece en listados operativos
+- **And** una factura existente
+- **When** el usuario elimina lógicamente la factura
+- **Then** el sistema marca la factura como eliminada
+- **And** la factura no aparece en listados operativos
 - **And** el archivo original se conserva
 - **And** registra la acción en auditoría
 
 ---
 
-## US-D08 — Control de acceso a documentos
+## US-D08 — Control de acceso a facturas
 
 **Como** sistema  
-**quiero** controlar el acceso a documentos  
+**quiero** controlar el acceso a facturas  
 **para** proteger la información.
 
 ### Criterios de aceptación (GWT)
@@ -842,21 +842,21 @@ Precondiciones:
 **Escenario 1: Acceso permitido**
 - **Given** un usuario autenticado
 - **And** permisos suficientes
-- **When** accede a un documento
+- **When** accede a una factura
 - **Then** el sistema permite la operación
 
 **Escenario 2: Acceso denegado**
 - **Given** un usuario autenticado sin permisos suficientes
-- **When** intenta acceder a un documento
+- **When** intenta acceder a una factura
 - **Then** el sistema responde **403**
 
 ---
 
-## US-D09 — Creación manual de documento (factura sin PDF)
+## US-D09 — Creación manual de factura (sin PDF)
 
 **Como** usuario  
 **quiero** crear una factura de manera manual con cabecera y movimientos  
-**para** registrar documentos sin necesidad de adjuntar un PDF en el momento.
+**para** registrar facturas sin necesidad de adjuntar un PDF en el momento.
 
 ### Criterios de aceptación (GWT)
 
@@ -864,7 +864,7 @@ Precondiciones:
 - **Given** un usuario autenticado
 - **And** un proveedor activo existente
 - **When** el usuario crea la factura con cabecera y movimientos
-- **Then** el sistema crea un documento en estado **DRAFT**
+- **Then** el sistema crea una factura en estado **DRAFT**
 - **And** persiste cabecera y movimientos en una sola operación
 - **And** registra la acción en auditoría
 
@@ -881,26 +881,26 @@ Precondiciones:
 
 ---
 
-## US-D10 — Adjuntar PDF a documento manual
+## US-D10 — Adjuntar PDF a factura manual
 
 **Como** usuario  
-**quiero** adjuntar un PDF a un documento creado manualmente  
+**quiero** adjuntar un PDF a una factura creada manualmente  
 **para** completar el registro con el archivo original.
 
 ### Criterios de aceptación (GWT)
 
 **Escenario 1: Adjuntar PDF exitoso**
 - **Given** un usuario autenticado
-- **And** un documento en estado **DRAFT** existente
+- **And** una factura en estado **DRAFT** existente
 - **When** el usuario adjunta un PDF válido
 - **Then** el sistema almacena el archivo de forma segura
 - **And** crea el FileRef asociado
-- **And** cambia el estado del documento a **ACTIVO**
+- **And** cambia el estado de la factura a **ACTIVO**
 - **And** registra la acción en auditoría
 
-**Escenario 2: Documento inexistente o eliminado**
+**Escenario 2: Factura inexistente o eliminada**
 - **Given** un usuario autenticado
-- **When** intenta adjuntar un PDF a un documento inexistente o eliminado
+- **When** intenta adjuntar un PDF a una factura inexistente o eliminada
 - **Then** el sistema responde con **404** o error de validación
 
 **Escenario 3: PDF inválido o tamaño excedido**
@@ -920,14 +920,14 @@ Precondiciones:
 
 **Escenario 1: Modificación exitosa**
 - **Given** un usuario autenticado
-- **And** un documento manual existente y no eliminado
+- **And** una factura manual existente y no eliminada
 - **When** el usuario actualiza cabecera y movimientos
 - **Then** el sistema persiste los cambios como conjunto
 - **And** registra la acción en auditoría
 
-**Escenario 2: Documento eliminado**
+**Escenario 2: Factura eliminada**
 - **Given** un usuario autenticado
-- **And** un documento eliminado
+- **And** una factura eliminada
 - **When** intenta modificar la factura
 - **Then** el sistema rechaza la operación
 
@@ -939,13 +939,13 @@ Precondiciones:
 ---
 
 ## Notas técnicas
-- El documento es una **entidad del dominio**.
+- La factura es el **aggregate root** del dominio.
 - El archivo (PDF) y los metadatos se gestionan de forma separada.
 - El documento original nunca se modifica.
 - La extracción automática y búsqueda semántica se abordan en épicas posteriores.
-- Se permite crear documentos manuales en estado **DRAFT** sin PDF asociado.
+- Se permite crear facturas manuales en estado **DRAFT** sin PDF asociado.
 - La factura manual incluye cabecera y movimientos en una sola llamada.
-- Los documentos manuales forman parte de la fuente de conocimiento.
+- Las facturas manuales forman parte de la fuente de conocimiento.
 
 
 # Épica E — Extracción de Información mediante Inteligencia Artificial

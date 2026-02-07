@@ -11,6 +11,8 @@ import { InMemoryLoginRateLimiter } from '../infrastructure/adapters/in-memory/i
 import { TimestampProviderIdGenerator } from '../infrastructure/adapters/timestamp-provider-id-generator.js';
 import { TimestampUserIdGenerator } from '../infrastructure/adapters/timestamp-user-id-generator.js';
 import { TimestampSessionIdGenerator } from '../infrastructure/adapters/timestamp-session-id-generator.js';
+import { TimestampInvoiceIdGenerator } from '../infrastructure/adapters/timestamp-invoice-id-generator.js';
+import { TimestampInvoiceMovementIdGenerator } from '../infrastructure/adapters/timestamp-invoice-movement-id-generator.js';
 import { LoginUserUseCase } from '../application/use-cases/login-user.use-case.js';
 import { RefreshAccessTokenUseCase } from '../application/use-cases/refresh-access-token.use-case.js';
 import { LogoutUserUseCase } from '../application/use-cases/logout-user.use-case.js';
@@ -42,6 +44,19 @@ import { Cif } from '../domain/value-objects/cif.value-object.js';
 import { InMemoryProviderRepository } from '../infrastructure/persistence/in-memory/in-memory-provider.repository.js';
 import { PostgresProviderRepository } from '../infrastructure/persistence/postgres/postgres-provider.repository.js';
 import { CreateProviderUseCase } from '../application/use-cases/create-provider.use-case.js';
+import { InMemoryInvoiceRepository } from '../infrastructure/persistence/in-memory/in-memory-invoice.repository.js';
+import { CreateManualInvoiceUseCase } from '../application/use-cases/create-manual-invoice.use-case.js';
+import { AttachInvoiceFileUseCase } from '../application/use-cases/attach-invoice-file.use-case.js';
+import { UpdateManualInvoiceUseCase } from '../application/use-cases/update-manual-invoice.use-case.js';
+import { ListInvoicesUseCase } from '../application/use-cases/list-invoices.use-case.js';
+import { GetInvoiceDetailUseCase } from '../application/use-cases/get-invoice-detail.use-case.js';
+import { SoftDeleteInvoiceUseCase } from '../application/use-cases/soft-delete-invoice.use-case.js';
+import { GetInvoiceFileUseCase } from '../application/use-cases/get-invoice-file.use-case.js';
+import { UploadInvoiceDocumentUseCase } from '../application/use-cases/upload-invoice-document.use-case.js';
+import { StubInvoiceExtractionAgent } from '../infrastructure/adapters/invoice-extraction/stub-invoice-extraction-agent.js';
+import { StubErrorInvoiceExtractionAgent } from '../infrastructure/adapters/invoice-extraction/stub-error-invoice-extraction-agent.js';
+import { InMemoryFileStorage } from '../infrastructure/adapters/in-memory/in-memory-file-storage.js';
+import { LocalFileStorage } from '../infrastructure/adapters/local/local-file-storage.js';
 
 const ACCESS_TOKEN_TTL_SECONDS = 900;
 const REFRESH_TOKEN_TTL_SECONDS = 2_592_000;
@@ -76,10 +91,16 @@ const loginAttemptRepository = usePostgres && sqlClient
 const providerRepository = usePostgres && sqlClient
     ? new PostgresProviderRepository(sqlClient)
     : new InMemoryProviderRepository();
+const invoiceRepository = new InMemoryInvoiceRepository();
+const fileStorage = config.STORAGE_TYPE === 'local'
+    ? new LocalFileStorage(config.STORAGE_PATH)
+    : new InMemoryFileStorage();
 const auditLogger = new InMemoryAuditLogger();
 const dateProvider = new SystemDateProvider();
 const userIdGenerator = new TimestampUserIdGenerator();
 const providerIdGenerator = new TimestampProviderIdGenerator();
+const invoiceIdGenerator = new TimestampInvoiceIdGenerator();
+const invoiceMovementIdGenerator = new TimestampInvoiceMovementIdGenerator();
 const sessionIdGenerator = new TimestampSessionIdGenerator();
 const passwordHasher = new BcryptPasswordHasher();
 const refreshTokenHasher = new SimpleRefreshTokenHasher();
@@ -218,14 +239,75 @@ const softDeleteProviderUseCase = new SoftDeleteProviderUseCase({
     dateProvider,
 });
 
+const createManualInvoiceUseCase = new CreateManualInvoiceUseCase({
+    providerRepository,
+    invoiceRepository,
+    auditLogger,
+    dateProvider,
+    invoiceIdGenerator,
+    invoiceMovementIdGenerator,
+});
+
+const attachInvoiceFileUseCase = new AttachInvoiceFileUseCase({
+    invoiceRepository,
+    fileStorage,
+    auditLogger,
+    dateProvider,
+});
+
+const updateManualInvoiceUseCase = new UpdateManualInvoiceUseCase({
+    invoiceRepository,
+    invoiceMovementIdGenerator,
+    auditLogger,
+    dateProvider,
+});
+
+const listInvoicesUseCase = new ListInvoicesUseCase({
+    invoiceRepository,
+});
+
+const getInvoiceDetailUseCase = new GetInvoiceDetailUseCase({
+    invoiceRepository,
+});
+
+const softDeleteInvoiceUseCase = new SoftDeleteInvoiceUseCase({
+    invoiceRepository,
+    auditLogger,
+    dateProvider,
+});
+
+const getInvoiceFileUseCase = new GetInvoiceFileUseCase({
+    invoiceRepository,
+    fileStorage,
+});
+
+const extractionAgent = config.AI_AGENT_TYPE === 'stub-error'
+    ? new StubErrorInvoiceExtractionAgent()
+    : new StubInvoiceExtractionAgent();
+
+const uploadInvoiceDocumentUseCase = new UploadInvoiceDocumentUseCase({
+    providerRepository,
+    invoiceRepository,
+    fileStorage,
+    extractionAgent,
+    auditLogger,
+    dateProvider,
+    invoiceIdGenerator,
+    invoiceMovementIdGenerator,
+});
+
 export const compositionRoot = {
     userRepository,
     sessionRepository,
     loginAttemptRepository,
     providerRepository,
+    invoiceRepository,
+    fileStorage,
     auditLogger,
     dateProvider,
     userIdGenerator,
+    invoiceIdGenerator,
+    invoiceMovementIdGenerator,
     passwordHasher,
     refreshTokenHasher,
     tokenService,
@@ -247,6 +329,14 @@ export const compositionRoot = {
     updateProviderUseCase,
     updateProviderStatusUseCase,
     softDeleteProviderUseCase,
+    createManualInvoiceUseCase,
+    attachInvoiceFileUseCase,
+    updateManualInvoiceUseCase,
+    listInvoicesUseCase,
+    getInvoiceDetailUseCase,
+    softDeleteInvoiceUseCase,
+    getInvoiceFileUseCase,
+    uploadInvoiceDocumentUseCase,
     refreshAccessTokenUseCase,
     logoutUserUseCase,
     authorizeRequestUseCase,
