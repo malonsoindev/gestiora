@@ -17,7 +17,7 @@
   "scripts": {
     "dev": "tsx main.ts",
     "dev:watch": "tsx watch main.ts",
-    "dev:genkit": "tsx watch genkit.ts",
+    "g-dev": "genkit start -- npx tsx main.ts",
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "db:apply": "tsx db/scripts/apply-sql.ts",

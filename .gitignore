@@ -10,3 +10,4 @@ docs/sesiones/
 example/
 storage/
 .prettierrc
+.genkit/
