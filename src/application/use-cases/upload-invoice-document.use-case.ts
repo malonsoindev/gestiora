@@ -8,7 +8,6 @@ import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
 import { InvalidProviderStatusError } from '../../domain/errors/invalid-provider-status.error.js';
-import { InvalidInvoiceTotalsError } from '../../domain/errors/invalid-invoice-totals.error.js';
 import { Invoice, InvoiceStatus } from '../../domain/entities/invoice.entity.js';
 import { InvoiceMovement } from '../../domain/entities/invoice-movement.entity.js';
 import { ProviderStatus } from '../../domain/entities/provider.entity.js';
@@ -39,7 +38,6 @@ export type UploadInvoiceDocumentResponse = {
 export type UploadInvoiceDocumentError =
     | ProviderNotFoundWithExtractionError
     | InvalidProviderStatusError
-    | InvalidInvoiceTotalsError
     | InvalidCifError
     | PortError;
 
@@ -84,9 +82,9 @@ export class UploadInvoiceDocumentUseCase {
         }
         const fileRef = fileRefResult.value;
 
-        const invoice = this.buildInvoice(provider.id, extracted, fileRef, now);
+        let invoice = this.buildInvoice(provider.id, extracted, fileRef, now, InvoiceStatus.Active);
         if (!invoice.isTotalsConsistent()) {
-            return fail(new InvalidInvoiceTotalsError());
+            invoice = this.buildInvoice(provider.id, extracted, fileRef, now, InvoiceStatus.Inconsistent);
         }
 
         const createResult = await this.dependencies.invoiceRepository.create(invoice);
@@ -158,6 +156,7 @@ export class UploadInvoiceDocumentUseCase {
         extracted: InvoiceExtractionResult,
         fileRef: FileRef,
         now: Date,
+        status: InvoiceStatus,
     ): Invoice {
         const movements = extracted.invoice.movements.map((movement) =>
             InvoiceMovement.create({
@@ -174,7 +173,7 @@ export class UploadInvoiceDocumentUseCase {
         return Invoice.create({
             id: this.dependencies.invoiceIdGenerator.generate(),
             providerId,
-            status: InvoiceStatus.Active,
+            status,
             ...(extracted.invoice.numeroFactura ? { numeroFactura: extracted.invoice.numeroFactura } : {}),
             ...(extracted.invoice.fechaOperacion ? { fechaOperacion: InvoiceDate.create(extracted.invoice.fechaOperacion) } : {}),
             ...(extracted.invoice.fechaVencimiento

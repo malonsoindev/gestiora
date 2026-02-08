@@ -1501,7 +1501,7 @@ components:
           type: string
         status:
           type: string
-          enum: [DRAFT, ACTIVE, DELETED]
+          enum: [DRAFT, ACTIVE, INCONSISTENT, DELETED]
         createdAt:
           type: string
           format: date-time
@@ -1587,7 +1587,7 @@ components:
           type: string
         status:
           type: string
-          enum: [DRAFT, ACTIVE, DELETED]
+          enum: [DRAFT, ACTIVE, INCONSISTENT, DELETED]
         fileRef:
           $ref: '#/components/schemas/FileRef'
         numeroFactura:

@@ -56,7 +56,7 @@ export type UpdateManualInvoiceBody = {
 };
 
 export type InvoicesListQuery = {
-    status?: 'DRAFT' | 'ACTIVE' | 'DELETED';
+    status?: 'DRAFT' | 'ACTIVE' | 'INCONSISTENT' | 'DELETED';
     providerId?: string;
     page?: number;
     pageSize?: number;
@@ -99,9 +99,6 @@ export class InvoicesController {
             return reply.code(400).send({ error: 'INVALID_PROVIDER_STATUS' });
         }
 
-        if (result.error instanceof InvalidInvoiceTotalsError) {
-            return reply.code(400).send({ error: 'INVALID_INVOICE_TOTALS' });
-        }
 
         if (result.error instanceof InvalidCifError) {
             return reply.code(400).send({ error: 'INVALID_CIF' });
@@ -232,9 +229,6 @@ export class InvoicesController {
             return reply.code(400).send({ error: 'INVALID_INVOICE_STATUS' });
         }
 
-        if (result.error instanceof InvalidInvoiceTotalsError) {
-            return reply.code(400).send({ error: 'INVALID_INVOICE_TOTALS' });
-        }
 
         if (result.error instanceof InvalidInvoiceTotalsError) {
             return reply.code(400).send({ error: 'INVALID_INVOICE_TOTALS' });

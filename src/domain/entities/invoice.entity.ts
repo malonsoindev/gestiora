@@ -6,6 +6,7 @@ import type { Money } from '../value-objects/money.value-object.js';
 export enum InvoiceStatus {
     Draft = 'DRAFT',
     Active = 'ACTIVE',
+    Inconsistent = 'INCONSISTENT',
     Deleted = 'DELETED',
 }
 

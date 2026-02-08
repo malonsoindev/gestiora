@@ -5,7 +5,7 @@ export const invoicesSchemas = {
             type: 'object',
             additionalProperties: false,
             properties: {
-                status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'DELETED'] },
+                status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'INCONSISTENT', 'DELETED'] },
                 providerId: { type: 'string' },
                 page: { type: 'integer', minimum: 1 },
                 pageSize: { type: 'integer', minimum: 1 },
@@ -24,7 +24,7 @@ export const invoicesSchemas = {
                             properties: {
                                 invoiceId: { type: 'string' },
                                 providerId: { type: 'string' },
-                                status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'DELETED'] },
+                                status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'INCONSISTENT', 'DELETED'] },
                                 createdAt: { type: 'string', format: 'date-time' },
                             },
                         },
@@ -93,7 +93,7 @@ export const invoicesSchemas = {
                 properties: {
                     invoiceId: { type: 'string' },
                     providerId: { type: 'string' },
-                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'DELETED'] },
+                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'INCONSISTENT', 'DELETED'] },
                     fileRef: {
                         type: 'object',
                         required: ['storageKey', 'filename', 'mimeType', 'sizeBytes', 'checksum'],
@@ -297,7 +297,7 @@ export const invoicesSchemas = {
                 properties: {
                     invoiceId: { type: 'string' },
                     providerId: { type: 'string' },
-                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'DELETED'] },
+                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'INCONSISTENT', 'DELETED'] },
                     fileRef: {
                         type: 'object',
                         required: ['storageKey', 'filename', 'mimeType', 'sizeBytes', 'checksum'],
@@ -405,7 +405,7 @@ export const invoicesSchemas = {
                 properties: {
                     invoiceId: { type: 'string' },
                     providerId: { type: 'string' },
-                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'DELETED'] },
+                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'INCONSISTENT', 'DELETED'] },
                     fileRef: {
                         type: 'object',
                         required: ['storageKey', 'filename', 'mimeType', 'sizeBytes', 'checksum'],

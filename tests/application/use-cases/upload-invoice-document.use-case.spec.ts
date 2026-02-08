@@ -181,6 +181,32 @@ class ExtractionAgentErrorStub implements InvoiceExtractionAgent {
     }
 }
 
+class ExtractionAgentTotalsMismatchStub implements InvoiceExtractionAgent {
+    async extract(): Promise<Result<InvoiceExtractionResult, PortError>> {
+        return ok({
+            providerCif: 'B12345678',
+            invoice: {
+                numeroFactura: 'FAC-2026-0002',
+                fechaOperacion: '2026-02-10',
+                baseImponible: 300,
+                iva: 63,
+                total: 363,
+                movements: [
+                    {
+                        concepto: 'Servicio',
+                        cantidad: 1,
+                        precio: 300,
+                        baseImponible: 300,
+                        iva: 63,
+                        total: 400,
+                    },
+                ],
+            },
+            missingFields: [],
+        });
+    }
+}
+
 const createProvider = (): Provider =>
     Provider.create({
         id: 'provider-1',
@@ -264,5 +290,42 @@ describe('UploadInvoiceDocumentUseCase', () => {
                 expect(result.error.extracted.providerCif).toBe('B12345678');
             }
         }
+    });
+
+    it('creates invoice with inconsistent status when totals mismatch', async () => {
+        const providerRepository = new ProviderRepositoryStub(createProvider());
+        const invoiceRepository = new InvoiceRepositorySpy();
+        const fileStorage = new FileStorageStub();
+        const extractionAgent = new ExtractionAgentTotalsMismatchStub();
+        const auditLogger = new AuditLoggerSpy();
+        const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
+        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
+
+        const useCase = new UploadInvoiceDocumentUseCase({
+            providerRepository,
+            invoiceRepository,
+            fileStorage,
+            extractionAgent,
+            auditLogger,
+            dateProvider: new DateProviderStub(),
+            invoiceIdGenerator,
+            invoiceMovementIdGenerator,
+        });
+
+        const result = await useCase.execute({
+            actorUserId: 'user-1',
+            file: {
+                filename: 'invoice-1.pdf',
+                mimeType: 'application/pdf',
+                sizeBytes: 1234,
+                checksum: 'checksum-1',
+                content: Buffer.from('pdf-content'),
+            },
+        });
+
+        expect(result.success).toBe(true);
+        expect(invoiceRepository.createdInvoice).not.toBeNull();
+        const createdInvoice = invoiceRepository.createdInvoice as { status?: string };
+        expect(createdInvoice.status).toBe('INCONSISTENT');
     });
 });
