@@ -17,6 +17,7 @@
   "scripts": {
     "dev": "tsx main.ts",
     "dev:watch": "tsx watch main.ts",
+    "dev:genkit": "tsx watch genkit.ts",
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "db:apply": "tsx db/scripts/apply-sql.ts",
@@ -26,6 +27,7 @@
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^25.1.0",
+    "@types/pdf-parse": "^1.1.4",
     "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9.39.2",
     "tsx": "^4.21.0",
@@ -47,6 +49,8 @@
     "fastify": "^5.7.2",
     "genkit": "^1.28.0",
     "jsonwebtoken": "^9.0.3",
+    "ora": "^9.3.0",
+    "pdf-parse": "^2.4.5",
     "postgres": "^3.4.8"
   }
 }

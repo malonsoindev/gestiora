@@ -108,69 +108,87 @@ export class InvoicesController {
         }
 
         if (result.error instanceof PortError) {
+            request.log.error({
+                err: result.error.cause ?? result.error,
+                message: result.error.message,
+                port: result.error.port,
+            }, 'Port error during invoice upload');
             return reply.code(500).send({ error: 'INTERNAL_ERROR' });
         }
 
+        request.log.error({ err: result.error }, 'Unhandled invoice upload error');
         return reply.code(500).send({ error: 'INTERNAL_ERROR' });
     }
 
     async uploadInvoiceDocument(request: FastifyRequest, reply: FastifyReply) {
-        const actorUserId = request.auth?.userId;
-        if (!actorUserId) {
-            return reply.code(401).send({ error: 'UNAUTHORIZED' });
-        }
+        request.log.info('Upload invoice document invoked');
+        try {
+            const actorUserId = request.auth?.userId;
+            if (!actorUserId) {
+                return reply.code(401).send({ error: 'UNAUTHORIZED' });
+            }
 
-        const file = await request.file();
-        if (!file) {
-            return reply.code(400).send({ error: 'INVALID_FILE' });
-        }
+            const file = await request.file();
+            if (!file) {
+                return reply.code(400).send({ error: 'INVALID_FILE' });
+            }
 
-        const content = await file.toBuffer();
-        const checksum = createHash('sha256').update(content).digest('hex');
+            const content = await file.toBuffer();
+            const checksum = createHash('sha256').update(content).digest('hex');
 
-        const result = await this.uploadInvoiceDocumentUseCase.execute({
-            actorUserId,
-            file: {
-                filename: file.filename,
-                mimeType: file.mimetype,
-                sizeBytes: content.length,
-                checksum,
-                content,
-            },
-        });
-
-        if (result.success) {
-            return reply.code(201).send({ invoiceId: result.value.invoiceId });
-        }
-
-        if (result.error instanceof ProviderNotFoundWithExtractionError) {
-            return reply.code(404).send({
-                error: 'PROVIDER_NOT_FOUND',
-                extracted: result.error.extracted,
+            const result = await this.uploadInvoiceDocumentUseCase.execute({
+                actorUserId,
+                file: {
+                    filename: file.filename,
+                    mimeType: file.mimetype,
+                    sizeBytes: content.length,
+                    checksum,
+                    content,
+                },
             });
-        }
 
-        if (result.error instanceof ProviderNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
+            if (result.success) {
+                return reply.code(201).send({ invoiceId: result.value.invoiceId });
+            }
 
-        if (result.error instanceof InvalidProviderStatusError) {
-            return reply.code(400).send({ error: 'INVALID_PROVIDER_STATUS' });
-        }
+            if (result.error instanceof ProviderNotFoundWithExtractionError) {
+                return reply.code(404).send({
+                    error: 'PROVIDER_NOT_FOUND',
+                    extracted: result.error.extracted,
+                });
+            }
 
-        if (result.error instanceof InvalidInvoiceTotalsError) {
-            return reply.code(400).send({ error: 'INVALID_INVOICE_TOTALS' });
-        }
+            if (result.error instanceof ProviderNotFoundError) {
+                return reply.code(404).send({ error: 'NOT_FOUND' });
+            }
 
-        if (result.error instanceof InvalidCifError) {
-            return reply.code(400).send({ error: 'INVALID_CIF' });
-        }
+            if (result.error instanceof InvalidProviderStatusError) {
+                return reply.code(400).send({ error: 'INVALID_PROVIDER_STATUS' });
+            }
 
-        if (result.error instanceof PortError) {
+            if (result.error instanceof InvalidInvoiceTotalsError) {
+                return reply.code(400).send({ error: 'INVALID_INVOICE_TOTALS' });
+            }
+
+            if (result.error instanceof InvalidCifError) {
+                return reply.code(400).send({ error: 'INVALID_CIF' });
+            }
+
+            if (result.error instanceof PortError) {
+                request.log.error({
+                    err: result.error.cause ?? result.error,
+                    message: result.error.message,
+                    port: result.error.port,
+                }, 'Port error during invoice upload');
+                return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            }
+
+            request.log.error({ err: result.error }, 'Unhandled invoice upload error');
+            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        } catch (error) {
+            request.log.error({ err: error }, 'Upload invoice failed');
             return reply.code(500).send({ error: 'INTERNAL_ERROR' });
         }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
     }
 
     async attachInvoiceFile(

@@ -9,3 +9,4 @@ coverage/
 docs/sesiones/
 example/
 storage/
+.prettierrc

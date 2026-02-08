@@ -183,12 +183,12 @@ export class Invoice {
     private isMovementConsistent(movement: InvoiceMovement): boolean {
         const isBaseValid =
             movement.baseImponible === undefined ||
-            movement.baseImponible === movement.cantidad * movement.precio;
+            this.isAmountEqual(movement.baseImponible, movement.cantidad * movement.precio);
 
         const isTotalValid =
             movement.baseImponible === undefined ||
             movement.iva === undefined ||
-            movement.total === movement.baseImponible + movement.iva;
+            this.isAmountEqual(movement.total, movement.baseImponible + movement.iva);
 
         return isBaseValid && isTotalValid;
     }
@@ -205,7 +205,7 @@ export class Invoice {
         }
 
         const sum = this.movements.reduce((acc, m) => acc + (m[field] ?? 0), 0);
-        return sum === invoiceValue;
+        return this.isAmountEqual(sum, invoiceValue);
     }
 
     private isInvoiceTotalConsistent(): boolean {
@@ -214,6 +214,12 @@ export class Invoice {
         }
 
         const sum = this.movements.reduce((acc, m) => acc + m.total, 0);
-        return sum === this.total;
+        return this.isAmountEqual(sum, this.total);
+    }
+
+    private isAmountEqual(a: number, b: number): boolean {
+        const roundedA = Math.round(a * 100);
+        const roundedB = Math.round(b * 100);
+        return roundedA === roundedB;
     }
 }
