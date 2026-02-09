@@ -957,7 +957,7 @@ Principios:
 - La IA actúa como **asistente**, no como fuente de verdad.
 - El documento original sigue siendo la referencia principal.
 - Los datos extraídos deben ser **revisables y corregibles** por el usuario.
-- Los procesos de extracción se ejecutan de forma **asíncrona**.
+- La extracción se ejecuta de forma **sincrónica** al subir el PDF.
 
 Precondiciones:
 - Gestión documental operativa (Épica D).
@@ -973,19 +973,19 @@ Precondiciones:
 
 ### Criterios de aceptación (GWT)
 
-**Escenario 1: Extracción iniciada correctamente**
+**Escenario 1: Extracción bloqueante correctamente**
 - **Given** un usuario autenticado
 - **And** un documento PDF recién subido
 - **When** el sistema inicia el proceso de extracción automática
-- **Then** el documento queda disponible inmediatamente
-- **And** el proceso de extracción se ejecuta de forma asíncrona
-- **And** el estado de extracción se marca como *pendiente* o *en proceso*
+- **Then** el sistema espera a que termine la extracción
+- **And** la factura se crea con los datos mínimos extraídos
+- **And** el documento queda disponible tras la creación
 - **And** el evento queda registrado
 
-**Escenario 2: Extracción no bloqueante**
-- **Given** un documento con extracción en proceso
-- **When** el usuario accede al documento
-- **Then** el sistema permite su consulta y gestión manual
+**Escenario 2: Extracción requerida para crear factura**
+- **Given** un documento PDF válido
+- **When** el sistema no puede extraer los datos mínimos
+- **Then** el sistema rechaza la creación de la factura
 
 ---
 
