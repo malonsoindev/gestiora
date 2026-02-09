@@ -8,6 +8,7 @@ import type { GetInvoiceDetailUseCase } from '../../../../application/use-cases/
 import type { SoftDeleteInvoiceUseCase } from '../../../../application/use-cases/soft-delete-invoice.use-case.js';
 import type { GetInvoiceFileUseCase } from '../../../../application/use-cases/get-invoice-file.use-case.js';
 import type { UploadInvoiceDocumentUseCase } from '../../../../application/use-cases/upload-invoice-document.use-case.js';
+import type { ConfirmInvoiceMovementsUseCase } from '../../../../application/use-cases/confirm-invoice-movements.use-case.js';
 import { InvalidCifError } from '../../../../domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '../../../../domain/errors/invalid-provider-status.error.js';
 import { ProviderNotFoundError } from '../../../../domain/errors/provider-not-found.error.js';
@@ -61,6 +62,19 @@ export type InvoicesListQuery = {
     pageSize?: number;
 };
 
+export type ConfirmInvoiceMovementsBody = {
+    movements: Array<{
+        id: string;
+        action: 'CONFIRM' | 'CORRECT' | 'REJECT';
+        concepto?: string;
+        cantidad?: number;
+        precio?: number;
+        baseImponible?: number;
+        iva?: number;
+        total?: number;
+    }>;
+};
+
 export class InvoicesController {
     constructor(
         private readonly createManualInvoiceUseCase: CreateManualInvoiceUseCase,
@@ -71,6 +85,7 @@ export class InvoicesController {
         private readonly softDeleteInvoiceUseCase: SoftDeleteInvoiceUseCase,
         private readonly getInvoiceFileUseCase: GetInvoiceFileUseCase,
         private readonly uploadInvoiceDocumentUseCase: UploadInvoiceDocumentUseCase,
+        private readonly confirmInvoiceMovementsUseCase: ConfirmInvoiceMovementsUseCase,
     ) {}
 
     async createManualInvoice(request: FastifyRequest<{ Body: CreateManualInvoiceBody }>, reply: FastifyReply) {
@@ -364,6 +379,40 @@ export class InvoicesController {
             reply.header('Content-Length', result.value.sizeBytes);
             reply.header('Content-Disposition', `attachment; filename="${result.value.filename}"`);
             return reply.code(200).send(result.value.content);
+        }
+
+        if (result.error instanceof InvoiceNotFoundError) {
+            return reply.code(404).send({ error: 'NOT_FOUND' });
+        }
+
+        if (result.error instanceof InvalidInvoiceStatusError) {
+            return reply.code(400).send({ error: 'INVALID_INVOICE_STATUS' });
+        }
+
+        if (result.error instanceof PortError) {
+            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+    }
+
+    async confirmInvoiceMovements(
+        request: FastifyRequest<{ Params: { invoiceId: string }; Body: ConfirmInvoiceMovementsBody }>,
+        reply: FastifyReply,
+    ) {
+        const actorUserId = request.auth?.userId;
+        if (!actorUserId) {
+            return reply.code(401).send({ error: 'UNAUTHORIZED' });
+        }
+
+        const result = await this.confirmInvoiceMovementsUseCase.execute({
+            actorUserId,
+            invoiceId: request.params.invoiceId,
+            movements: request.body.movements,
+        });
+
+        if (result.success) {
+            return reply.code(200).send({ invoiceId: result.value.invoiceId });
         }
 
         if (result.error instanceof InvoiceNotFoundError) {

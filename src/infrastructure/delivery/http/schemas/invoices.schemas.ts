@@ -110,7 +110,7 @@ export const invoicesSchemas = {
                         type: 'array',
                         items: {
                             type: 'object',
-                            required: ['id', 'concepto', 'cantidad', 'precio', 'total'],
+                            required: ['id', 'concepto', 'cantidad', 'precio', 'total', 'source', 'status'],
                             properties: {
                                 id: { type: 'string' },
                                 concepto: { type: 'string' },
@@ -119,6 +119,8 @@ export const invoicesSchemas = {
                                 baseImponible: { type: 'number' },
                                 iva: { type: 'number' },
                                 total: { type: 'number' },
+                                source: { type: 'string', enum: ['MANUAL', 'AI'] },
+                                status: { type: 'string', enum: ['PROPOSED', 'CONFIRMED', 'REJECTED'] },
                             },
                         },
                     },
@@ -314,7 +316,7 @@ export const invoicesSchemas = {
                         type: 'array',
                         items: {
                             type: 'object',
-                            required: ['id', 'concepto', 'cantidad', 'precio', 'total'],
+                            required: ['id', 'concepto', 'cantidad', 'precio', 'total', 'source', 'status'],
                             properties: {
                                 id: { type: 'string' },
                                 concepto: { type: 'string' },
@@ -323,6 +325,8 @@ export const invoicesSchemas = {
                                 baseImponible: { type: 'number' },
                                 iva: { type: 'number' },
                                 total: { type: 'number' },
+                                source: { type: 'string', enum: ['MANUAL', 'AI'] },
+                                status: { type: 'string', enum: ['PROPOSED', 'CONFIRMED', 'REJECTED'] },
                             },
                         },
                     },
@@ -422,7 +426,7 @@ export const invoicesSchemas = {
                         type: 'array',
                         items: {
                             type: 'object',
-                            required: ['id', 'concepto', 'cantidad', 'precio', 'total'],
+                            required: ['id', 'concepto', 'cantidad', 'precio', 'total', 'source', 'status'],
                             properties: {
                                 id: { type: 'string' },
                                 concepto: { type: 'string' },
@@ -431,9 +435,77 @@ export const invoicesSchemas = {
                                 baseImponible: { type: 'number' },
                                 iva: { type: 'number' },
                                 total: { type: 'number' },
+                                source: { type: 'string', enum: ['MANUAL', 'AI'] },
+                                status: { type: 'string', enum: ['PROPOSED', 'CONFIRMED', 'REJECTED'] },
                             },
                         },
                     },
+                },
+            },
+            400: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            401: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
+    confirmMovements: {
+        security: [{ bearerAuth: [] }],
+        params: {
+            type: 'object',
+            required: ['invoiceId'],
+            properties: {
+                invoiceId: { type: 'string' },
+            },
+        },
+        body: {
+            type: 'object',
+            required: ['movements'],
+            additionalProperties: false,
+            properties: {
+                movements: {
+                    type: 'array',
+                    minItems: 1,
+                    items: {
+                        type: 'object',
+                        required: ['id', 'action'],
+                        additionalProperties: false,
+                        properties: {
+                            id: { type: 'string' },
+                            action: { type: 'string', enum: ['CONFIRM', 'CORRECT', 'REJECT'] },
+                            concepto: { type: 'string' },
+                            cantidad: { type: 'number' },
+                            precio: { type: 'number' },
+                            baseImponible: { type: 'number' },
+                            iva: { type: 'number' },
+                            total: { type: 'number' },
+                        },
+                    },
+                },
+            },
+        },
+        response: {
+            200: {
+                type: 'object',
+                required: ['invoiceId'],
+                properties: {
+                    invoiceId: { type: 'string' },
                 },
             },
             400: {

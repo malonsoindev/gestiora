@@ -10,7 +10,7 @@ import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
 import { InvalidProviderStatusError } from '../../domain/errors/invalid-provider-status.error.js';
 import { Invoice, InvoiceStatus } from '../../domain/entities/invoice.entity.js';
-import { InvoiceMovement } from '../../domain/entities/invoice-movement.entity.js';
+import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '../../domain/entities/invoice-movement.entity.js';
 import { ProviderStatus } from '../../domain/entities/provider.entity.js';
 import { Provider } from '../../domain/entities/provider.entity.js';
 import { InvoiceDate } from '../../domain/value-objects/invoice-date.value-object.js';
@@ -187,6 +187,8 @@ export class UploadInvoiceDocumentUseCase {
                 ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
                 ...(movement.iva === undefined ? {} : { iva: movement.iva }),
                 total: movement.total,
+                source: InvoiceMovementSource.Ai,
+                status: InvoiceMovementStatus.Proposed,
             }),
         );
 

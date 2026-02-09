@@ -1,3 +1,14 @@
+export enum InvoiceMovementSource {
+    Manual = 'MANUAL',
+    Ai = 'AI',
+}
+
+export enum InvoiceMovementStatus {
+    Proposed = 'PROPOSED',
+    Confirmed = 'CONFIRMED',
+    Rejected = 'REJECTED',
+}
+
 export type InvoiceMovementProps = {
     id: string;
     concepto: string;
@@ -6,13 +17,19 @@ export type InvoiceMovementProps = {
     baseImponible?: number;
     iva?: number;
     total: number;
+    source?: InvoiceMovementSource;
+    status?: InvoiceMovementStatus;
 };
 
 export class InvoiceMovement {
     private constructor(private readonly props: InvoiceMovementProps) {}
 
     static create(props: InvoiceMovementProps): InvoiceMovement {
-        return new InvoiceMovement({ ...props });
+        return new InvoiceMovement({
+            ...props,
+            source: props.source ?? InvoiceMovementSource.Manual,
+            status: props.status ?? InvoiceMovementStatus.Confirmed,
+        });
     }
 
     get id(): string {
@@ -41,5 +58,13 @@ export class InvoiceMovement {
 
     get total(): number {
         return this.props.total;
+    }
+
+    get source(): InvoiceMovementSource {
+        return this.props.source ?? InvoiceMovementSource.Manual;
+    }
+
+    get status(): InvoiceMovementStatus {
+        return this.props.status ?? InvoiceMovementStatus.Confirmed;
     }
 }

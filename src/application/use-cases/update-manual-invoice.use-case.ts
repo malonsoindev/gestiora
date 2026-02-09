@@ -136,6 +136,8 @@ export class UpdateManualInvoiceUseCase {
                 ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
                 ...(movement.iva === undefined ? {} : { iva: movement.iva }),
                 total: movement.total,
+                source: movement.source,
+                status: movement.status,
             })),
         };
     }

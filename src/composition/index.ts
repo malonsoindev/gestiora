@@ -48,6 +48,7 @@ import { InMemoryInvoiceRepository } from '../infrastructure/persistence/in-memo
 import { CreateManualInvoiceUseCase } from '../application/use-cases/create-manual-invoice.use-case.js';
 import { AttachInvoiceFileUseCase } from '../application/use-cases/attach-invoice-file.use-case.js';
 import { UpdateManualInvoiceUseCase } from '../application/use-cases/update-manual-invoice.use-case.js';
+import { ConfirmInvoiceMovementsUseCase } from '../application/use-cases/confirm-invoice-movements.use-case.js';
 import { ListInvoicesUseCase } from '../application/use-cases/list-invoices.use-case.js';
 import { GetInvoiceDetailUseCase } from '../application/use-cases/get-invoice-detail.use-case.js';
 import { SoftDeleteInvoiceUseCase } from '../application/use-cases/soft-delete-invoice.use-case.js';
@@ -266,6 +267,12 @@ const updateManualInvoiceUseCase = new UpdateManualInvoiceUseCase({
     dateProvider,
 });
 
+const confirmInvoiceMovementsUseCase = new ConfirmInvoiceMovementsUseCase({
+    invoiceRepository,
+    auditLogger,
+    dateProvider,
+});
+
 const listInvoicesUseCase = new ListInvoicesUseCase({
     invoiceRepository,
 });
@@ -392,6 +399,7 @@ export const compositionRoot = {
     createManualInvoiceUseCase,
     attachInvoiceFileUseCase,
     updateManualInvoiceUseCase,
+    confirmInvoiceMovementsUseCase,
     listInvoicesUseCase,
     getInvoiceDetailUseCase,
     softDeleteInvoiceUseCase,

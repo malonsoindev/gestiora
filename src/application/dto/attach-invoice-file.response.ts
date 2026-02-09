@@ -26,5 +26,7 @@ export type AttachInvoiceFileResponse = {
         baseImponible?: number;
         iva?: number;
         total: number;
+        source: 'MANUAL' | 'AI';
+        status: 'PROPOSED' | 'CONFIRMED' | 'REJECTED';
     }>;
 };

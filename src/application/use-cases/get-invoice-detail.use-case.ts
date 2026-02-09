@@ -35,6 +35,8 @@ export type GetInvoiceDetailResponse = {
         baseImponible?: number;
         iva?: number;
         total: number;
+        source: 'MANUAL' | 'AI';
+        status: 'PROPOSED' | 'CONFIRMED' | 'REJECTED';
     }>;
 };
 
@@ -85,6 +87,8 @@ export class GetInvoiceDetailUseCase {
                 ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
                 ...(movement.iva === undefined ? {} : { iva: movement.iva }),
                 total: movement.total,
+                source: movement.source,
+                status: movement.status,
             })),
         });
     }
