@@ -72,32 +72,8 @@ export class ConfirmInvoiceHeaderUseCase {
             headerStatus?: InvoiceHeaderStatus;
         } = {};
 
-        const fields = request.fields;
-        let hasCorrections = false;
-        if (fields.numeroFactura?.action === 'CORRECT' && fields.numeroFactura.value !== undefined) {
-            updates.numeroFactura = fields.numeroFactura.value;
-            hasCorrections = true;
-        }
-        if (fields.fechaOperacion?.action === 'CORRECT' && fields.fechaOperacion.value !== undefined) {
-            updates.fechaOperacion = InvoiceDate.create(fields.fechaOperacion.value);
-            hasCorrections = true;
-        }
-        if (fields.fechaVencimiento?.action === 'CORRECT' && fields.fechaVencimiento.value !== undefined) {
-            updates.fechaVencimiento = InvoiceDate.create(fields.fechaVencimiento.value);
-            hasCorrections = true;
-        }
-        if (fields.baseImponible?.action === 'CORRECT' && fields.baseImponible.value !== undefined) {
-            updates.baseImponible = Money.create(fields.baseImponible.value);
-            hasCorrections = true;
-        }
-        if (fields.iva?.action === 'CORRECT' && fields.iva.value !== undefined) {
-            updates.iva = Money.create(fields.iva.value);
-            hasCorrections = true;
-        }
-        if (fields.total?.action === 'CORRECT' && fields.total.value !== undefined) {
-            updates.total = Money.create(fields.total.value);
-            hasCorrections = true;
-        }
+        const { fieldUpdates, hasCorrections } = this.processFieldCorrections(request.fields);
+        Object.assign(updates, fieldUpdates);
 
         updates.headerSource = hasCorrections ? InvoiceHeaderSource.Manual : invoice.headerSource;
         updates.headerStatus = InvoiceHeaderStatus.Confirmed;
@@ -127,5 +103,38 @@ export class ConfirmInvoiceHeaderUseCase {
         }
 
         return ok({ invoiceId: updated.id });
+    }
+
+    private processFieldCorrections(fields: ConfirmInvoiceHeaderRequest['fields']): {
+        fieldUpdates: Partial<{
+            numeroFactura: string;
+            fechaOperacion: InvoiceDate;
+            fechaVencimiento: InvoiceDate;
+            baseImponible: Money;
+            iva: Money;
+            total: Money;
+        }>;
+        hasCorrections: boolean;
+    } {
+        const fieldUpdates: Record<string, unknown> = {};
+        let hasCorrections = false;
+
+        const fieldProcessors = [
+            { field: fields.numeroFactura, key: 'numeroFactura', transform: (v: string) => v },
+            { field: fields.fechaOperacion, key: 'fechaOperacion', transform: (v: string) => InvoiceDate.create(v) },
+            { field: fields.fechaVencimiento, key: 'fechaVencimiento', transform: (v: string) => InvoiceDate.create(v) },
+            { field: fields.baseImponible, key: 'baseImponible', transform: (v: number) => Money.create(v) },
+            { field: fields.iva, key: 'iva', transform: (v: number) => Money.create(v) },
+            { field: fields.total, key: 'total', transform: (v: number) => Money.create(v) },
+        ];
+
+        for (const { field, key, transform } of fieldProcessors) {
+            if (field?.action === 'CORRECT' && field.value !== undefined) {
+                fieldUpdates[key] = transform(field.value as never);
+                hasCorrections = true;
+            }
+        }
+
+        return { fieldUpdates, hasCorrections };
     }
 }
