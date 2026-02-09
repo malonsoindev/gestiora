@@ -31,6 +31,11 @@ export class GenkitInvoiceExtractionAgent implements InvoiceExtractionAgent {
             if (output.providerCif !== undefined) {
                 value.providerCif = output.providerCif;
             }
+            if (output.provider !== undefined) {
+                value.provider = output.provider;
+            }
+
+            console.log(JSON.stringify(value, null, 2));
 
             return ok(value);
         } catch (error) {

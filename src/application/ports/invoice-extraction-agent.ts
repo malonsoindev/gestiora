@@ -20,6 +20,14 @@ export type ExtractedInvoice = {
 
 export type InvoiceExtractionResult = {
     providerCif?: string;
+    provider?: {
+        razonSocial?: string;
+        cif?: string;
+        direccion?: string;
+        poblacion?: string;
+        provincia?: string;
+        pais?: string;
+    };
     invoice: ExtractedInvoice;
     missingFields: string[];
 };

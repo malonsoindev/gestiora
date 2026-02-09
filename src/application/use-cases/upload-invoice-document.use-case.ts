@@ -4,6 +4,7 @@ import type { FileStorage } from '../ports/file-storage.js';
 import type { InvoiceIdGenerator } from '../ports/invoice-id-generator.js';
 import type { InvoiceMovementIdGenerator } from '../ports/invoice-movement-id-generator.js';
 import type { ProviderRepository } from '../ports/provider.repository.js';
+import type { ProviderIdGenerator } from '../ports/provider-id-generator.js';
 import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
@@ -11,13 +12,12 @@ import { InvalidProviderStatusError } from '../../domain/errors/invalid-provider
 import { Invoice, InvoiceStatus } from '../../domain/entities/invoice.entity.js';
 import { InvoiceMovement } from '../../domain/entities/invoice-movement.entity.js';
 import { ProviderStatus } from '../../domain/entities/provider.entity.js';
-import type { Provider } from '../../domain/entities/provider.entity.js';
+import { Provider } from '../../domain/entities/provider.entity.js';
 import { InvoiceDate } from '../../domain/value-objects/invoice-date.value-object.js';
 import { Money } from '../../domain/value-objects/money.value-object.js';
 import { FileRef } from '../../domain/value-objects/file-ref.value-object.js';
 import { Cif } from '../../domain/value-objects/cif.value-object.js';
 import { InvalidCifError } from '../../domain/errors/invalid-cif.error.js';
-import { ProviderNotFoundWithExtractionError } from '../errors/provider-not-found-with-extraction.error.js';
 import { ok, fail, type Result } from '../../shared/result.js';
 
 export type UploadInvoiceDocumentRequest = {
@@ -36,7 +36,6 @@ export type UploadInvoiceDocumentResponse = {
 };
 
 export type UploadInvoiceDocumentError =
-    | ProviderNotFoundWithExtractionError
     | InvalidProviderStatusError
     | InvalidCifError
     | PortError;
@@ -50,6 +49,7 @@ export type UploadInvoiceDocumentDependencies = {
     dateProvider: DateProvider;
     invoiceIdGenerator: InvoiceIdGenerator;
     invoiceMovementIdGenerator: InvoiceMovementIdGenerator;
+    providerIdGenerator: ProviderIdGenerator;
 };
 
 export class UploadInvoiceDocumentUseCase {
@@ -70,7 +70,7 @@ export class UploadInvoiceDocumentUseCase {
         }
 
         const extracted = extractionResult.value;
-        const providerResult = await this.resolveProvider(extracted);
+        const providerResult = await this.resolveProvider(extracted, now);
         if (!providerResult.success) {
             return fail(providerResult.error);
         }
@@ -111,9 +111,10 @@ export class UploadInvoiceDocumentUseCase {
 
     private async resolveProvider(
         extracted: InvoiceExtractionResult,
+        now: Date,
     ): Promise<Result<Provider, UploadInvoiceDocumentError>> {
         if (!extracted.providerCif) {
-            return fail(new ProviderNotFoundWithExtractionError(extracted));
+            return fail(new InvalidCifError());
         }
 
         let normalizedCif: string;
@@ -132,7 +133,26 @@ export class UploadInvoiceDocumentUseCase {
         }
         const provider = providerResult.value;
         if (!provider) {
-            return fail(new ProviderNotFoundWithExtractionError(extracted));
+            const extractedProvider = extracted.provider;
+            const draftProvider = Provider.create({
+                id: this.dependencies.providerIdGenerator.generate(),
+                razonSocial: extractedProvider?.razonSocial ?? extracted.providerCif,
+                ...(extractedProvider?.direccion ? { direccion: extractedProvider.direccion } : {}),
+                ...(extractedProvider?.poblacion ? { poblacion: extractedProvider.poblacion } : {}),
+                ...(extractedProvider?.provincia ? { provincia: extractedProvider.provincia } : {}),
+                ...(extractedProvider?.pais ? { pais: extractedProvider.pais } : {}),
+                cif: Cif.create(extractedProvider?.cif ?? normalizedCif),
+                status: ProviderStatus.Draft,
+                createdAt: now,
+                updatedAt: now,
+            });
+
+            const createResult = await this.dependencies.providerRepository.create(draftProvider);
+            if (!createResult.success) {
+                return fail(createResult.error);
+            }
+
+            return ok(draftProvider);
         }
         if (provider.status !== ProviderStatus.Active) {
             return fail(new InvalidProviderStatusError());

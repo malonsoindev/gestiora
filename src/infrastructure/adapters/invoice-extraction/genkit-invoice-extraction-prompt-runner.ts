@@ -4,6 +4,14 @@ import { openAI } from '@genkit-ai/compat-oai/openai';
 
 export type InvoiceExtractionPromptOutput = {
     providerCif?: string;
+    provider?: {
+        razonSocial?: string;
+        cif?: string;
+        direccion?: string;
+        poblacion?: string;
+        provincia?: string;
+        pais?: string;
+    };
     invoice: {
         numeroFactura?: string;
         fechaOperacion?: string;
@@ -38,8 +46,18 @@ const invoiceMovementSchema = z.object({
     total: z.coerce.number().describe('Movement total.'),
 });
 
+const providerSchema = z.object({
+    razonSocial: z.string().describe('Provider legal name.').nullable().optional(),
+    cif: z.string().describe('Provider CIF or VAT number.').nullable().optional(),
+    direccion: z.string().describe('Provider address.').nullable().optional(),
+    poblacion: z.string().describe('Provider city.').nullable().optional(),
+    provincia: z.string().describe('Provider province.').nullable().optional(),
+    pais: z.string().describe('Provider country.').nullable().optional(),
+});
+
 const invoiceSchema = z.object({
     providerCif: z.string().describe('Provider CIF or VAT number.').nullable().optional(),
+    provider: providerSchema.describe('Provider data.').nullable().optional(),
     numeroFactura: z.string().describe('Invoice number.').nullable().optional(),
     fechaOperacion: z
         .string()
@@ -138,6 +156,31 @@ DOCUMENT CONTEXT:
         const result: InvoiceExtractionPromptOutput = { invoice };
         if (output.providerCif !== null && output.providerCif !== undefined) {
             result.providerCif = output.providerCif;
+        }
+        if (output.provider !== null && output.provider !== undefined) {
+            const provider: InvoiceExtractionPromptOutput['provider'] = {};
+            if (output.provider.razonSocial !== null && output.provider.razonSocial !== undefined) {
+                provider.razonSocial = output.provider.razonSocial;
+            }
+            if (output.provider.cif !== null && output.provider.cif !== undefined) {
+                provider.cif = output.provider.cif;
+            }
+            if (output.provider.direccion !== null && output.provider.direccion !== undefined) {
+                provider.direccion = output.provider.direccion;
+            }
+            if (output.provider.poblacion !== null && output.provider.poblacion !== undefined) {
+                provider.poblacion = output.provider.poblacion;
+            }
+            if (output.provider.provincia !== null && output.provider.provincia !== undefined) {
+                provider.provincia = output.provider.provincia;
+            }
+            if (output.provider.pais !== null && output.provider.pais !== undefined) {
+                provider.pais = output.provider.pais;
+            }
+
+            if (Object.keys(provider).length > 0) {
+                result.provider = provider;
+            }
         }
         if (output.missingFields !== null && output.missingFields !== undefined) {
             result.missingFields = output.missingFields;

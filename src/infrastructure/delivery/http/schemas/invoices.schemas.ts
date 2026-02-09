@@ -67,14 +67,6 @@ export const invoicesSchemas = {
                     error: { type: 'string' },
                 },
             },
-            404: {
-                type: 'object',
-                required: ['error', 'extracted'],
-                properties: {
-                    error: { type: 'string' },
-                    extracted: { type: 'object' },
-                },
-            },
         },
     },
     detail: {

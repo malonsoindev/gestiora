@@ -655,12 +655,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Provider not found with extracted data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ExtractionProviderNotFoundResponse'
     get:
       tags: [Documents]
       summary: List invoices

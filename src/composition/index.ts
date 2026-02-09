@@ -353,6 +353,7 @@ const uploadInvoiceDocumentUseCase = new UploadInvoiceDocumentUseCase({
     dateProvider,
     invoiceIdGenerator,
     invoiceMovementIdGenerator,
+    providerIdGenerator,
 });
 
 export const compositionRoot = {

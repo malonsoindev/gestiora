@@ -8,7 +8,6 @@ import type { GetInvoiceDetailUseCase } from '../../../../application/use-cases/
 import type { SoftDeleteInvoiceUseCase } from '../../../../application/use-cases/soft-delete-invoice.use-case.js';
 import type { GetInvoiceFileUseCase } from '../../../../application/use-cases/get-invoice-file.use-case.js';
 import type { UploadInvoiceDocumentUseCase } from '../../../../application/use-cases/upload-invoice-document.use-case.js';
-import { ProviderNotFoundWithExtractionError } from '../../../../application/errors/provider-not-found-with-extraction.error.js';
 import { InvalidCifError } from '../../../../domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '../../../../domain/errors/invalid-provider-status.error.js';
 import { ProviderNotFoundError } from '../../../../domain/errors/provider-not-found.error.js';
@@ -148,12 +147,6 @@ export class InvoicesController {
                 return reply.code(201).send({ invoiceId: result.value.invoiceId });
             }
 
-            if (result.error instanceof ProviderNotFoundWithExtractionError) {
-                return reply.code(404).send({
-                    error: 'PROVIDER_NOT_FOUND',
-                    extracted: result.error.extracted,
-                });
-            }
 
             if (result.error instanceof ProviderNotFoundError) {
                 return reply.code(404).send({ error: 'NOT_FOUND' });
