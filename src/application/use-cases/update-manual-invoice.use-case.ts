@@ -6,7 +6,7 @@ import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
 import type { InvoiceMovementIdGenerator } from '../ports/invoice-movement-id-generator.js';
 import type { Invoice } from '../../domain/entities/invoice.entity.js';
-import { InvoiceStatus } from '../../domain/entities/invoice.entity.js';
+import { InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '../../domain/entities/invoice.entity.js';
 import { InvoiceMovement } from '../../domain/entities/invoice-movement.entity.js';
 import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '../../domain/errors/invalid-invoice-status.error.js';
@@ -73,6 +73,8 @@ export class UpdateManualInvoiceUseCase {
                 : { baseImponible: Money.create(request.invoice.baseImponible) }),
             ...(request.invoice.iva === undefined ? {} : { iva: Money.create(request.invoice.iva) }),
             ...(request.invoice.total === undefined ? {} : { total: Money.create(request.invoice.total) }),
+            headerSource: InvoiceHeaderSource.Manual,
+            headerStatus: InvoiceHeaderStatus.Confirmed,
             movements,
             updatedAt: now,
         });
@@ -125,6 +127,8 @@ export class UpdateManualInvoiceUseCase {
             ...(invoice.baseImponible === undefined ? {} : { baseImponible: invoice.baseImponible }),
             ...(invoice.iva === undefined ? {} : { iva: invoice.iva }),
             ...(invoice.total === undefined ? {} : { total: invoice.total }),
+            headerSource: invoice.headerSource,
+            headerStatus: invoice.headerStatus,
             createdAt: invoice.createdAt.toISOString(),
             updatedAt: invoice.updatedAt.toISOString(),
             ...(invoice.deletedAt === undefined ? {} : { deletedAt: invoice.deletedAt.toISOString() }),

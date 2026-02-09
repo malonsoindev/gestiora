@@ -103,6 +103,8 @@ export const invoicesSchemas = {
                     baseImponible: { type: 'number' },
                     iva: { type: 'number' },
                     total: { type: 'number' },
+                    headerSource: { type: 'string', enum: ['MANUAL', 'AI'] },
+                    headerStatus: { type: 'string', enum: ['PROPOSED', 'CONFIRMED'] },
                     createdAt: { type: 'string', format: 'date-time' },
                     updatedAt: { type: 'string', format: 'date-time' },
                     deletedAt: { type: 'string', format: 'date-time', nullable: true },
@@ -309,6 +311,8 @@ export const invoicesSchemas = {
                     baseImponible: { type: 'number' },
                     iva: { type: 'number' },
                     total: { type: 'number' },
+                    headerSource: { type: 'string', enum: ['MANUAL', 'AI'] },
+                    headerStatus: { type: 'string', enum: ['PROPOSED', 'CONFIRMED'] },
                     createdAt: { type: 'string', format: 'date-time' },
                     updatedAt: { type: 'string', format: 'date-time' },
                     deletedAt: { type: 'string', format: 'date-time', nullable: true },
@@ -419,6 +423,8 @@ export const invoicesSchemas = {
                     baseImponible: { type: 'number' },
                     iva: { type: 'number' },
                     total: { type: 'number' },
+                    headerSource: { type: 'string', enum: ['MANUAL', 'AI'] },
+                    headerStatus: { type: 'string', enum: ['PROPOSED', 'CONFIRMED'] },
                     createdAt: { type: 'string', format: 'date-time' },
                     updatedAt: { type: 'string', format: 'date-time' },
                     deletedAt: { type: 'string', format: 'date-time', nullable: true },
@@ -495,6 +501,113 @@ export const invoicesSchemas = {
                             baseImponible: { type: 'number' },
                             iva: { type: 'number' },
                             total: { type: 'number' },
+                        },
+                    },
+                },
+            },
+        },
+        response: {
+            200: {
+                type: 'object',
+                required: ['invoiceId'],
+                properties: {
+                    invoiceId: { type: 'string' },
+                },
+            },
+            400: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            401: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
+    confirmHeader: {
+        security: [{ bearerAuth: [] }],
+        params: {
+            type: 'object',
+            required: ['invoiceId'],
+            properties: {
+                invoiceId: { type: 'string' },
+            },
+        },
+        body: {
+            type: 'object',
+            required: ['fields'],
+            additionalProperties: false,
+            properties: {
+                fields: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                        numeroFactura: {
+                            type: 'object',
+                            required: ['action'],
+                            additionalProperties: false,
+                            properties: {
+                                action: { type: 'string', enum: ['CONFIRM', 'CORRECT'] },
+                                value: { type: 'string' },
+                            },
+                        },
+                        fechaOperacion: {
+                            type: 'object',
+                            required: ['action'],
+                            additionalProperties: false,
+                            properties: {
+                                action: { type: 'string', enum: ['CONFIRM', 'CORRECT'] },
+                                value: { type: 'string' },
+                            },
+                        },
+                        fechaVencimiento: {
+                            type: 'object',
+                            required: ['action'],
+                            additionalProperties: false,
+                            properties: {
+                                action: { type: 'string', enum: ['CONFIRM', 'CORRECT'] },
+                                value: { type: 'string' },
+                            },
+                        },
+                        baseImponible: {
+                            type: 'object',
+                            required: ['action'],
+                            additionalProperties: false,
+                            properties: {
+                                action: { type: 'string', enum: ['CONFIRM', 'CORRECT'] },
+                                value: { type: 'number' },
+                            },
+                        },
+                        iva: {
+                            type: 'object',
+                            required: ['action'],
+                            additionalProperties: false,
+                            properties: {
+                                action: { type: 'string', enum: ['CONFIRM', 'CORRECT'] },
+                                value: { type: 'number' },
+                            },
+                        },
+                        total: {
+                            type: 'object',
+                            required: ['action'],
+                            additionalProperties: false,
+                            properties: {
+                                action: { type: 'string', enum: ['CONFIRM', 'CORRECT'] },
+                                value: { type: 'number' },
+                            },
                         },
                     },
                 },

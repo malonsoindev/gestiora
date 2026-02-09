@@ -24,6 +24,8 @@ export type GetInvoiceDetailResponse = {
     baseImponible?: number;
     iva?: number;
     total?: number;
+    headerSource: 'MANUAL' | 'AI';
+    headerStatus: 'PROPOSED' | 'CONFIRMED';
     createdAt: string;
     updatedAt: string;
     deletedAt?: string;
@@ -76,6 +78,8 @@ export class GetInvoiceDetailUseCase {
             ...(invoice.baseImponible === undefined ? {} : { baseImponible: invoice.baseImponible }),
             ...(invoice.iva === undefined ? {} : { iva: invoice.iva }),
             ...(invoice.total === undefined ? {} : { total: invoice.total }),
+            headerSource: invoice.headerSource,
+            headerStatus: invoice.headerStatus,
             createdAt: invoice.createdAt.toISOString(),
             updatedAt: invoice.updatedAt.toISOString(),
             ...(invoice.deletedAt === undefined ? {} : { deletedAt: invoice.deletedAt.toISOString() }),

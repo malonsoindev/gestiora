@@ -9,7 +9,7 @@ import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
 import { InvalidProviderStatusError } from '../../domain/errors/invalid-provider-status.error.js';
-import { Invoice, InvoiceStatus } from '../../domain/entities/invoice.entity.js';
+import { Invoice, InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '../../domain/entities/invoice.entity.js';
 import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '../../domain/entities/invoice-movement.entity.js';
 import { ProviderStatus } from '../../domain/entities/provider.entity.js';
 import { Provider } from '../../domain/entities/provider.entity.js';
@@ -196,6 +196,8 @@ export class UploadInvoiceDocumentUseCase {
             id: this.dependencies.invoiceIdGenerator.generate(),
             providerId,
             status,
+            headerSource: InvoiceHeaderSource.Ai,
+            headerStatus: InvoiceHeaderStatus.Proposed,
             ...(extracted.invoice.numeroFactura ? { numeroFactura: extracted.invoice.numeroFactura } : {}),
             ...(extracted.invoice.fechaOperacion ? { fechaOperacion: InvoiceDate.create(extracted.invoice.fechaOperacion) } : {}),
             ...(extracted.invoice.fechaVencimiento

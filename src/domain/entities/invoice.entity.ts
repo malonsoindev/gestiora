@@ -10,10 +10,22 @@ export enum InvoiceStatus {
     Deleted = 'DELETED',
 }
 
+export enum InvoiceHeaderSource {
+    Manual = 'MANUAL',
+    Ai = 'AI',
+}
+
+export enum InvoiceHeaderStatus {
+    Proposed = 'PROPOSED',
+    Confirmed = 'CONFIRMED',
+}
+
 export type InvoiceProps = {
     id: string;
     providerId: string;
     status: InvoiceStatus;
+    headerSource?: InvoiceHeaderSource;
+    headerStatus?: InvoiceHeaderStatus;
     numeroFactura?: string;
     fechaOperacion?: InvoiceDate;
     fechaVencimiento?: InvoiceDate;
@@ -44,6 +56,14 @@ export class Invoice {
 
     get status(): InvoiceStatus {
         return this.props.status;
+    }
+
+    get headerSource(): InvoiceHeaderSource {
+        return this.props.headerSource ?? InvoiceHeaderSource.Manual;
+    }
+
+    get headerStatus(): InvoiceHeaderStatus {
+        return this.props.headerStatus ?? InvoiceHeaderStatus.Confirmed;
     }
 
     get numeroFactura(): string | undefined {
@@ -106,6 +126,8 @@ export class Invoice {
         baseImponible?: Money;
         iva?: Money;
         total?: Money;
+        headerSource?: InvoiceHeaderSource;
+        headerStatus?: InvoiceHeaderStatus;
         movements?: InvoiceMovement[];
         updatedAt: Date;
     }): Invoice {
@@ -117,6 +139,16 @@ export class Invoice {
             createdAt: this.props.createdAt,
             updatedAt: update.updatedAt,
         };
+
+        const headerSource = update.headerSource ?? this.props.headerSource;
+        if (headerSource !== undefined) {
+            next.headerSource = headerSource;
+        }
+
+        const headerStatus = update.headerStatus ?? this.props.headerStatus;
+        if (headerStatus !== undefined) {
+            next.headerStatus = headerStatus;
+        }
 
         const numeroFactura = update.numeroFactura ?? this.props.numeroFactura;
         if (numeroFactura !== undefined) {

@@ -1069,6 +1069,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /documents/{invoiceId}/header/confirm:
+    put:
+      tags: [Documents]
+      summary: Confirm or correct invoice header
+      description: For action CONFIRM, only action is required. For CORRECT, include the corrected value.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: invoiceId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmInvoiceHeaderRequest'
+      responses:
+        '200':
+          description: Header updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceCreateResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /search:
     post:
       tags: [Search]
@@ -1652,6 +1697,70 @@ components:
               total:
                 type: number
 
+    ConfirmInvoiceHeaderRequest:
+      type: object
+      required: [fields]
+      properties:
+        fields:
+          type: object
+          properties:
+            numeroFactura:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [CONFIRM, CORRECT]
+                value:
+                  type: string
+            fechaOperacion:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [CONFIRM, CORRECT]
+                value:
+                  type: string
+                  format: date
+            fechaVencimiento:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [CONFIRM, CORRECT]
+                value:
+                  type: string
+                  format: date
+            baseImponible:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [CONFIRM, CORRECT]
+                value:
+                  type: number
+            iva:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [CONFIRM, CORRECT]
+                value:
+                  type: number
+            total:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [CONFIRM, CORRECT]
+                value:
+                  type: number
+
     InvoiceDetail:
       type: object
       required: [invoiceId, providerId, status, createdAt, updatedAt]
@@ -1679,6 +1788,12 @@ components:
           type: number
         total:
           type: number
+        headerSource:
+          type: string
+          enum: [MANUAL, AI]
+        headerStatus:
+          type: string
+          enum: [PROPOSED, CONFIRMED]
         createdAt:
           type: string
           format: date-time

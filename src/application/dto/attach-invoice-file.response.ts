@@ -15,6 +15,8 @@ export type AttachInvoiceFileResponse = {
     baseImponible?: number;
     iva?: number;
     total?: number;
+    headerSource: 'MANUAL' | 'AI';
+    headerStatus: 'PROPOSED' | 'CONFIRMED';
     createdAt: string;
     updatedAt: string;
     deletedAt?: string;
