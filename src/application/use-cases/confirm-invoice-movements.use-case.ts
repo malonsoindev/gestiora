@@ -62,64 +62,9 @@ export class ConfirmInvoiceMovementsUseCase {
         }
 
         const movementUpdates = new Map(request.movements.map((movement) => [movement.id, movement]));
-        const updatedMovements = invoice.movements.map((movement) => {
-            const update = movementUpdates.get(movement.id);
-            if (!update) {
-                return movement;
-            }
-
-            if (update.action === 'CONFIRM') {
-                return InvoiceMovement.create({
-                    id: movement.id,
-                    concepto: movement.concepto,
-                    cantidad: movement.cantidad,
-                    precio: movement.precio,
-                    ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
-                    ...(movement.iva === undefined ? {} : { iva: movement.iva }),
-                    total: movement.total,
-                    source: movement.source,
-                    status: InvoiceMovementStatus.Confirmed,
-                });
-            }
-
-            if (update.action === 'REJECT') {
-                return InvoiceMovement.create({
-                    id: movement.id,
-                    concepto: movement.concepto,
-                    cantidad: movement.cantidad,
-                    precio: movement.precio,
-                    ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
-                    ...(movement.iva === undefined ? {} : { iva: movement.iva }),
-                    total: movement.total,
-                    source: movement.source,
-                    status: InvoiceMovementStatus.Rejected,
-                });
-            }
-
-            if (update.action === 'CORRECT') {
-                return InvoiceMovement.create({
-                    id: movement.id,
-                    concepto: update.concepto ?? movement.concepto,
-                    cantidad: update.cantidad ?? movement.cantidad,
-                    precio: update.precio ?? movement.precio,
-                    ...(update.baseImponible === undefined
-                        ? movement.baseImponible === undefined
-                            ? {}
-                            : { baseImponible: movement.baseImponible }
-                        : { baseImponible: update.baseImponible }),
-                    ...(update.iva === undefined
-                        ? movement.iva === undefined
-                            ? {}
-                            : { iva: movement.iva }
-                        : { iva: update.iva }),
-                    total: update.total ?? movement.total,
-                    source: InvoiceMovementSource.Manual,
-                    status: InvoiceMovementStatus.Confirmed,
-                });
-            }
-
-            return movement;
-        });
+        const updatedMovements = invoice.movements.map((movement) =>
+            this.processMovementUpdate(movement, movementUpdates.get(movement.id)),
+        );
 
         const updated = invoice.updateDetails({
             movements: updatedMovements,
@@ -151,5 +96,48 @@ export class ConfirmInvoiceMovementsUseCase {
         }
 
         return ok({ invoiceId: updated.id });
+    }
+
+    private processMovementUpdate(
+        movement: InvoiceMovement,
+        update: ConfirmInvoiceMovementsRequest['movements'][number] | undefined,
+    ): InvoiceMovement {
+        if (!update) {
+            return movement;
+        }
+
+        const statusMap: Record<'CONFIRM' | 'REJECT' | 'CORRECT', InvoiceMovementStatus> = {
+            CONFIRM: InvoiceMovementStatus.Confirmed,
+            REJECT: InvoiceMovementStatus.Rejected,
+            CORRECT: InvoiceMovementStatus.Confirmed,
+        };
+
+        const isCorrection = update.action === 'CORRECT';
+
+        return InvoiceMovement.create({
+            id: movement.id,
+            concepto: isCorrection ? (update.concepto ?? movement.concepto) : movement.concepto,
+            cantidad: isCorrection ? (update.cantidad ?? movement.cantidad) : movement.cantidad,
+            precio: isCorrection ? (update.precio ?? movement.precio) : movement.precio,
+            ...this.resolveOptionalField('baseImponible', movement.baseImponible, isCorrection ? update.baseImponible : undefined),
+            ...this.resolveOptionalField('iva', movement.iva, isCorrection ? update.iva : undefined),
+            total: isCorrection ? (update.total ?? movement.total) : movement.total,
+            source: isCorrection ? InvoiceMovementSource.Manual : movement.source,
+            status: statusMap[update.action],
+        });
+    }
+
+    private resolveOptionalField<K extends string, V>(
+        key: K,
+        currentValue: V | undefined,
+        updateValue: V | undefined,
+    ): Record<K, V> | Record<string, never> {
+        if (updateValue !== undefined) {
+            return { [key]: updateValue } as Record<K, V>;
+        }
+        if (currentValue !== undefined) {
+            return { [key]: currentValue } as Record<K, V>;
+        }
+        return {} as Record<string, never>;
     }
 }
