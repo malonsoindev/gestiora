@@ -1122,6 +1122,8 @@ Precondiciones:
 
 ### Criterios de aceptación (GWT)
 
+**Nota v1:** esta historia queda **denegada para esta version**. No se implementa trazabilidad ni evidencias.
+
 **Escenario 1: Origen de datos**
 - **Given** un documento con datos extraídos
 - **When** el usuario consulta los datos
