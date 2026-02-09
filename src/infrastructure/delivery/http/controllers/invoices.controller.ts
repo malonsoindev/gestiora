@@ -10,6 +10,7 @@ import type { GetInvoiceFileUseCase } from '../../../../application/use-cases/ge
 import type { UploadInvoiceDocumentUseCase } from '../../../../application/use-cases/upload-invoice-document.use-case.js';
 import type { ConfirmInvoiceMovementsUseCase } from '../../../../application/use-cases/confirm-invoice-movements.use-case.js';
 import type { ConfirmInvoiceHeaderUseCase } from '../../../../application/use-cases/confirm-invoice-header.use-case.js';
+import type { ReprocessInvoiceExtractionUseCase } from '../../../../application/use-cases/reprocess-invoice-extraction.use-case.js';
 import { InvalidCifError } from '../../../../domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '../../../../domain/errors/invalid-provider-status.error.js';
 import { ProviderNotFoundError } from '../../../../domain/errors/provider-not-found.error.js';
@@ -99,6 +100,7 @@ export class InvoicesController {
         private readonly uploadInvoiceDocumentUseCase: UploadInvoiceDocumentUseCase,
         private readonly confirmInvoiceMovementsUseCase: ConfirmInvoiceMovementsUseCase,
         private readonly confirmInvoiceHeaderUseCase: ConfirmInvoiceHeaderUseCase,
+        private readonly reprocessInvoiceExtractionUseCase: ReprocessInvoiceExtractionUseCase,
     ) {}
 
     async createManualInvoice(request: FastifyRequest<{ Body: CreateManualInvoiceBody }>, reply: FastifyReply) {
@@ -456,6 +458,39 @@ export class InvoicesController {
             actorUserId,
             invoiceId: request.params.invoiceId,
             fields: request.body.fields,
+        });
+
+        if (result.success) {
+            return reply.code(200).send({ invoiceId: result.value.invoiceId });
+        }
+
+        if (result.error instanceof InvoiceNotFoundError) {
+            return reply.code(404).send({ error: 'NOT_FOUND' });
+        }
+
+        if (result.error instanceof InvalidInvoiceStatusError) {
+            return reply.code(400).send({ error: 'INVALID_INVOICE_STATUS' });
+        }
+
+        if (result.error instanceof PortError) {
+            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+    }
+
+    async reprocessInvoiceExtraction(
+        request: FastifyRequest<{ Params: { invoiceId: string } }>,
+        reply: FastifyReply,
+    ) {
+        const actorUserId = request.auth?.userId;
+        if (!actorUserId) {
+            return reply.code(401).send({ error: 'UNAUTHORIZED' });
+        }
+
+        const result = await this.reprocessInvoiceExtractionUseCase.execute({
+            actorUserId,
+            invoiceId: request.params.invoiceId,
         });
 
         if (result.success) {

@@ -644,4 +644,44 @@ export const invoicesSchemas = {
             },
         },
     },
+    reprocess: {
+        security: [{ bearerAuth: [] }],
+        params: {
+            type: 'object',
+            required: ['invoiceId'],
+            properties: {
+                invoiceId: { type: 'string' },
+            },
+        },
+        response: {
+            200: {
+                type: 'object',
+                required: ['invoiceId'],
+                properties: {
+                    invoiceId: { type: 'string' },
+                },
+            },
+            400: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            401: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
 };

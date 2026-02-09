@@ -1114,6 +1114,44 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /documents/{invoiceId}/reprocess:
+    post:
+      tags: [Documents]
+      summary: Reprocess invoice extraction
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: invoiceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Reprocess started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceCreateResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /search:
     post:
       tags: [Search]

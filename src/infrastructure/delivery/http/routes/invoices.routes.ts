@@ -61,6 +61,15 @@ export const registerInvoicesRoutes = async (
         async (request, reply) => controller.confirmInvoiceHeader(request, reply),
     );
 
+    app.post<{ Params: { invoiceId: string } }>(
+        '/documents/:invoiceId/reprocess',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: invoicesSchemas.reprocess,
+        },
+        async (request, reply) => controller.reprocessInvoiceExtraction(request, reply),
+    );
+
     app.get<{ Querystring: InvoicesListQuery }>(
         '/documents',
         {

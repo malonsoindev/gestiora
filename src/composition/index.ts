@@ -50,6 +50,7 @@ import { AttachInvoiceFileUseCase } from '../application/use-cases/attach-invoic
 import { UpdateManualInvoiceUseCase } from '../application/use-cases/update-manual-invoice.use-case.js';
 import { ConfirmInvoiceMovementsUseCase } from '../application/use-cases/confirm-invoice-movements.use-case.js';
 import { ConfirmInvoiceHeaderUseCase } from '../application/use-cases/confirm-invoice-header.use-case.js';
+import { ReprocessInvoiceExtractionUseCase } from '../application/use-cases/reprocess-invoice-extraction.use-case.js';
 import { ListInvoicesUseCase } from '../application/use-cases/list-invoices.use-case.js';
 import { GetInvoiceDetailUseCase } from '../application/use-cases/get-invoice-detail.use-case.js';
 import { SoftDeleteInvoiceUseCase } from '../application/use-cases/soft-delete-invoice.use-case.js';
@@ -280,6 +281,7 @@ const confirmInvoiceHeaderUseCase = new ConfirmInvoiceHeaderUseCase({
     dateProvider,
 });
 
+
 const listInvoicesUseCase = new ListInvoicesUseCase({
     invoiceRepository,
 });
@@ -358,6 +360,15 @@ const extractionAgent = config.AI_AGENT_TYPE === 'stub-error'
         })
         : new StubInvoiceExtractionAgent();
 
+const reprocessInvoiceExtractionUseCase = new ReprocessInvoiceExtractionUseCase({
+    invoiceRepository,
+    fileStorage,
+    extractionAgent,
+    auditLogger,
+    dateProvider,
+    invoiceMovementIdGenerator,
+});
+
 const uploadInvoiceDocumentUseCase = new UploadInvoiceDocumentUseCase({
     providerRepository,
     invoiceRepository,
@@ -408,6 +419,7 @@ export const compositionRoot = {
     updateManualInvoiceUseCase,
     confirmInvoiceMovementsUseCase,
     confirmInvoiceHeaderUseCase,
+    reprocessInvoiceExtractionUseCase,
     listInvoicesUseCase,
     getInvoiceDetailUseCase,
     softDeleteInvoiceUseCase,
