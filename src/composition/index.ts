@@ -58,6 +58,7 @@ import { GetInvoiceFileUseCase } from '../application/use-cases/get-invoice-file
 import { UploadInvoiceDocumentUseCase } from '../application/use-cases/upload-invoice-document.use-case.js';
 import { StubInvoiceExtractionAgent } from '../infrastructure/adapters/invoice-extraction/stub-invoice-extraction-agent.js';
 import { StubErrorInvoiceExtractionAgent } from '../infrastructure/adapters/invoice-extraction/stub-error-invoice-extraction-agent.js';
+import type { InvoiceExtractionAgent } from '../application/ports/invoice-extraction-agent.js';
 import { createRequire } from 'node:module';
 import { GenkitInvoiceExtractionAgent } from '../infrastructure/adapters/invoice-extraction/genkit-invoice-extraction-agent.js';
 import { createGenkitInvoicePromptRunner } from '../infrastructure/adapters/invoice-extraction/genkit-invoice-extraction-prompt-runner.js';
@@ -351,14 +352,20 @@ const genkitTextExtractor = async (content: Buffer) => {
     return result.value;
 };
 
-const extractionAgent = config.AI_AGENT_TYPE === 'stub-error'
-    ? new StubErrorInvoiceExtractionAgent()
-    : config.AI_AGENT_TYPE === 'genkit'
-        ? new GenkitInvoiceExtractionAgent({
+const createExtractionAgent = (): InvoiceExtractionAgent => {
+    if (config.AI_AGENT_TYPE === 'stub-error') {
+        return new StubErrorInvoiceExtractionAgent();
+    }
+    if (config.AI_AGENT_TYPE === 'genkit') {
+        return new GenkitInvoiceExtractionAgent({
             promptRunner: genkitPromptRunner,
             textExtractor: genkitTextExtractor,
-        })
-        : new StubInvoiceExtractionAgent();
+        });
+    }
+    return new StubInvoiceExtractionAgent();
+};
+
+const extractionAgent = createExtractionAgent();
 
 const reprocessInvoiceExtractionUseCase = new ReprocessInvoiceExtractionUseCase({
     invoiceRepository,
