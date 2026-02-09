@@ -1096,6 +1096,8 @@ Precondiciones:
 
 ### Criterios de aceptación (GWT)
 
+**Nota v1:** esta historia queda **denegada para esta version**. La extracción es sincrónica y el reproceso cubre los casos de fallo.
+
 **Escenario 1: Estados definidos**
 - **Given** un documento con extracción
 - **Then** el sistema gestiona estados como:
