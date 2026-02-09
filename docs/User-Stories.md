@@ -997,6 +997,8 @@ Precondiciones:
 
 ### Criterios de aceptación (GWT)
 
+**Nota v1:** esta historia queda **denegada para esta version** en cuanto a metadatos por campo (origen/estado/confianza). En v1 solo se requiere extraer y guardar los datos mínimos.
+
 **Escenario 1: Extracción de campos mínimos**
 - **Given** un documento válido
 - **When** el sistema procesa la extracción
