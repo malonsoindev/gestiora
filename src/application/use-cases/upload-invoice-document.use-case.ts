@@ -8,6 +8,8 @@ import type { ProviderIdGenerator } from '../ports/provider-id-generator.js';
 import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
+import type { UploadInvoiceDocumentRequest } from '../dto/upload-invoice-document.request.js';
+import type { UploadInvoiceDocumentResponse } from '../dto/upload-invoice-document.response.js';
 import { InvalidProviderStatusError } from '../../domain/errors/invalid-provider-status.error.js';
 import { Invoice, InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '../../domain/entities/invoice.entity.js';
 import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '../../domain/entities/invoice-movement.entity.js';
@@ -19,20 +21,6 @@ import { Cif } from '../../domain/value-objects/cif.value-object.js';
 import { InvalidCifError } from '../../domain/errors/invalid-cif.error.js';
 import { ok, fail, type Result } from '../../shared/result.js';
 
-export type UploadInvoiceDocumentRequest = {
-    actorUserId: string;
-    file: {
-        filename: string;
-        mimeType: string;
-        sizeBytes: number;
-        checksum: string;
-        content: Buffer;
-    };
-};
-
-export type UploadInvoiceDocumentResponse = {
-    invoiceId: string;
-};
 
 export type UploadInvoiceDocumentError =
     | InvalidProviderStatusError
