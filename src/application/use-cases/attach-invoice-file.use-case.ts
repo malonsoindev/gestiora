@@ -3,6 +3,7 @@ import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
+import type { AttachInvoiceFileRequest } from '../dto/attach-invoice-file.request.js';
 import type { AttachInvoiceFileResponse } from '../dto/attach-invoice-file.response.js';
 import type { Invoice } from '../../domain/entities/invoice.entity.js';
 import { InvoiceStatus } from '../../domain/entities/invoice.entity.js';
@@ -10,18 +11,6 @@ import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.erro
 import { InvalidInvoiceStatusError } from '../../domain/errors/invalid-invoice-status.error.js';
 import { FileRef } from '../../domain/value-objects/file-ref.value-object.js';
 import { ok, fail, type Result } from '../../shared/result.js';
-
-export type AttachInvoiceFileRequest = {
-    actorUserId: string;
-    invoiceId: string;
-    file: {
-        filename: string;
-        mimeType: string;
-        sizeBytes: number;
-        checksum: string;
-        content: Buffer;
-    };
-};
 
 export type AttachInvoiceFileDependencies = {
     invoiceRepository: InvoiceRepository;
