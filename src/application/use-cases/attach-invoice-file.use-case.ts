@@ -126,6 +126,8 @@ export class AttachInvoiceFileUseCase {
             ...(updated.baseImponible === undefined ? {} : { baseImponible: updated.baseImponible }),
             ...(updated.iva === undefined ? {} : { iva: updated.iva }),
             ...(updated.total === undefined ? {} : { total: updated.total }),
+            headerSource: updated.headerSource,
+            headerStatus: updated.headerStatus,
             createdAt: updated.createdAt.toISOString(),
             updatedAt: updated.updatedAt.toISOString(),
             ...(updated.deletedAt === undefined ? {} : { deletedAt: updated.deletedAt.toISOString() }),
@@ -137,6 +139,8 @@ export class AttachInvoiceFileUseCase {
                 ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
                 ...(movement.iva === undefined ? {} : { iva: movement.iva }),
                 total: movement.total,
+                source: movement.source,
+                status: movement.status,
             })),
         };
     }

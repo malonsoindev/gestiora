@@ -6,13 +6,26 @@ import type { Money } from '../value-objects/money.value-object.js';
 export enum InvoiceStatus {
     Draft = 'DRAFT',
     Active = 'ACTIVE',
+    Inconsistent = 'INCONSISTENT',
     Deleted = 'DELETED',
+}
+
+export enum InvoiceHeaderSource {
+    Manual = 'MANUAL',
+    Ai = 'AI',
+}
+
+export enum InvoiceHeaderStatus {
+    Proposed = 'PROPOSED',
+    Confirmed = 'CONFIRMED',
 }
 
 export type InvoiceProps = {
     id: string;
     providerId: string;
     status: InvoiceStatus;
+    headerSource?: InvoiceHeaderSource;
+    headerStatus?: InvoiceHeaderStatus;
     numeroFactura?: string;
     fechaOperacion?: InvoiceDate;
     fechaVencimiento?: InvoiceDate;
@@ -43,6 +56,14 @@ export class Invoice {
 
     get status(): InvoiceStatus {
         return this.props.status;
+    }
+
+    get headerSource(): InvoiceHeaderSource {
+        return this.props.headerSource ?? InvoiceHeaderSource.Manual;
+    }
+
+    get headerStatus(): InvoiceHeaderStatus {
+        return this.props.headerStatus ?? InvoiceHeaderStatus.Confirmed;
     }
 
     get numeroFactura(): string | undefined {
@@ -105,6 +126,8 @@ export class Invoice {
         baseImponible?: Money;
         iva?: Money;
         total?: Money;
+        headerSource?: InvoiceHeaderSource;
+        headerStatus?: InvoiceHeaderStatus;
         movements?: InvoiceMovement[];
         updatedAt: Date;
     }): Invoice {
@@ -116,6 +139,16 @@ export class Invoice {
             createdAt: this.props.createdAt,
             updatedAt: update.updatedAt,
         };
+
+        const headerSource = update.headerSource ?? this.props.headerSource;
+        if (headerSource !== undefined) {
+            next.headerSource = headerSource;
+        }
+
+        const headerStatus = update.headerStatus ?? this.props.headerStatus;
+        if (headerStatus !== undefined) {
+            next.headerStatus = headerStatus;
+        }
 
         const numeroFactura = update.numeroFactura ?? this.props.numeroFactura;
         if (numeroFactura !== undefined) {
@@ -183,12 +216,12 @@ export class Invoice {
     private isMovementConsistent(movement: InvoiceMovement): boolean {
         const isBaseValid =
             movement.baseImponible === undefined ||
-            movement.baseImponible === movement.cantidad * movement.precio;
+            this.isAmountEqual(movement.baseImponible, movement.cantidad * movement.precio);
 
         const isTotalValid =
             movement.baseImponible === undefined ||
             movement.iva === undefined ||
-            movement.total === movement.baseImponible + movement.iva;
+            this.isAmountEqual(movement.total, movement.baseImponible + movement.iva);
 
         return isBaseValid && isTotalValid;
     }
@@ -205,7 +238,7 @@ export class Invoice {
         }
 
         const sum = this.movements.reduce((acc, m) => acc + (m[field] ?? 0), 0);
-        return sum === invoiceValue;
+        return this.isAmountEqual(sum, invoiceValue);
     }
 
     private isInvoiceTotalConsistent(): boolean {
@@ -214,6 +247,12 @@ export class Invoice {
         }
 
         const sum = this.movements.reduce((acc, m) => acc + m.total, 0);
-        return sum === this.total;
+        return this.isAmountEqual(sum, this.total);
+    }
+
+    private isAmountEqual(a: number, b: number): boolean {
+        const roundedA = Math.round(a * 100);
+        const roundedB = Math.round(b * 100);
+        return roundedA === roundedB;
     }
 }

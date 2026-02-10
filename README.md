@@ -20,6 +20,8 @@ Database schema
 
 Variables de entorno
 - PORT (por defecto 3000)
+- AI_AGENT_TYPE (stub | stub-error | genkit)
+- OAI_MODEL_NAME (solo genkit, por defecto gpt-4o-mini)
 
 Credenciales de prueba (seed)
 - admin@example.com / AdminPass1!a
@@ -29,6 +31,7 @@ Endpoints (v1)
 - POST /auth/login (publico)
 - POST /auth/refresh (protegido)
 - POST /auth/logout (protegido)
+- POST /documents (protegido, subida de PDF)
 
 Ejemplos con curl
 
@@ -48,6 +51,11 @@ curl -X POST http://localhost:3000/auth/logout \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <ACCESS_TOKEN>" \
   -d "{\"refreshToken\":\"<REFRESH_TOKEN>\"}"
+
+Subir factura PDF (requiere Bearer)
+curl -X POST http://localhost:3000/documents \
+  -H "Authorization: Bearer <ACCESS_TOKEN>" \
+  -F "file=@/ruta/a/factura.pdf"
 
 Notas de arquitectura
 - Domain no depende de infra.

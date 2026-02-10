@@ -5,7 +5,7 @@ export const invoicesSchemas = {
             type: 'object',
             additionalProperties: false,
             properties: {
-                status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'DELETED'] },
+                status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'INCONSISTENT', 'DELETED'] },
                 providerId: { type: 'string' },
                 page: { type: 'integer', minimum: 1 },
                 pageSize: { type: 'integer', minimum: 1 },
@@ -24,7 +24,7 @@ export const invoicesSchemas = {
                             properties: {
                                 invoiceId: { type: 'string' },
                                 providerId: { type: 'string' },
-                                status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'DELETED'] },
+                                status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'INCONSISTENT', 'DELETED'] },
                                 createdAt: { type: 'string', format: 'date-time' },
                             },
                         },
@@ -67,14 +67,6 @@ export const invoicesSchemas = {
                     error: { type: 'string' },
                 },
             },
-            404: {
-                type: 'object',
-                required: ['error', 'extracted'],
-                properties: {
-                    error: { type: 'string' },
-                    extracted: { type: 'object' },
-                },
-            },
         },
     },
     detail: {
@@ -93,7 +85,7 @@ export const invoicesSchemas = {
                 properties: {
                     invoiceId: { type: 'string' },
                     providerId: { type: 'string' },
-                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'DELETED'] },
+                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'INCONSISTENT', 'DELETED'] },
                     fileRef: {
                         type: 'object',
                         required: ['storageKey', 'filename', 'mimeType', 'sizeBytes', 'checksum'],
@@ -111,6 +103,8 @@ export const invoicesSchemas = {
                     baseImponible: { type: 'number' },
                     iva: { type: 'number' },
                     total: { type: 'number' },
+                    headerSource: { type: 'string', enum: ['MANUAL', 'AI'] },
+                    headerStatus: { type: 'string', enum: ['PROPOSED', 'CONFIRMED'] },
                     createdAt: { type: 'string', format: 'date-time' },
                     updatedAt: { type: 'string', format: 'date-time' },
                     deletedAt: { type: 'string', format: 'date-time', nullable: true },
@@ -118,7 +112,7 @@ export const invoicesSchemas = {
                         type: 'array',
                         items: {
                             type: 'object',
-                            required: ['id', 'concepto', 'cantidad', 'precio', 'total'],
+                            required: ['id', 'concepto', 'cantidad', 'precio', 'total', 'source', 'status'],
                             properties: {
                                 id: { type: 'string' },
                                 concepto: { type: 'string' },
@@ -127,6 +121,8 @@ export const invoicesSchemas = {
                                 baseImponible: { type: 'number' },
                                 iva: { type: 'number' },
                                 total: { type: 'number' },
+                                source: { type: 'string', enum: ['MANUAL', 'AI'] },
+                                status: { type: 'string', enum: ['PROPOSED', 'CONFIRMED', 'REJECTED'] },
                             },
                         },
                     },
@@ -297,7 +293,7 @@ export const invoicesSchemas = {
                 properties: {
                     invoiceId: { type: 'string' },
                     providerId: { type: 'string' },
-                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'DELETED'] },
+                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'INCONSISTENT', 'DELETED'] },
                     fileRef: {
                         type: 'object',
                         required: ['storageKey', 'filename', 'mimeType', 'sizeBytes', 'checksum'],
@@ -315,6 +311,8 @@ export const invoicesSchemas = {
                     baseImponible: { type: 'number' },
                     iva: { type: 'number' },
                     total: { type: 'number' },
+                    headerSource: { type: 'string', enum: ['MANUAL', 'AI'] },
+                    headerStatus: { type: 'string', enum: ['PROPOSED', 'CONFIRMED'] },
                     createdAt: { type: 'string', format: 'date-time' },
                     updatedAt: { type: 'string', format: 'date-time' },
                     deletedAt: { type: 'string', format: 'date-time', nullable: true },
@@ -322,7 +320,7 @@ export const invoicesSchemas = {
                         type: 'array',
                         items: {
                             type: 'object',
-                            required: ['id', 'concepto', 'cantidad', 'precio', 'total'],
+                            required: ['id', 'concepto', 'cantidad', 'precio', 'total', 'source', 'status'],
                             properties: {
                                 id: { type: 'string' },
                                 concepto: { type: 'string' },
@@ -331,6 +329,8 @@ export const invoicesSchemas = {
                                 baseImponible: { type: 'number' },
                                 iva: { type: 'number' },
                                 total: { type: 'number' },
+                                source: { type: 'string', enum: ['MANUAL', 'AI'] },
+                                status: { type: 'string', enum: ['PROPOSED', 'CONFIRMED', 'REJECTED'] },
                             },
                         },
                     },
@@ -405,7 +405,7 @@ export const invoicesSchemas = {
                 properties: {
                     invoiceId: { type: 'string' },
                     providerId: { type: 'string' },
-                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'DELETED'] },
+                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'INCONSISTENT', 'DELETED'] },
                     fileRef: {
                         type: 'object',
                         required: ['storageKey', 'filename', 'mimeType', 'sizeBytes', 'checksum'],
@@ -423,6 +423,8 @@ export const invoicesSchemas = {
                     baseImponible: { type: 'number' },
                     iva: { type: 'number' },
                     total: { type: 'number' },
+                    headerSource: { type: 'string', enum: ['MANUAL', 'AI'] },
+                    headerStatus: { type: 'string', enum: ['PROPOSED', 'CONFIRMED'] },
                     createdAt: { type: 'string', format: 'date-time' },
                     updatedAt: { type: 'string', format: 'date-time' },
                     deletedAt: { type: 'string', format: 'date-time', nullable: true },
@@ -430,7 +432,7 @@ export const invoicesSchemas = {
                         type: 'array',
                         items: {
                             type: 'object',
-                            required: ['id', 'concepto', 'cantidad', 'precio', 'total'],
+                            required: ['id', 'concepto', 'cantidad', 'precio', 'total', 'source', 'status'],
                             properties: {
                                 id: { type: 'string' },
                                 concepto: { type: 'string' },
@@ -439,9 +441,224 @@ export const invoicesSchemas = {
                                 baseImponible: { type: 'number' },
                                 iva: { type: 'number' },
                                 total: { type: 'number' },
+                                source: { type: 'string', enum: ['MANUAL', 'AI'] },
+                                status: { type: 'string', enum: ['PROPOSED', 'CONFIRMED', 'REJECTED'] },
                             },
                         },
                     },
+                },
+            },
+            400: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            401: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
+    confirmMovements: {
+        security: [{ bearerAuth: [] }],
+        params: {
+            type: 'object',
+            required: ['invoiceId'],
+            properties: {
+                invoiceId: { type: 'string' },
+            },
+        },
+        body: {
+            type: 'object',
+            required: ['movements'],
+            additionalProperties: false,
+            properties: {
+                movements: {
+                    type: 'array',
+                    minItems: 1,
+                    items: {
+                        type: 'object',
+                        required: ['id', 'action'],
+                        additionalProperties: false,
+                        properties: {
+                            id: { type: 'string' },
+                            action: { type: 'string', enum: ['CONFIRM', 'CORRECT', 'REJECT'] },
+                            concepto: { type: 'string' },
+                            cantidad: { type: 'number' },
+                            precio: { type: 'number' },
+                            baseImponible: { type: 'number' },
+                            iva: { type: 'number' },
+                            total: { type: 'number' },
+                        },
+                    },
+                },
+            },
+        },
+        response: {
+            200: {
+                type: 'object',
+                required: ['invoiceId'],
+                properties: {
+                    invoiceId: { type: 'string' },
+                },
+            },
+            400: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            401: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
+    confirmHeader: {
+        security: [{ bearerAuth: [] }],
+        params: {
+            type: 'object',
+            required: ['invoiceId'],
+            properties: {
+                invoiceId: { type: 'string' },
+            },
+        },
+        body: {
+            type: 'object',
+            required: ['fields'],
+            additionalProperties: false,
+            properties: {
+                fields: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                        numeroFactura: {
+                            type: 'object',
+                            required: ['action'],
+                            additionalProperties: false,
+                            properties: {
+                                action: { type: 'string', enum: ['CONFIRM', 'CORRECT'] },
+                                value: { type: 'string' },
+                            },
+                        },
+                        fechaOperacion: {
+                            type: 'object',
+                            required: ['action'],
+                            additionalProperties: false,
+                            properties: {
+                                action: { type: 'string', enum: ['CONFIRM', 'CORRECT'] },
+                                value: { type: 'string' },
+                            },
+                        },
+                        fechaVencimiento: {
+                            type: 'object',
+                            required: ['action'],
+                            additionalProperties: false,
+                            properties: {
+                                action: { type: 'string', enum: ['CONFIRM', 'CORRECT'] },
+                                value: { type: 'string' },
+                            },
+                        },
+                        baseImponible: {
+                            type: 'object',
+                            required: ['action'],
+                            additionalProperties: false,
+                            properties: {
+                                action: { type: 'string', enum: ['CONFIRM', 'CORRECT'] },
+                                value: { type: 'number' },
+                            },
+                        },
+                        iva: {
+                            type: 'object',
+                            required: ['action'],
+                            additionalProperties: false,
+                            properties: {
+                                action: { type: 'string', enum: ['CONFIRM', 'CORRECT'] },
+                                value: { type: 'number' },
+                            },
+                        },
+                        total: {
+                            type: 'object',
+                            required: ['action'],
+                            additionalProperties: false,
+                            properties: {
+                                action: { type: 'string', enum: ['CONFIRM', 'CORRECT'] },
+                                value: { type: 'number' },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        response: {
+            200: {
+                type: 'object',
+                required: ['invoiceId'],
+                properties: {
+                    invoiceId: { type: 'string' },
+                },
+            },
+            400: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            401: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
+    reprocess: {
+        security: [{ bearerAuth: [] }],
+        params: {
+            type: 'object',
+            required: ['invoiceId'],
+            properties: {
+                invoiceId: { type: 'string' },
+            },
+        },
+        response: {
+            200: {
+                type: 'object',
+                required: ['invoiceId'],
+                properties: {
+                    invoiceId: { type: 'string' },
                 },
             },
             400: {

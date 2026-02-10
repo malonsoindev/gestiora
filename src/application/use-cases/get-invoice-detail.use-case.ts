@@ -1,42 +1,9 @@
 import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { PortError } from '../errors/port.error.js';
+import type { GetInvoiceDetailRequest } from '../dto/get-invoice-detail.request.js';
+import type { GetInvoiceDetailResponse } from '../dto/get-invoice-detail.response.js';
 import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
 import { ok, fail, type Result } from '../../shared/result.js';
-
-export type GetInvoiceDetailRequest = {
-    invoiceId: string;
-};
-
-export type GetInvoiceDetailResponse = {
-    invoiceId: string;
-    providerId: string;
-    status: 'DRAFT' | 'ACTIVE' | 'DELETED';
-    fileRef?: {
-        storageKey: string;
-        filename: string;
-        mimeType: string;
-        sizeBytes: number;
-        checksum: string;
-    };
-    numeroFactura?: string;
-    fechaOperacion?: string;
-    fechaVencimiento?: string;
-    baseImponible?: number;
-    iva?: number;
-    total?: number;
-    createdAt: string;
-    updatedAt: string;
-    deletedAt?: string;
-    movements: Array<{
-        id: string;
-        concepto: string;
-        cantidad: number;
-        precio: number;
-        baseImponible?: number;
-        iva?: number;
-        total: number;
-    }>;
-};
 
 export class GetInvoiceDetailUseCase {
     constructor(private readonly dependencies: { invoiceRepository: InvoiceRepository }) {}
@@ -74,6 +41,8 @@ export class GetInvoiceDetailUseCase {
             ...(invoice.baseImponible === undefined ? {} : { baseImponible: invoice.baseImponible }),
             ...(invoice.iva === undefined ? {} : { iva: invoice.iva }),
             ...(invoice.total === undefined ? {} : { total: invoice.total }),
+            headerSource: invoice.headerSource,
+            headerStatus: invoice.headerStatus,
             createdAt: invoice.createdAt.toISOString(),
             updatedAt: invoice.updatedAt.toISOString(),
             ...(invoice.deletedAt === undefined ? {} : { deletedAt: invoice.deletedAt.toISOString() }),
@@ -85,6 +54,8 @@ export class GetInvoiceDetailUseCase {
                 ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
                 ...(movement.iva === undefined ? {} : { iva: movement.iva }),
                 total: movement.total,
+                source: movement.source,
+                status: movement.status,
             })),
         });
     }

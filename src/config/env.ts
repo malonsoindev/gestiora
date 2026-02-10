@@ -48,6 +48,7 @@ const envSchema = z.object({
     STORAGE_TYPE: z.enum(['in-memory', 'local']).default('in-memory'),
     STORAGE_PATH: z.string().default('storage'),
     AI_AGENT_TYPE: z.enum(['stub', 'stub-error', 'genkit']).default('stub'),
+    OAI_MODEL_NAME: z.string().optional(),
 }).refine(
     (data) => data.DATABASE_TYPE !== 'postgres' || Boolean(data.DATABASE_URL),
     {

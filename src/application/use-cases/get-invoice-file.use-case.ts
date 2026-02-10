@@ -1,21 +1,12 @@
 import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { FileStorage } from '../ports/file-storage.js';
 import type { PortError } from '../errors/port.error.js';
+import type { GetInvoiceFileRequest } from '../dto/get-invoice-file.request.js';
+import type { GetInvoiceFileResponse } from '../dto/get-invoice-file.response.js';
 import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '../../domain/errors/invalid-invoice-status.error.js';
 import { InvoiceStatus } from '../../domain/entities/invoice.entity.js';
 import { ok, fail, type Result } from '../../shared/result.js';
-
-export type GetInvoiceFileRequest = {
-    invoiceId: string;
-};
-
-export type GetInvoiceFileResponse = {
-    filename: string;
-    mimeType: string;
-    sizeBytes: number;
-    content: Buffer;
-};
 
 export class GetInvoiceFileUseCase {
     constructor(

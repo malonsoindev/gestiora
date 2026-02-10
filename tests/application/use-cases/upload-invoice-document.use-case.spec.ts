@@ -6,11 +6,11 @@ import type { InvoiceExtractionAgent, InvoiceExtractionResult } from '../../../s
 import type { InvoiceIdGenerator } from '../../../src/application/ports/invoice-id-generator.js';
 import type { InvoiceMovementIdGenerator } from '../../../src/application/ports/invoice-movement-id-generator.js';
 import type { ProviderRepository } from '../../../src/application/ports/provider.repository.js';
+import type { ProviderIdGenerator } from '../../../src/application/ports/provider-id-generator.js';
 import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
 import type { DateProvider } from '../../../src/application/ports/date-provider.js';
 import type { PortError } from '../../../src/application/errors/port.error.js';
 import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
-import { ProviderNotFoundWithExtractionError } from '../../../src/application/errors/provider-not-found-with-extraction.error.js';
 import { ok, type Result } from '../../../src/shared/result.js';
 
 const fixedNow = new Date('2026-02-24T10:00:00.000Z');
@@ -134,6 +134,13 @@ class ExtractionAgentStub implements InvoiceExtractionAgent {
     async extract(): Promise<Result<InvoiceExtractionResult, PortError>> {
         return ok({
             providerCif: 'B12345678',
+            provider: {
+                razonSocial: 'Proveedor Demo',
+                direccion: 'Calle 1',
+                poblacion: 'Valencia',
+                provincia: 'Valencia',
+                pais: 'ES',
+            },
             invoice: {
                 numeroFactura: 'FAC-2026-0001',
                 fechaOperacion: '2026-02-10',
@@ -161,6 +168,9 @@ class ExtractionAgentErrorStub implements InvoiceExtractionAgent {
     async extract(): Promise<Result<InvoiceExtractionResult, PortError>> {
         return ok({
             providerCif: 'B12345678',
+            provider: {
+                razonSocial: 'Proveedor Demo',
+            },
             invoice: {
                 numeroFactura: 'FAC-2026-0001',
                 fechaOperacion: '2026-02-10',
@@ -177,6 +187,43 @@ class ExtractionAgentErrorStub implements InvoiceExtractionAgent {
                 ],
             },
             missingFields: ['fechaVencimiento'],
+        });
+    }
+}
+
+class ProviderIdGeneratorStub implements ProviderIdGenerator {
+    constructor(private readonly id: string) {}
+
+    generate(): string {
+        return this.id;
+    }
+}
+
+class ExtractionAgentTotalsMismatchStub implements InvoiceExtractionAgent {
+    async extract(): Promise<Result<InvoiceExtractionResult, PortError>> {
+        return ok({
+            providerCif: 'B12345678',
+            provider: {
+                razonSocial: 'Proveedor Demo',
+            },
+            invoice: {
+                numeroFactura: 'FAC-2026-0002',
+                fechaOperacion: '2026-02-10',
+                baseImponible: 300,
+                iva: 63,
+                total: 363,
+                movements: [
+                    {
+                        concepto: 'Servicio',
+                        cantidad: 1,
+                        precio: 300,
+                        baseImponible: 300,
+                        iva: 63,
+                        total: 400,
+                    },
+                ],
+            },
+            missingFields: [],
         });
     }
 }
@@ -199,6 +246,7 @@ describe('UploadInvoiceDocumentUseCase', () => {
         const auditLogger = new AuditLoggerSpy();
         const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
         const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
+        const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
 
         const useCase = new UploadInvoiceDocumentUseCase({
             providerRepository,
@@ -209,6 +257,7 @@ describe('UploadInvoiceDocumentUseCase', () => {
             dateProvider: new DateProviderStub(),
             invoiceIdGenerator,
             invoiceMovementIdGenerator,
+            providerIdGenerator,
         });
 
         const result = await useCase.execute({
@@ -226,7 +275,7 @@ describe('UploadInvoiceDocumentUseCase', () => {
         expect(invoiceRepository.createdInvoice).not.toBeNull();
     });
 
-    it('returns extracted data when provider is not found', async () => {
+    it('creates invoice when provider is not found', async () => {
         const providerRepository = new ProviderRepositoryStub(null);
         const invoiceRepository = new InvoiceRepositorySpy();
         const fileStorage = new FileStorageStub();
@@ -234,6 +283,7 @@ describe('UploadInvoiceDocumentUseCase', () => {
         const auditLogger = new AuditLoggerSpy();
         const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
         const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
+        const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
 
         const useCase = new UploadInvoiceDocumentUseCase({
             providerRepository,
@@ -244,6 +294,7 @@ describe('UploadInvoiceDocumentUseCase', () => {
             dateProvider: new DateProviderStub(),
             invoiceIdGenerator,
             invoiceMovementIdGenerator,
+            providerIdGenerator,
         });
 
         const result = await useCase.execute({
@@ -257,12 +308,46 @@ describe('UploadInvoiceDocumentUseCase', () => {
             },
         });
 
-        expect(result.success).toBe(false);
-        if (!result.success) {
-            expect(result.error).toBeInstanceOf(ProviderNotFoundWithExtractionError);
-            if (result.error instanceof ProviderNotFoundWithExtractionError) {
-                expect(result.error.extracted.providerCif).toBe('B12345678');
-            }
-        }
+        expect(result.success).toBe(true);
+        expect(invoiceRepository.createdInvoice).not.toBeNull();
+    });
+
+    it('creates invoice with inconsistent status when totals mismatch', async () => {
+        const providerRepository = new ProviderRepositoryStub(createProvider());
+        const invoiceRepository = new InvoiceRepositorySpy();
+        const fileStorage = new FileStorageStub();
+        const extractionAgent = new ExtractionAgentTotalsMismatchStub();
+        const auditLogger = new AuditLoggerSpy();
+        const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
+        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
+        const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+
+        const useCase = new UploadInvoiceDocumentUseCase({
+            providerRepository,
+            invoiceRepository,
+            fileStorage,
+            extractionAgent,
+            auditLogger,
+            dateProvider: new DateProviderStub(),
+            invoiceIdGenerator,
+            invoiceMovementIdGenerator,
+            providerIdGenerator,
+        });
+
+        const result = await useCase.execute({
+            actorUserId: 'user-1',
+            file: {
+                filename: 'invoice-1.pdf',
+                mimeType: 'application/pdf',
+                sizeBytes: 1234,
+                checksum: 'checksum-1',
+                content: Buffer.from('pdf-content'),
+            },
+        });
+
+        expect(result.success).toBe(true);
+        expect(invoiceRepository.createdInvoice).not.toBeNull();
+        const createdInvoice = invoiceRepository.createdInvoice as { status?: string };
+        expect(createdInvoice.status).toBe('INCONSISTENT');
     });
 });

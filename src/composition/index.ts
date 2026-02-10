@@ -48,6 +48,9 @@ import { InMemoryInvoiceRepository } from '../infrastructure/persistence/in-memo
 import { CreateManualInvoiceUseCase } from '../application/use-cases/create-manual-invoice.use-case.js';
 import { AttachInvoiceFileUseCase } from '../application/use-cases/attach-invoice-file.use-case.js';
 import { UpdateManualInvoiceUseCase } from '../application/use-cases/update-manual-invoice.use-case.js';
+import { ConfirmInvoiceMovementsUseCase } from '../application/use-cases/confirm-invoice-movements.use-case.js';
+import { ConfirmInvoiceHeaderUseCase } from '../application/use-cases/confirm-invoice-header.use-case.js';
+import { ReprocessInvoiceExtractionUseCase } from '../application/use-cases/reprocess-invoice-extraction.use-case.js';
 import { ListInvoicesUseCase } from '../application/use-cases/list-invoices.use-case.js';
 import { GetInvoiceDetailUseCase } from '../application/use-cases/get-invoice-detail.use-case.js';
 import { SoftDeleteInvoiceUseCase } from '../application/use-cases/soft-delete-invoice.use-case.js';
@@ -55,6 +58,11 @@ import { GetInvoiceFileUseCase } from '../application/use-cases/get-invoice-file
 import { UploadInvoiceDocumentUseCase } from '../application/use-cases/upload-invoice-document.use-case.js';
 import { StubInvoiceExtractionAgent } from '../infrastructure/adapters/invoice-extraction/stub-invoice-extraction-agent.js';
 import { StubErrorInvoiceExtractionAgent } from '../infrastructure/adapters/invoice-extraction/stub-error-invoice-extraction-agent.js';
+import type { InvoiceExtractionAgent } from '../application/ports/invoice-extraction-agent.js';
+import { createRequire } from 'node:module';
+import { GenkitInvoiceExtractionAgent } from '../infrastructure/adapters/invoice-extraction/genkit-invoice-extraction-agent.js';
+import { createGenkitInvoicePromptRunner } from '../infrastructure/adapters/invoice-extraction/genkit-invoice-extraction-prompt-runner.js';
+import { PdfTextExtractor } from '../infrastructure/adapters/invoice-extraction/pdf-text-extractor.js';
 import { InMemoryFileStorage } from '../infrastructure/adapters/in-memory/in-memory-file-storage.js';
 import { LocalFileStorage } from '../infrastructure/adapters/local/local-file-storage.js';
 
@@ -262,6 +270,19 @@ const updateManualInvoiceUseCase = new UpdateManualInvoiceUseCase({
     dateProvider,
 });
 
+const confirmInvoiceMovementsUseCase = new ConfirmInvoiceMovementsUseCase({
+    invoiceRepository,
+    auditLogger,
+    dateProvider,
+});
+
+const confirmInvoiceHeaderUseCase = new ConfirmInvoiceHeaderUseCase({
+    invoiceRepository,
+    auditLogger,
+    dateProvider,
+});
+
+
 const listInvoicesUseCase = new ListInvoicesUseCase({
     invoiceRepository,
 });
@@ -281,9 +302,79 @@ const getInvoiceFileUseCase = new GetInvoiceFileUseCase({
     fileStorage,
 });
 
-const extractionAgent = config.AI_AGENT_TYPE === 'stub-error'
-    ? new StubErrorInvoiceExtractionAgent()
-    : new StubInvoiceExtractionAgent();
+type PdfParse = (content: Buffer) => Promise<{ text: string }>;
+const require = createRequire(import.meta.url);
+const resolvePdfParse = (module: unknown): PdfParse => {
+    if (typeof module === 'function') {
+        return module as PdfParse;
+    }
+
+    if (module && typeof module === 'object') {
+        const candidate = module as Record<string, unknown>;
+        if (typeof candidate.default === 'function') {
+            return candidate.default as PdfParse;
+        }
+
+        if (
+            candidate.default &&
+            typeof candidate.default === 'object' &&
+            typeof (candidate.default as Record<string, unknown>).default === 'function'
+        ) {
+            return (candidate.default as Record<string, unknown>).default as PdfParse;
+        }
+
+        if (typeof candidate.PDFParse === 'function') {
+            return async (content: Buffer) => {
+                const parser = new (candidate.PDFParse as new (options: { data: Buffer }) => {
+                    getText: () => Promise<{ text: string }>;
+                    destroy: () => Promise<void>;
+                })({ data: content });
+                const result = await parser.getText();
+                await parser.destroy();
+                return result;
+            };
+        }
+    }
+
+    throw new Error('Unsupported pdf-parse module format');
+};
+const pdfParseModule = require('pdf-parse');
+const pdfParse = resolvePdfParse(pdfParseModule);
+const pdfTextExtractor = new PdfTextExtractor(async (content) => pdfParse(content));
+const genkitPromptRunner = createGenkitInvoicePromptRunner({
+    model: config.OAI_MODEL_NAME ?? 'gpt-4o-mini',
+});
+const genkitTextExtractor = async (content: Buffer) => {
+    const result = await pdfTextExtractor.extract(content);
+    if (!result.success) {
+        throw result.error;
+    }
+    return result.value;
+};
+
+const createExtractionAgent = (): InvoiceExtractionAgent => {
+    if (config.AI_AGENT_TYPE === 'stub-error') {
+        return new StubErrorInvoiceExtractionAgent();
+    }
+    if (config.AI_AGENT_TYPE === 'genkit') {
+        return new GenkitInvoiceExtractionAgent({
+            promptRunner: genkitPromptRunner,
+            textExtractor: genkitTextExtractor,
+        });
+    }
+    return new StubInvoiceExtractionAgent();
+};
+
+const extractionAgent = createExtractionAgent();
+
+const reprocessInvoiceExtractionUseCase = new ReprocessInvoiceExtractionUseCase({
+    invoiceRepository,
+    fileStorage,
+    extractionAgent,
+    auditLogger,
+    dateProvider,
+    invoiceMovementIdGenerator,
+});
 
 const uploadInvoiceDocumentUseCase = new UploadInvoiceDocumentUseCase({
     providerRepository,
@@ -294,6 +385,7 @@ const uploadInvoiceDocumentUseCase = new UploadInvoiceDocumentUseCase({
     dateProvider,
     invoiceIdGenerator,
     invoiceMovementIdGenerator,
+    providerIdGenerator,
 });
 
 export const compositionRoot = {
@@ -332,6 +424,9 @@ export const compositionRoot = {
     createManualInvoiceUseCase,
     attachInvoiceFileUseCase,
     updateManualInvoiceUseCase,
+    confirmInvoiceMovementsUseCase,
+    confirmInvoiceHeaderUseCase,
+    reprocessInvoiceExtractionUseCase,
     listInvoicesUseCase,
     getInvoiceDetailUseCase,
     softDeleteInvoiceUseCase,

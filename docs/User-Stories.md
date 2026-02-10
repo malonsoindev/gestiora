@@ -957,7 +957,7 @@ Principios:
 - La IA actúa como **asistente**, no como fuente de verdad.
 - El documento original sigue siendo la referencia principal.
 - Los datos extraídos deben ser **revisables y corregibles** por el usuario.
-- Los procesos de extracción se ejecutan de forma **asíncrona**.
+- La extracción se ejecuta de forma **sincrónica** al subir el PDF.
 
 Precondiciones:
 - Gestión documental operativa (Épica D).
@@ -973,19 +973,19 @@ Precondiciones:
 
 ### Criterios de aceptación (GWT)
 
-**Escenario 1: Extracción iniciada correctamente**
+**Escenario 1: Extracción bloqueante correctamente**
 - **Given** un usuario autenticado
 - **And** un documento PDF recién subido
 - **When** el sistema inicia el proceso de extracción automática
-- **Then** el documento queda disponible inmediatamente
-- **And** el proceso de extracción se ejecuta de forma asíncrona
-- **And** el estado de extracción se marca como *pendiente* o *en proceso*
+- **Then** el sistema espera a que termine la extracción
+- **And** la factura se crea con los datos mínimos extraídos
+- **And** el documento queda disponible tras la creación
 - **And** el evento queda registrado
 
-**Escenario 2: Extracción no bloqueante**
-- **Given** un documento con extracción en proceso
-- **When** el usuario accede al documento
-- **Then** el sistema permite su consulta y gestión manual
+**Escenario 2: Extracción requerida para crear factura**
+- **Given** un documento PDF válido
+- **When** el sistema no puede extraer los datos mínimos
+- **Then** el sistema rechaza la creación de la factura
 
 ---
 
@@ -996,6 +996,8 @@ Precondiciones:
 **para** estructurar la información.
 
 ### Criterios de aceptación (GWT)
+
+**Nota v1:** esta historia queda **denegada para esta version** en cuanto a metadatos por campo (origen/estado/confianza). En v1 solo se requiere extraer y guardar los datos mínimos.
 
 **Escenario 1: Extracción de campos mínimos**
 - **Given** un documento válido
@@ -1094,6 +1096,8 @@ Precondiciones:
 
 ### Criterios de aceptación (GWT)
 
+**Nota v1:** esta historia queda **denegada para esta version**. La extracción es sincrónica y el reproceso cubre los casos de fallo.
+
 **Escenario 1: Estados definidos**
 - **Given** un documento con extracción
 - **Then** el sistema gestiona estados como:
@@ -1117,6 +1121,8 @@ Precondiciones:
 **para** confiar en la información presentada.
 
 ### Criterios de aceptación (GWT)
+
+**Nota v1:** esta historia queda **denegada para esta version**. No se implementa trazabilidad ni evidencias.
 
 **Escenario 1: Origen de datos**
 - **Given** un documento con datos extraídos

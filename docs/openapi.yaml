@@ -655,12 +655,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Provider not found with extracted data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ExtractionProviderNotFoundResponse'
     get:
       tags: [Documents]
       summary: List invoices
@@ -1011,6 +1005,134 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OkResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/{invoiceId}/movements/confirm:
+    put:
+      tags: [Documents]
+      summary: Confirm or correct invoice movements
+      description: For action CONFIRM or REJECT, only id and action are required. For CORRECT, include the corrected fields.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: invoiceId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmInvoiceMovementsRequest'
+      responses:
+        '200':
+          description: Movements updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceCreateResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/{invoiceId}/header/confirm:
+    put:
+      tags: [Documents]
+      summary: Confirm or correct invoice header
+      description: For action CONFIRM, only action is required. For CORRECT, include the corrected value.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: invoiceId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmInvoiceHeaderRequest'
+      responses:
+        '200':
+          description: Header updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceCreateResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/{invoiceId}/reprocess:
+    post:
+      tags: [Documents]
+      summary: Reprocess invoice extraction
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: invoiceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Reprocess started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceCreateResponse'
         '400':
           description: Validation error
           content:
@@ -1501,7 +1623,7 @@ components:
           type: string
         status:
           type: string
-          enum: [DRAFT, ACTIVE, DELETED]
+          enum: [DRAFT, ACTIVE, INCONSISTENT, DELETED]
         createdAt:
           type: string
           format: date-time
@@ -1554,6 +1676,12 @@ components:
           type: number
         total:
           type: number
+        source:
+          type: string
+          enum: [MANUAL, AI]
+        status:
+          type: string
+          enum: [PROPOSED, CONFIRMED, REJECTED]
 
     InvoiceUpdateRequest:
       type: object
@@ -1577,6 +1705,100 @@ components:
           items:
             $ref: '#/components/schemas/InvoiceMovement'
 
+    ConfirmInvoiceMovementsRequest:
+      type: object
+      required: [movements]
+      properties:
+        movements:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [id, action]
+            properties:
+              id:
+                type: string
+              action:
+                type: string
+                enum: [CONFIRM, CORRECT, REJECT]
+                description: CONFIRM keeps values, CORRECT updates values, REJECT marks movement as rejected.
+              concepto:
+                type: string
+              cantidad:
+                type: number
+              precio:
+                type: number
+              baseImponible:
+                type: number
+              iva:
+                type: number
+              total:
+                type: number
+
+    ConfirmInvoiceHeaderRequest:
+      type: object
+      required: [fields]
+      properties:
+        fields:
+          type: object
+          properties:
+            numeroFactura:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [CONFIRM, CORRECT]
+                value:
+                  type: string
+            fechaOperacion:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [CONFIRM, CORRECT]
+                value:
+                  type: string
+                  format: date
+            fechaVencimiento:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [CONFIRM, CORRECT]
+                value:
+                  type: string
+                  format: date
+            baseImponible:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [CONFIRM, CORRECT]
+                value:
+                  type: number
+            iva:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [CONFIRM, CORRECT]
+                value:
+                  type: number
+            total:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [CONFIRM, CORRECT]
+                value:
+                  type: number
+
     InvoiceDetail:
       type: object
       required: [invoiceId, providerId, status, createdAt, updatedAt]
@@ -1587,7 +1809,7 @@ components:
           type: string
         status:
           type: string
-          enum: [DRAFT, ACTIVE, DELETED]
+          enum: [DRAFT, ACTIVE, INCONSISTENT, DELETED]
         fileRef:
           $ref: '#/components/schemas/FileRef'
         numeroFactura:
@@ -1604,6 +1826,12 @@ components:
           type: number
         total:
           type: number
+        headerSource:
+          type: string
+          enum: [MANUAL, AI]
+        headerStatus:
+          type: string
+          enum: [PROPOSED, CONFIRMED]
         createdAt:
           type: string
           format: date-time

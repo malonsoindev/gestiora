@@ -1,8 +1,8 @@
-export type AttachInvoiceFileResponse = {
+export type GetInvoiceDetailResponse = {
     invoiceId: string;
     providerId: string;
     status: 'DRAFT' | 'ACTIVE' | 'INCONSISTENT' | 'DELETED';
-    fileRef: {
+    fileRef?: {
         storageKey: string;
         filename: string;
         mimeType: string;

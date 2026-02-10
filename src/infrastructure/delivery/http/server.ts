@@ -85,6 +85,7 @@ export const buildServer = async (): Promise<FastifyInstance> => {
         typeof value === 'object' && value !== null;
 
     app.setErrorHandler((error, _request, reply) => {
+        app.log.error({ err: error }, 'Unhandled error');
         const statusCode = isObject(error) && typeof error.statusCode === 'number' ? error.statusCode : 500;
         const message = isObject(error) && typeof error.message === 'string' ? error.message : 'Internal error';
 
@@ -136,6 +137,9 @@ export const buildServer = async (): Promise<FastifyInstance> => {
         compositionRoot.softDeleteInvoiceUseCase,
         compositionRoot.getInvoiceFileUseCase,
         compositionRoot.uploadInvoiceDocumentUseCase,
+        compositionRoot.confirmInvoiceMovementsUseCase,
+        compositionRoot.confirmInvoiceHeaderUseCase,
+        compositionRoot.reprocessInvoiceExtractionUseCase,
     );
 
     await registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);

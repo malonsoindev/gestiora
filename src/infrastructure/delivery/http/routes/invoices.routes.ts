@@ -4,6 +4,8 @@ import type {
     InvoicesController,
     CreateManualInvoiceBody,
     UpdateManualInvoiceBody,
+    ConfirmInvoiceMovementsBody,
+    ConfirmInvoiceHeaderBody,
     InvoicesListQuery,
 } from '../controllers/invoices.controller.js';
 import { buildAuthorizeMiddleware } from '../middlewares/authorize.middleware.js';
@@ -39,6 +41,33 @@ export const registerInvoicesRoutes = async (
             schema: invoicesSchemas.updateManual,
         },
         async (request, reply) => controller.updateManualInvoice(request, reply),
+    );
+
+    app.put<{ Params: { invoiceId: string }; Body: ConfirmInvoiceMovementsBody }>(
+        '/documents/:invoiceId/movements/confirm',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: invoicesSchemas.confirmMovements,
+        },
+        async (request, reply) => controller.confirmInvoiceMovements(request, reply),
+    );
+
+    app.put<{ Params: { invoiceId: string }; Body: ConfirmInvoiceHeaderBody }>(
+        '/documents/:invoiceId/header/confirm',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: invoicesSchemas.confirmHeader,
+        },
+        async (request, reply) => controller.confirmInvoiceHeader(request, reply),
+    );
+
+    app.post<{ Params: { invoiceId: string } }>(
+        '/documents/:invoiceId/reprocess',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: invoicesSchemas.reprocess,
+        },
+        async (request, reply) => controller.reprocessInvoiceExtraction(request, reply),
     );
 
     app.get<{ Querystring: InvoicesListQuery }>(

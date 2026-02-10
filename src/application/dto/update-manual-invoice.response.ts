@@ -1,7 +1,7 @@
 export type UpdateManualInvoiceResponse = {
     invoiceId: string;
     providerId: string;
-    status: 'DRAFT' | 'ACTIVE' | 'DELETED';
+    status: 'DRAFT' | 'ACTIVE' | 'INCONSISTENT' | 'DELETED';
     fileRef?: {
         storageKey: string;
         filename: string;
@@ -15,6 +15,8 @@ export type UpdateManualInvoiceResponse = {
     baseImponible?: number;
     iva?: number;
     total?: number;
+    headerSource: 'MANUAL' | 'AI';
+    headerStatus: 'PROPOSED' | 'CONFIRMED';
     createdAt: string;
     updatedAt: string;
     deletedAt?: string;
@@ -26,5 +28,7 @@ export type UpdateManualInvoiceResponse = {
         baseImponible?: number;
         iva?: number;
         total: number;
+        source: 'MANUAL' | 'AI';
+        status: 'PROPOSED' | 'CONFIRMED' | 'REJECTED';
     }>;
 };
