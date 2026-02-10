@@ -114,78 +114,120 @@ DOCUMENT CONTEXT:
             throw new Error('Prompt returned no output');
         }
 
-        const invoice: InvoiceExtractionPromptOutput['invoice'] = {};
-        if (output.numeroFactura !== null && output.numeroFactura !== undefined) {
-            invoice.numeroFactura = output.numeroFactura;
-        }
-        if (output.fechaOperacion !== null && output.fechaOperacion !== undefined) {
-            invoice.fechaOperacion = output.fechaOperacion;
-        }
-        if (output.fechaVencimiento !== null && output.fechaVencimiento !== undefined) {
-            invoice.fechaVencimiento = output.fechaVencimiento;
-        }
-        if (output.baseImponible !== null && output.baseImponible !== undefined) {
-            invoice.baseImponible = output.baseImponible;
-        }
-        if (output.iva !== null && output.iva !== undefined) {
-            invoice.iva = output.iva;
-        }
-        if (output.total !== null && output.total !== undefined) {
-            invoice.total = output.total;
-        }
-        if (output.movements !== null && output.movements !== undefined) {
-            invoice.movements = output.movements.map((movement) => {
-                const normalized = {
-                    concepto: movement.concepto,
-                    cantidad: movement.cantidad,
-                    precio: movement.precio,
-                    total: movement.total,
-                } as InvoiceMovementOutput;
-
-                if (movement.baseImponible !== null && movement.baseImponible !== undefined) {
-                    normalized.baseImponible = movement.baseImponible;
-                }
-                if (movement.iva !== null && movement.iva !== undefined) {
-                    normalized.iva = movement.iva;
-                }
-
-                return normalized;
-            });
-        }
-
+        const invoice = mapInvoice(output);
+        const provider = mapProvider(output.provider ?? null);
         const result: InvoiceExtractionPromptOutput = { invoice };
-        if (output.providerCif !== null && output.providerCif !== undefined) {
-            result.providerCif = output.providerCif;
-        }
-        if (output.provider !== null && output.provider !== undefined) {
-            const provider: InvoiceExtractionPromptOutput['provider'] = {};
-            if (output.provider.razonSocial !== null && output.provider.razonSocial !== undefined) {
-                provider.razonSocial = output.provider.razonSocial;
-            }
-            if (output.provider.cif !== null && output.provider.cif !== undefined) {
-                provider.cif = output.provider.cif;
-            }
-            if (output.provider.direccion !== null && output.provider.direccion !== undefined) {
-                provider.direccion = output.provider.direccion;
-            }
-            if (output.provider.poblacion !== null && output.provider.poblacion !== undefined) {
-                provider.poblacion = output.provider.poblacion;
-            }
-            if (output.provider.provincia !== null && output.provider.provincia !== undefined) {
-                provider.provincia = output.provider.provincia;
-            }
-            if (output.provider.pais !== null && output.provider.pais !== undefined) {
-                provider.pais = output.provider.pais;
-            }
 
-            if (Object.keys(provider).length > 0) {
-                result.provider = provider;
-            }
+        setIfPresent(result, 'providerCif', output.providerCif);
+        if (provider) {
+            result.provider = provider;
         }
-        if (output.missingFields !== null && output.missingFields !== undefined) {
-            result.missingFields = output.missingFields;
-        }
+        setIfPresent(result, 'missingFields', output.missingFields);
 
         return result;
     };
+};
+
+const isPresent = <T>(value: T | null | undefined): value is T => value !== null && value !== undefined;
+
+const setIfPresent = <T, K extends string>(
+    target: Partial<Record<K, T>>,
+    key: K,
+    value: T | null | undefined,
+): void => {
+    if (isPresent(value)) {
+        target[key] = value;
+    }
+};
+
+const mapMovements = (
+    movements:
+        | Array<{
+              concepto: string;
+              cantidad: number;
+              precio: number;
+              baseImponible?: number | null | undefined;
+              iva?: number | null | undefined;
+              total: number;
+          }>
+        | null
+        | undefined,
+): InvoiceMovementOutput[] | undefined => {
+    if (!isPresent(movements)) {
+        return undefined;
+    }
+
+    return movements.map((movement) => {
+        const normalized: InvoiceMovementOutput = {
+            concepto: movement.concepto,
+            cantidad: movement.cantidad,
+            precio: movement.precio,
+            total: movement.total,
+        };
+
+        setIfPresent(normalized, 'baseImponible', movement.baseImponible);
+        setIfPresent(normalized, 'iva', movement.iva);
+
+        return normalized;
+    });
+};
+
+const mapInvoice = (output: {
+    numeroFactura?: string | null | undefined;
+    fechaOperacion?: string | null | undefined;
+    fechaVencimiento?: string | null | undefined;
+    baseImponible?: number | null | undefined;
+    iva?: number | null | undefined;
+    total?: number | null | undefined;
+    movements?:
+        | Array<{
+              concepto: string;
+              cantidad: number;
+              precio: number;
+              baseImponible?: number | null | undefined;
+              iva?: number | null | undefined;
+              total: number;
+          }>
+        | null
+        | undefined;
+}): InvoiceExtractionPromptOutput['invoice'] => {
+    const invoice: InvoiceExtractionPromptOutput['invoice'] = {};
+    setIfPresent(invoice, 'numeroFactura', output.numeroFactura);
+    setIfPresent(invoice, 'fechaOperacion', output.fechaOperacion);
+    setIfPresent(invoice, 'fechaVencimiento', output.fechaVencimiento);
+    setIfPresent(invoice, 'baseImponible', output.baseImponible);
+    setIfPresent(invoice, 'iva', output.iva);
+    setIfPresent(invoice, 'total', output.total);
+    const movements = mapMovements(output.movements);
+    if (movements) {
+        invoice.movements = movements;
+    }
+    return invoice;
+};
+
+const mapProvider = (
+    provider:
+        | {
+              razonSocial?: string | null | undefined;
+              cif?: string | null | undefined;
+              direccion?: string | null | undefined;
+              poblacion?: string | null | undefined;
+              provincia?: string | null | undefined;
+              pais?: string | null | undefined;
+          }
+        | null,
+): InvoiceExtractionPromptOutput['provider'] | undefined => {
+    if (!isPresent(provider)) {
+        return undefined;
+    }
+
+    const mapped: InvoiceExtractionPromptOutput['provider'] = {};
+    setIfPresent(mapped, 'razonSocial', provider.razonSocial);
+    setIfPresent(mapped, 'cif', provider.cif);
+    setIfPresent(mapped, 'direccion', provider.direccion);
+    setIfPresent(mapped, 'poblacion', provider.poblacion);
+    setIfPresent(mapped, 'provincia', provider.provincia);
+    setIfPresent(mapped, 'pais', provider.pais);
+
+    return Object.keys(mapped).length > 0 ? mapped : undefined;
 };
