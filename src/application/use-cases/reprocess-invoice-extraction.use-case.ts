@@ -5,6 +5,8 @@ import type { InvoiceExtractionAgent } from '../ports/invoice-extraction-agent.j
 import type { InvoiceMovementIdGenerator } from '../ports/invoice-movement-id-generator.js';
 import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { PortError } from '../errors/port.error.js';
+import type { ReprocessInvoiceExtractionRequest } from '../dto/reprocess-invoice-extraction.request.js';
+import type { ReprocessInvoiceExtractionResponse } from '../dto/reprocess-invoice-extraction.response.js';
 import {
     InvoiceHeaderSource,
     InvoiceHeaderStatus,
@@ -21,14 +23,6 @@ import { InvoiceDate } from '../../domain/value-objects/invoice-date.value-objec
 import { Money } from '../../domain/value-objects/money.value-object.js';
 import { ok, fail, type Result } from '../../shared/result.js';
 
-export type ReprocessInvoiceExtractionRequest = {
-    actorUserId: string;
-    invoiceId: string;
-};
-
-export type ReprocessInvoiceExtractionResponse = {
-    invoiceId: string;
-};
 
 export type ReprocessInvoiceExtractionDependencies = {
     invoiceRepository: InvoiceRepository;

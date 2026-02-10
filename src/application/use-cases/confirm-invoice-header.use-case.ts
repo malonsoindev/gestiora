@@ -2,6 +2,8 @@ import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { PortError } from '../errors/port.error.js';
+import type { ConfirmInvoiceHeaderRequest } from '../dto/confirm-invoice-header.request.js';
+import type { ConfirmInvoiceHeaderResponse } from '../dto/confirm-invoice-header.response.js';
 import { InvoiceHeaderSource, InvoiceHeaderStatus } from '../../domain/entities/invoice.entity.js';
 import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '../../domain/errors/invalid-invoice-status.error.js';
@@ -9,22 +11,6 @@ import { InvoiceDate } from '../../domain/value-objects/invoice-date.value-objec
 import { Money } from '../../domain/value-objects/money.value-object.js';
 import { ok, fail, type Result } from '../../shared/result.js';
 
-export type ConfirmInvoiceHeaderRequest = {
-    actorUserId: string;
-    invoiceId: string;
-    fields: {
-        numeroFactura?: { action: 'CONFIRM' | 'CORRECT'; value?: string };
-        fechaOperacion?: { action: 'CONFIRM' | 'CORRECT'; value?: string };
-        fechaVencimiento?: { action: 'CONFIRM' | 'CORRECT'; value?: string };
-        baseImponible?: { action: 'CONFIRM' | 'CORRECT'; value?: number };
-        iva?: { action: 'CONFIRM' | 'CORRECT'; value?: number };
-        total?: { action: 'CONFIRM' | 'CORRECT'; value?: number };
-    };
-};
-
-export type ConfirmInvoiceHeaderResponse = {
-    invoiceId: string;
-};
 
 export type ConfirmInvoiceHeaderDependencies = {
     invoiceRepository: InvoiceRepository;

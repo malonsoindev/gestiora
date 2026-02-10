@@ -1,18 +1,12 @@
 import type { ProviderRepository } from '../ports/provider.repository.js';
 import type { ProviderListResponse, ProviderSummary } from '../dto/list-providers.response.js';
+import type { ListProvidersRequest } from '../dto/list-providers.request.js';
 import type { ProviderStatus } from '../../domain/entities/provider.entity.js';
 import type { PortError } from '../errors/port.error.js';
 import { ok, fail, type Result } from '../../shared/result.js';
 
 export type ListProvidersDependencies = {
     providerRepository: ProviderRepository;
-};
-
-export type ListProvidersRequest = {
-    page: number;
-    pageSize: number;
-    status?: ProviderStatus;
-    q?: string;
 };
 
 export type ListProvidersError = PortError;

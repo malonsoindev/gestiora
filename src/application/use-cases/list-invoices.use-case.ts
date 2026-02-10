@@ -1,25 +1,8 @@
 import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { PortError } from '../errors/port.error.js';
+import type { ListInvoicesRequest } from '../dto/list-invoices.request.js';
+import type { ListInvoicesResponse } from '../dto/list-invoices.response.js';
 import { ok, type Result } from '../../shared/result.js';
-
-export type ListInvoicesRequest = {
-    status?: 'DRAFT' | 'ACTIVE' | 'INCONSISTENT' | 'DELETED';
-    providerId?: string;
-    page: number;
-    pageSize: number;
-};
-
-export type ListInvoicesResponse = {
-    items: Array<{
-        invoiceId: string;
-        providerId: string;
-        status: 'DRAFT' | 'ACTIVE' | 'INCONSISTENT' | 'DELETED';
-        createdAt: Date;
-    }>;
-    page: number;
-    pageSize: number;
-    total: number;
-};
 
 export class ListInvoicesUseCase {
     constructor(private readonly dependencies: { invoiceRepository: InvoiceRepository }) {}

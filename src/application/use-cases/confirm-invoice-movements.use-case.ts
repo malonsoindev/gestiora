@@ -2,29 +2,13 @@ import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { PortError } from '../errors/port.error.js';
+import type { ConfirmInvoiceMovementsRequest } from '../dto/confirm-invoice-movements.request.js';
+import type { ConfirmInvoiceMovementsResponse } from '../dto/confirm-invoice-movements.response.js';
 import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '../../domain/entities/invoice-movement.entity.js';
 import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '../../domain/errors/invalid-invoice-status.error.js';
 import { ok, fail, type Result } from '../../shared/result.js';
 
-export type ConfirmInvoiceMovementsRequest = {
-    actorUserId: string;
-    invoiceId: string;
-    movements: Array<{
-        id: string;
-        action: 'CONFIRM' | 'CORRECT' | 'REJECT';
-        concepto?: string;
-        cantidad?: number;
-        precio?: number;
-        baseImponible?: number;
-        iva?: number;
-        total?: number;
-    }>;
-};
-
-export type ConfirmInvoiceMovementsResponse = {
-    invoiceId: string;
-};
 
 export type ConfirmInvoiceMovementsDependencies = {
     invoiceRepository: InvoiceRepository;
