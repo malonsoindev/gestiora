@@ -2,13 +2,9 @@ import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
+import type { SoftDeleteInvoiceRequest } from '../dto/soft-delete-invoice.request.js';
 import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
 import { ok, fail, type Result } from '../../shared/result.js';
-
-export type SoftDeleteInvoiceRequest = {
-    actorUserId: string;
-    invoiceId: string;
-};
 
 export class SoftDeleteInvoiceUseCase {
     constructor(
