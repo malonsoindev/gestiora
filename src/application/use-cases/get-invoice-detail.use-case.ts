@@ -1,46 +1,9 @@
 import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { PortError } from '../errors/port.error.js';
+import type { GetInvoiceDetailRequest } from '../dto/get-invoice-detail.request.js';
+import type { GetInvoiceDetailResponse } from '../dto/get-invoice-detail.response.js';
 import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
 import { ok, fail, type Result } from '../../shared/result.js';
-
-export type GetInvoiceDetailRequest = {
-    invoiceId: string;
-};
-
-export type GetInvoiceDetailResponse = {
-    invoiceId: string;
-    providerId: string;
-    status: 'DRAFT' | 'ACTIVE' | 'INCONSISTENT' | 'DELETED';
-    fileRef?: {
-        storageKey: string;
-        filename: string;
-        mimeType: string;
-        sizeBytes: number;
-        checksum: string;
-    };
-    numeroFactura?: string;
-    fechaOperacion?: string;
-    fechaVencimiento?: string;
-    baseImponible?: number;
-    iva?: number;
-    total?: number;
-    headerSource: 'MANUAL' | 'AI';
-    headerStatus: 'PROPOSED' | 'CONFIRMED';
-    createdAt: string;
-    updatedAt: string;
-    deletedAt?: string;
-    movements: Array<{
-        id: string;
-        concepto: string;
-        cantidad: number;
-        precio: number;
-        baseImponible?: number;
-        iva?: number;
-        total: number;
-        source: 'MANUAL' | 'AI';
-        status: 'PROPOSED' | 'CONFIRMED' | 'REJECTED';
-    }>;
-};
 
 export class GetInvoiceDetailUseCase {
     constructor(private readonly dependencies: { invoiceRepository: InvoiceRepository }) {}
