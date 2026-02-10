@@ -43,6 +43,7 @@ import { Provider, ProviderStatus } from '../domain/entities/provider.entity.js'
 import { Cif } from '../domain/value-objects/cif.value-object.js';
 import { InMemoryProviderRepository } from '../infrastructure/persistence/in-memory/in-memory-provider.repository.js';
 import { PostgresProviderRepository } from '../infrastructure/persistence/postgres/postgres-provider.repository.js';
+import { PostgresInvoiceRepository } from '../infrastructure/persistence/postgres/postgres-invoice.repository.js';
 import { CreateProviderUseCase } from '../application/use-cases/create-provider.use-case.js';
 import { InMemoryInvoiceRepository } from '../infrastructure/persistence/in-memory/in-memory-invoice.repository.js';
 import { CreateManualInvoiceUseCase } from '../application/use-cases/create-manual-invoice.use-case.js';
@@ -99,7 +100,9 @@ const loginAttemptRepository = usePostgres && sqlClient
 const providerRepository = usePostgres && sqlClient
     ? new PostgresProviderRepository(sqlClient)
     : new InMemoryProviderRepository();
-const invoiceRepository = new InMemoryInvoiceRepository();
+const invoiceRepository = usePostgres && sqlClient
+    ? new PostgresInvoiceRepository(sqlClient)
+    : new InMemoryInvoiceRepository();
 const fileStorage = config.STORAGE_TYPE === 'local'
     ? new LocalFileStorage(config.STORAGE_PATH)
     : new InMemoryFileStorage();
