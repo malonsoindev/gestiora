@@ -291,8 +291,12 @@ export class PostgresInvoiceRepository implements InvoiceRepository {
             headerSource: this.mapHeaderSource(row.header_source),
             headerStatus: this.mapHeaderStatus(row.header_status),
             ...(row.numero_factura ? { numeroFactura: row.numero_factura } : {}),
-            ...(row.fecha_operacion ? { fechaOperacion: InvoiceDate.create(row.fecha_operacion) } : {}),
-            ...(row.fecha_vencimiento ? { fechaVencimiento: InvoiceDate.create(row.fecha_vencimiento) } : {}),
+            ...(row.fecha_operacion
+                ? { fechaOperacion: InvoiceDate.create(this.normalizeInvoiceDate(row.fecha_operacion)) }
+                : {}),
+            ...(row.fecha_vencimiento
+                ? { fechaVencimiento: InvoiceDate.create(this.normalizeInvoiceDate(row.fecha_vencimiento)) }
+                : {}),
             ...(row.base_imponible === null ? {} : { baseImponible: Money.create(Number(row.base_imponible)) }),
             ...(row.iva === null ? {} : { iva: Money.create(Number(row.iva)) }),
             ...(row.total === null ? {} : { total: Money.create(Number(row.total)) }),
@@ -354,5 +358,21 @@ export class PostgresInvoiceRepository implements InvoiceRepository {
             default:
                 return InvoiceMovementStatus.Confirmed;
         }
+    }
+
+    /**
+     * Normaliza fechas provenientes de Postgres a formato `YYYY-MM-DD`.
+     * Acepta `Date` o `string` y recorta timestamps ISO si los hubiera.
+     * @param value Fecha desde Postgres (Date o string ISO).
+     * @returns Fecha normalizada en formato `YYYY-MM-DD`.
+     */
+    private normalizeInvoiceDate(value: Date | string): string {
+        if (value instanceof Date) {
+            return value.toISOString().slice(0, 10);
+        }
+        if (value.includes('T')) {
+            return value.slice(0, 10);
+        }
+        return value;
     }
 }
