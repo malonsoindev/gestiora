@@ -35,8 +35,6 @@ export class GenkitInvoiceExtractionAgent implements InvoiceExtractionAgent {
                 value.provider = output.provider;
             }
 
-            //console.log(JSON.stringify(value, null, 2));
-
             return ok(value);
         } catch (error) {
             const cause = error instanceof Error ? error : new Error('Unknown error');

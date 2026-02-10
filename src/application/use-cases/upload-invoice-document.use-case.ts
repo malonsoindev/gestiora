@@ -11,8 +11,7 @@ import type { PortError } from '../errors/port.error.js';
 import { InvalidProviderStatusError } from '../../domain/errors/invalid-provider-status.error.js';
 import { Invoice, InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '../../domain/entities/invoice.entity.js';
 import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '../../domain/entities/invoice-movement.entity.js';
-import { ProviderStatus } from '../../domain/entities/provider.entity.js';
-import { Provider } from '../../domain/entities/provider.entity.js';
+import { Provider, ProviderStatus } from '../../domain/entities/provider.entity.js';
 import { InvoiceDate } from '../../domain/value-objects/invoice-date.value-object.js';
 import { Money } from '../../domain/value-objects/money.value-object.js';
 import { FileRef } from '../../domain/value-objects/file-ref.value-object.js';
@@ -113,52 +112,68 @@ export class UploadInvoiceDocumentUseCase {
         extracted: InvoiceExtractionResult,
         now: Date,
     ): Promise<Result<Provider, UploadInvoiceDocumentError>> {
-        if (!extracted.providerCif) {
-            return fail(new InvalidCifError());
+        const cifResult = this.normalizeCif(extracted.providerCif);
+        if (!cifResult.success) {
+            return fail(cifResult.error);
+        }
+        const normalizedCif = cifResult.value;
+
+        const providerResult = await this.dependencies.providerRepository.findByCif(normalizedCif);
+        if (!providerResult.success) {
+            return fail(providerResult.error);
         }
 
-        let normalizedCif: string;
+        const provider = providerResult.value;
+        if (!provider) {
+            return this.createDraftProvider(extracted, normalizedCif, now);
+        }
+
+        if (provider.status !== ProviderStatus.Active) {
+            return fail(new InvalidProviderStatusError());
+        }
+
+        return ok(provider);
+    }
+
+    private normalizeCif(providerCif: string | undefined): Result<string, InvalidCifError> {
+        if (!providerCif) {
+            return fail(new InvalidCifError());
+        }
         try {
-            normalizedCif = Cif.create(extracted.providerCif).getValue();
+            return ok(Cif.create(providerCif).getValue());
         } catch (error) {
             if (error instanceof InvalidCifError) {
                 return fail(error);
             }
             throw error;
         }
+    }
 
-        const providerResult = await this.dependencies.providerRepository.findByCif(normalizedCif);
-        if (!providerResult.success) {
-            return fail(providerResult.error);
-        }
-        const provider = providerResult.value;
-        if (!provider) {
-            const extractedProvider = extracted.provider;
-            const draftProvider = Provider.create({
-                id: this.dependencies.providerIdGenerator.generate(),
-                razonSocial: extractedProvider?.razonSocial ?? extracted.providerCif,
-                ...(extractedProvider?.direccion ? { direccion: extractedProvider.direccion } : {}),
-                ...(extractedProvider?.poblacion ? { poblacion: extractedProvider.poblacion } : {}),
-                ...(extractedProvider?.provincia ? { provincia: extractedProvider.provincia } : {}),
-                ...(extractedProvider?.pais ? { pais: extractedProvider.pais } : {}),
-                cif: Cif.create(extractedProvider?.cif ?? normalizedCif),
-                status: ProviderStatus.Draft,
-                createdAt: now,
-                updatedAt: now,
-            });
+    private async createDraftProvider(
+        extracted: InvoiceExtractionResult,
+        normalizedCif: string,
+        now: Date,
+    ): Promise<Result<Provider, PortError>> {
+        const extractedProvider = extracted.provider;
+        const draftProvider = Provider.create({
+            id: this.dependencies.providerIdGenerator.generate(),
+            razonSocial: extractedProvider?.razonSocial ?? normalizedCif,
+            ...(extractedProvider?.direccion && { direccion: extractedProvider.direccion }),
+            ...(extractedProvider?.poblacion && { poblacion: extractedProvider.poblacion }),
+            ...(extractedProvider?.provincia && { provincia: extractedProvider.provincia }),
+            ...(extractedProvider?.pais && { pais: extractedProvider.pais }),
+            cif: Cif.create(extractedProvider?.cif ?? normalizedCif),
+            status: ProviderStatus.Draft,
+            createdAt: now,
+            updatedAt: now,
+        });
 
-            const createResult = await this.dependencies.providerRepository.create(draftProvider);
-            if (!createResult.success) {
-                return fail(createResult.error);
-            }
-
-            return ok(draftProvider);
-        }
-        if (provider.status !== ProviderStatus.Active) {
-            return fail(new InvalidProviderStatusError());
+        const createResult = await this.dependencies.providerRepository.create(draftProvider);
+        if (!createResult.success) {
+            return fail(createResult.error);
         }
 
-        return ok(provider);
+        return ok(draftProvider);
     }
 
     private async storeFile(

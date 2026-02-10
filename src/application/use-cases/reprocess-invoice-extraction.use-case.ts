@@ -17,7 +17,6 @@ import {
 } from '../../domain/entities/invoice-movement.entity.js';
 import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '../../domain/errors/invalid-invoice-status.error.js';
-import { FileRef } from '../../domain/value-objects/file-ref.value-object.js';
 import { InvoiceDate } from '../../domain/value-objects/invoice-date.value-object.js';
 import { Money } from '../../domain/value-objects/money.value-object.js';
 import { ok, fail, type Result } from '../../shared/result.js';
@@ -89,54 +88,10 @@ export class ReprocessInvoiceExtractionUseCase {
         }
         const extracted = extractionResult.value;
 
-        const headerUpdates: {
-            numeroFactura?: string;
-            fechaOperacion?: InvoiceDate;
-            fechaVencimiento?: InvoiceDate;
-            baseImponible?: Money;
-            iva?: Money;
-            total?: Money;
-            headerSource?: InvoiceHeaderSource;
-            headerStatus?: InvoiceHeaderStatus;
-        } = {};
-
-        if (invoice.headerSource !== InvoiceHeaderSource.Manual || invoice.headerStatus !== InvoiceHeaderStatus.Confirmed) {
-            if (extracted.invoice.numeroFactura) {
-                headerUpdates.numeroFactura = extracted.invoice.numeroFactura;
-            }
-            if (extracted.invoice.fechaOperacion) {
-                headerUpdates.fechaOperacion = InvoiceDate.create(extracted.invoice.fechaOperacion);
-            }
-            if (extracted.invoice.fechaVencimiento) {
-                headerUpdates.fechaVencimiento = InvoiceDate.create(extracted.invoice.fechaVencimiento);
-            }
-            if (extracted.invoice.baseImponible !== undefined) {
-                headerUpdates.baseImponible = Money.create(extracted.invoice.baseImponible);
-            }
-            if (extracted.invoice.iva !== undefined) {
-                headerUpdates.iva = Money.create(extracted.invoice.iva);
-            }
-            if (extracted.invoice.total !== undefined) {
-                headerUpdates.total = Money.create(extracted.invoice.total);
-            }
-            headerUpdates.headerSource = InvoiceHeaderSource.Ai;
-            headerUpdates.headerStatus = InvoiceHeaderStatus.Proposed;
-        }
+        const headerUpdates = this.buildHeaderUpdates(invoice, extracted);
 
         const manualMovements = invoice.movements.filter((movement) => movement.source === InvoiceMovementSource.Manual);
-        const aiMovements = extracted.invoice.movements.map((movement) =>
-            InvoiceMovement.create({
-                id: this.dependencies.invoiceMovementIdGenerator.generate(),
-                concepto: movement.concepto,
-                cantidad: movement.cantidad,
-                precio: movement.precio,
-                ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
-                ...(movement.iva === undefined ? {} : { iva: movement.iva }),
-                total: movement.total,
-                source: InvoiceMovementSource.Ai,
-                status: InvoiceMovementStatus.Proposed,
-            }),
-        );
+        const aiMovements = this.createAiMovements(extracted.invoice.movements);
 
         const updated = invoice.updateDetails({
             ...headerUpdates,
@@ -164,5 +119,71 @@ export class ReprocessInvoiceExtractionUseCase {
         }
 
         return ok({ invoiceId: updated.id });
+    }
+
+    private buildHeaderUpdates(
+        invoice: { headerSource: InvoiceHeaderSource; headerStatus: InvoiceHeaderStatus },
+        extracted: { invoice: {
+            numeroFactura?: string;
+            fechaOperacion?: string;
+            fechaVencimiento?: string;
+            baseImponible?: number;
+            iva?: number;
+            total?: number;
+        } },
+    ): Partial<{
+        numeroFactura: string;
+        fechaOperacion: InvoiceDate;
+        fechaVencimiento: InvoiceDate;
+        baseImponible: Money;
+        iva: Money;
+        total: Money;
+        headerSource: InvoiceHeaderSource;
+        headerStatus: InvoiceHeaderStatus;
+    }> {
+        const isManuallyConfirmed =
+            invoice.headerSource === InvoiceHeaderSource.Manual &&
+            invoice.headerStatus === InvoiceHeaderStatus.Confirmed;
+
+        if (isManuallyConfirmed) {
+            return {};
+        }
+
+        const ext = extracted.invoice;
+        return {
+            ...(ext.numeroFactura && { numeroFactura: ext.numeroFactura }),
+            ...(ext.fechaOperacion && { fechaOperacion: InvoiceDate.create(ext.fechaOperacion) }),
+            ...(ext.fechaVencimiento && { fechaVencimiento: InvoiceDate.create(ext.fechaVencimiento) }),
+            ...(ext.baseImponible !== undefined && { baseImponible: Money.create(ext.baseImponible) }),
+            ...(ext.iva !== undefined && { iva: Money.create(ext.iva) }),
+            ...(ext.total !== undefined && { total: Money.create(ext.total) }),
+            headerSource: InvoiceHeaderSource.Ai,
+            headerStatus: InvoiceHeaderStatus.Proposed,
+        };
+    }
+
+    private createAiMovements(
+        movements: Array<{
+            concepto: string;
+            cantidad: number;
+            precio: number;
+            baseImponible?: number;
+            iva?: number;
+            total: number;
+        }>,
+    ): InvoiceMovement[] {
+        return movements.map((movement) =>
+            InvoiceMovement.create({
+                id: this.dependencies.invoiceMovementIdGenerator.generate(),
+                concepto: movement.concepto,
+                cantidad: movement.cantidad,
+                precio: movement.precio,
+                ...(movement.baseImponible !== undefined && { baseImponible: movement.baseImponible }),
+                ...(movement.iva !== undefined && { iva: movement.iva }),
+                total: movement.total,
+                source: InvoiceMovementSource.Ai,
+                status: InvoiceMovementStatus.Proposed,
+            }),
+        );
     }
 }
