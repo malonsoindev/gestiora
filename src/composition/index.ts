@@ -44,6 +44,7 @@ import { Cif } from '../domain/value-objects/cif.value-object.js';
 import { InMemoryProviderRepository } from '../infrastructure/persistence/in-memory/in-memory-provider.repository.js';
 import { PostgresProviderRepository } from '../infrastructure/persistence/postgres/postgres-provider.repository.js';
 import { PostgresInvoiceRepository } from '../infrastructure/persistence/postgres/postgres-invoice.repository.js';
+import { PostgresSearchQueryRepository } from '../infrastructure/persistence/postgres/postgres-search-query.repository.js';
 import { CreateProviderUseCase } from '../application/use-cases/create-provider.use-case.js';
 import { InMemoryInvoiceRepository } from '../infrastructure/persistence/in-memory/in-memory-invoice.repository.js';
 import { CreateManualInvoiceUseCase } from '../application/use-cases/create-manual-invoice.use-case.js';
@@ -138,7 +139,9 @@ const loginRateLimiter = new InMemoryLoginRateLimiter(
     MAX_LOGIN_ATTEMPTS,
     LOGIN_WINDOW_MINUTES,
 );
-const searchQueryRepository = new InMemorySearchQueryRepository();
+const searchQueryRepository = usePostgres && sqlClient
+    ? new PostgresSearchQueryRepository(sqlClient)
+    : new InMemorySearchQueryRepository();
 const searchQueryIdGenerator = new SearchQueryIdGeneratorCrypto();
 
 const genkitRagClient = createGenkitRagClient({
