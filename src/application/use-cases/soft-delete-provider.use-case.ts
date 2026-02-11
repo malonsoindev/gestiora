@@ -3,17 +3,20 @@ import type { ProviderRepository } from '../ports/provider.repository.js';
 import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
+import type { RagReindexProviderInvoicesHandler } from '../services/rag-reindex-provider-invoices.service.js';
 import { ProviderNotFoundError } from '../../domain/errors/provider-not-found.error.js';
 import { ProviderStatus } from '../../domain/entities/provider.entity.js';
+import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
 import { ok, fail, type Result } from '../../shared/result.js';
 
 export type SoftDeleteProviderDependencies = {
     providerRepository: ProviderRepository;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
+    ragReindexProviderInvoicesService: RagReindexProviderInvoicesHandler;
 };
 
-export type SoftDeleteProviderError = ProviderNotFoundError | PortError;
+export type SoftDeleteProviderError = ProviderNotFoundError | InvoiceNotFoundError | PortError;
 
 export class SoftDeleteProviderUseCase {
     constructor(private readonly dependencies: SoftDeleteProviderDependencies) {}
@@ -58,6 +61,13 @@ export class SoftDeleteProviderUseCase {
         });
         if (!auditResult.success) {
             return fail(auditResult.error);
+        }
+
+        const reindexResult = await this.dependencies.ragReindexProviderInvoicesService.reindexByProviderId(
+            updatedProvider.id,
+        );
+        if (!reindexResult.success) {
+            return fail(reindexResult.error);
         }
 
         return ok(undefined);

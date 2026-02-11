@@ -14,6 +14,7 @@ import { InvoiceNotFoundError } from '../../../src/domain/errors/invoice-not-fou
 import { InvalidInvoiceStatusError } from '../../../src/domain/errors/invalid-invoice-status.error.js';
 import { InvalidInvoiceTotalsError } from '../../../src/domain/errors/invalid-invoice-totals.error.js';
 import { ok, type Result } from '../../../src/shared/result.js';
+import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
 
 const fixedNow = new Date('2026-02-18T10:00:00.000Z');
 
@@ -111,6 +112,7 @@ describe('UpdateManualInvoiceUseCase', () => {
             auditLogger,
             dateProvider: new DateProviderStub(),
             invoiceMovementIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -151,6 +153,7 @@ describe('UpdateManualInvoiceUseCase', () => {
             auditLogger,
             dateProvider: new DateProviderStub(),
             invoiceMovementIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -192,6 +195,7 @@ describe('UpdateManualInvoiceUseCase', () => {
             auditLogger,
             dateProvider: new DateProviderStub(),
             invoiceMovementIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -228,6 +232,7 @@ describe('UpdateManualInvoiceUseCase', () => {
             auditLogger,
             dateProvider: new DateProviderStub(),
             invoiceMovementIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -268,6 +273,7 @@ describe('UpdateManualInvoiceUseCase', () => {
             auditLogger,
             dateProvider: new DateProviderStub(),
             invoiceMovementIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({

@@ -13,6 +13,7 @@ import { InvalidProviderStatusError } from '../../../src/domain/errors/invalid-p
 import { InvalidInvoiceTotalsError } from '../../../src/domain/errors/invalid-invoice-totals.error.js';
 import { ProviderNotFoundError } from '../../../src/domain/errors/provider-not-found.error.js';
 import { ok, type Result } from '../../../src/shared/result.js';
+import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
 
 const fixedNow = new Date('2026-02-10T10:00:00.000Z');
 
@@ -132,6 +133,7 @@ describe('CreateManualInvoiceUseCase', () => {
             dateProvider: new DateProviderStub(),
             invoiceIdGenerator,
             invoiceMovementIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -179,6 +181,7 @@ describe('CreateManualInvoiceUseCase', () => {
             dateProvider: new DateProviderStub(),
             invoiceIdGenerator,
             invoiceMovementIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -217,6 +220,7 @@ describe('CreateManualInvoiceUseCase', () => {
             dateProvider: new DateProviderStub(),
             invoiceIdGenerator,
             invoiceMovementIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -257,6 +261,7 @@ describe('CreateManualInvoiceUseCase', () => {
             dateProvider: new DateProviderStub(),
             invoiceIdGenerator,
             invoiceMovementIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -297,6 +302,7 @@ describe('CreateManualInvoiceUseCase', () => {
             dateProvider: new DateProviderStub(),
             invoiceIdGenerator,
             invoiceMovementIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -337,6 +343,7 @@ describe('CreateManualInvoiceUseCase', () => {
             dateProvider: new DateProviderStub(),
             invoiceIdGenerator,
             invoiceMovementIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -381,6 +388,7 @@ describe('CreateManualInvoiceUseCase', () => {
             dateProvider: new DateProviderStub(),
             invoiceIdGenerator,
             invoiceMovementIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({

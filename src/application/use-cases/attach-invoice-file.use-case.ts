@@ -3,6 +3,7 @@ import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
+import type { RagReindexInvoiceHandler } from '../services/rag-reindex-invoice.service.js';
 import type { AttachInvoiceFileRequest } from '../dto/attach-invoice-file.request.js';
 import type { AttachInvoiceFileResponse } from '../dto/attach-invoice-file.response.js';
 import type { Invoice } from '../../domain/entities/invoice.entity.js';
@@ -17,6 +18,7 @@ export type AttachInvoiceFileDependencies = {
     fileStorage: FileStorage;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
+    ragReindexInvoiceService: RagReindexInvoiceHandler;
 };
 
 export type AttachInvoiceFileError = InvoiceNotFoundError | InvalidInvoiceStatusError | PortError;
@@ -70,6 +72,11 @@ export class AttachInvoiceFileUseCase {
         });
         if (!auditResult.success) {
             return fail(auditResult.error);
+        }
+
+        const reindexResult = await this.dependencies.ragReindexInvoiceService.reindex(updated.id);
+        if (!reindexResult.success) {
+            return fail(reindexResult.error);
         }
 
         return ok(this.mapResponse(updated, fileRef));

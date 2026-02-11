@@ -12,6 +12,7 @@ import type { DateProvider } from '../../../src/application/ports/date-provider.
 import type { PortError } from '../../../src/application/errors/port.error.js';
 import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
 import { ok, type Result } from '../../../src/shared/result.js';
+import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
 
 const fixedNow = new Date('2026-02-24T10:00:00.000Z');
 
@@ -258,6 +259,7 @@ describe('UploadInvoiceDocumentUseCase', () => {
             invoiceIdGenerator,
             invoiceMovementIdGenerator,
             providerIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -295,6 +297,7 @@ describe('UploadInvoiceDocumentUseCase', () => {
             invoiceIdGenerator,
             invoiceMovementIdGenerator,
             providerIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -332,6 +335,7 @@ describe('UploadInvoiceDocumentUseCase', () => {
             invoiceIdGenerator,
             invoiceMovementIdGenerator,
             providerIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({

@@ -19,6 +19,7 @@ import { FileRef } from '../../../src/domain/value-objects/file-ref.value-object
 import { InvoiceDate } from '../../../src/domain/value-objects/invoice-date.value-object.js';
 import { Money } from '../../../src/domain/value-objects/money.value-object.js';
 import { ok, type Result } from '../../../src/shared/result.js';
+import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
 
 const fixedNow = new Date('2026-03-04T10:00:00.000Z');
 
@@ -192,6 +193,7 @@ describe('ReprocessInvoiceExtractionUseCase', () => {
             auditLogger,
             dateProvider: new DateProviderStub(),
             invoiceMovementIdGenerator: movementIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -232,6 +234,7 @@ describe('ReprocessInvoiceExtractionUseCase', () => {
             auditLogger,
             dateProvider: new DateProviderStub(),
             invoiceMovementIdGenerator: movementIdGenerator,
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({

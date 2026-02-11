@@ -14,6 +14,7 @@ import { FileRef } from '../../../src/domain/value-objects/file-ref.value-object
 import { InvoiceNotFoundError } from '../../../src/domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '../../../src/domain/errors/invalid-invoice-status.error.js';
 import { ok, type Result } from '../../../src/shared/result.js';
+import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
 
 const fixedNow = new Date('2026-02-15T10:00:00.000Z');
 
@@ -127,6 +128,7 @@ describe('AttachInvoiceFileUseCase', () => {
             fileStorage,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -168,6 +170,7 @@ describe('AttachInvoiceFileUseCase', () => {
             fileStorage,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -196,6 +199,7 @@ describe('AttachInvoiceFileUseCase', () => {
             fileStorage,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -233,6 +237,7 @@ describe('AttachInvoiceFileUseCase', () => {
             fileStorage,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({

@@ -66,6 +66,14 @@ import { createGenkitInvoicePromptRunner } from '../infrastructure/adapters/invo
 import { PdfTextExtractor } from '../infrastructure/adapters/invoice-extraction/pdf-text-extractor.js';
 import { InMemoryFileStorage } from '../infrastructure/adapters/in-memory/in-memory-file-storage.js';
 import { LocalFileStorage } from '../infrastructure/adapters/local/local-file-storage.js';
+import { createGenkitRagClient } from '../infrastructure/adapters/rag/genkit-rag-client.js';
+import { DevLocalRagIndexer } from '../infrastructure/adapters/rag/dev-local-rag-indexer.js';
+import { DevLocalRagRetriever } from '../infrastructure/adapters/rag/dev-local-rag-retriever.js';
+import { GenkitRagAnswerGenerator } from '../infrastructure/adapters/rag/genkit-rag-answer-generator.js';
+import { IndexInvoicesForRagUseCase } from '../application/use-cases/index-invoices-for-rag.use-case.js';
+import { QueryInvoicesRagUseCase } from '../application/use-cases/query-invoices-rag.use-case.js';
+import { RagReindexInvoiceService } from '../application/services/rag-reindex-invoice.service.js';
+import { RagReindexProviderInvoicesService } from '../application/services/rag-reindex-provider-invoices.service.js';
 
 const ACCESS_TOKEN_TTL_SECONDS = 900;
 const REFRESH_TOKEN_TTL_SECONDS = 2_592_000;
@@ -126,6 +134,45 @@ const loginRateLimiter = new InMemoryLoginRateLimiter(
     MAX_LOGIN_ATTEMPTS,
     LOGIN_WINDOW_MINUTES,
 );
+
+const genkitRagClient = createGenkitRagClient({
+    indexName: config.RAG_INDEX_NAME,
+    promptDir: config.RAG_PROMPT_DIR,
+    embedderModel: config.RAG_EMBEDDER_MODEL,
+});
+const ragIndexer = new DevLocalRagIndexer({
+    ai: genkitRagClient,
+    indexName: config.RAG_INDEX_NAME,
+});
+const ragRetriever = new DevLocalRagRetriever({
+    ai: genkitRagClient,
+    indexName: config.RAG_INDEX_NAME,
+});
+const ragAnswerGenerator = new GenkitRagAnswerGenerator({
+    ai: genkitRagClient,
+    modelName: config.OAI_MODEL_NAME ?? 'gpt-4o-mini',
+    promptName: 'rag-query',
+});
+const indexInvoicesForRagUseCase = new IndexInvoicesForRagUseCase({
+    ragIndexer,
+    movementsChunkSize: 10,
+});
+const queryInvoicesRagUseCase = new QueryInvoicesRagUseCase({
+    ragRetriever,
+    ragAnswerGenerator,
+    topK: 5,
+});
+const ragReindexInvoiceService = new RagReindexInvoiceService({
+    invoiceRepository,
+    providerRepository,
+    indexInvoicesForRagUseCase,
+});
+const ragReindexProviderInvoicesService = new RagReindexProviderInvoicesService({
+    invoiceRepository,
+    providerRepository,
+    indexInvoicesForRagUseCase,
+    pageSize: 200,
+});
 
 const loginUserUseCase = new LoginUserUseCase({
     userRepository,
@@ -236,18 +283,21 @@ const updateProviderUseCase = new UpdateProviderUseCase({
     providerRepository,
     auditLogger,
     dateProvider,
+    ragReindexProviderInvoicesService,
 });
 
 const updateProviderStatusUseCase = new UpdateProviderStatusUseCase({
     providerRepository,
     auditLogger,
     dateProvider,
+    ragReindexProviderInvoicesService,
 });
 
 const softDeleteProviderUseCase = new SoftDeleteProviderUseCase({
     providerRepository,
     auditLogger,
     dateProvider,
+    ragReindexProviderInvoicesService,
 });
 
 const createManualInvoiceUseCase = new CreateManualInvoiceUseCase({
@@ -257,6 +307,7 @@ const createManualInvoiceUseCase = new CreateManualInvoiceUseCase({
     dateProvider,
     invoiceIdGenerator,
     invoiceMovementIdGenerator,
+    ragReindexInvoiceService,
 });
 
 const attachInvoiceFileUseCase = new AttachInvoiceFileUseCase({
@@ -264,6 +315,7 @@ const attachInvoiceFileUseCase = new AttachInvoiceFileUseCase({
     fileStorage,
     auditLogger,
     dateProvider,
+    ragReindexInvoiceService,
 });
 
 const updateManualInvoiceUseCase = new UpdateManualInvoiceUseCase({
@@ -271,18 +323,21 @@ const updateManualInvoiceUseCase = new UpdateManualInvoiceUseCase({
     invoiceMovementIdGenerator,
     auditLogger,
     dateProvider,
+    ragReindexInvoiceService,
 });
 
 const confirmInvoiceMovementsUseCase = new ConfirmInvoiceMovementsUseCase({
     invoiceRepository,
     auditLogger,
     dateProvider,
+    ragReindexInvoiceService,
 });
 
 const confirmInvoiceHeaderUseCase = new ConfirmInvoiceHeaderUseCase({
     invoiceRepository,
     auditLogger,
     dateProvider,
+    ragReindexInvoiceService,
 });
 
 
@@ -298,6 +353,7 @@ const softDeleteInvoiceUseCase = new SoftDeleteInvoiceUseCase({
     invoiceRepository,
     auditLogger,
     dateProvider,
+    ragReindexInvoiceService,
 });
 
 const getInvoiceFileUseCase = new GetInvoiceFileUseCase({
@@ -377,6 +433,7 @@ const reprocessInvoiceExtractionUseCase = new ReprocessInvoiceExtractionUseCase(
     auditLogger,
     dateProvider,
     invoiceMovementIdGenerator,
+    ragReindexInvoiceService,
 });
 
 const uploadInvoiceDocumentUseCase = new UploadInvoiceDocumentUseCase({
@@ -389,6 +446,7 @@ const uploadInvoiceDocumentUseCase = new UploadInvoiceDocumentUseCase({
     invoiceIdGenerator,
     invoiceMovementIdGenerator,
     providerIdGenerator,
+    ragReindexInvoiceService,
 });
 
 export const compositionRoot = {
@@ -439,6 +497,8 @@ export const compositionRoot = {
     logoutUserUseCase,
     authorizeRequestUseCase,
     antiBruteForceUseCase,
+    indexInvoicesForRagUseCase,
+    queryInvoicesRagUseCase,
 };
 
 export const seedUsers = async (): Promise<void> => {

@@ -11,6 +11,7 @@ import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.
 import type { ProviderProps } from '../../../src/domain/entities/provider.entity.js';
 import { Cif } from '../../../src/domain/value-objects/cif.value-object.js';
 import { ok, type Result } from '../../../src/shared/result.js';
+import { RagReindexProviderInvoicesServiceStub } from '../stubs/rag-reindex-provider-invoices.service.stub.js';
 
 const fixedNow = new Date('2026-02-05T10:00:00.000Z');
 
@@ -95,6 +96,7 @@ describe('UpdateProviderUseCase', () => {
             providerRepository,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            ragReindexProviderInvoicesService: new RagReindexProviderInvoicesServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -123,6 +125,7 @@ describe('UpdateProviderUseCase', () => {
             providerRepository,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            ragReindexProviderInvoicesService: new RagReindexProviderInvoicesServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -148,6 +151,7 @@ describe('UpdateProviderUseCase', () => {
             providerRepository,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            ragReindexProviderInvoicesService: new RagReindexProviderInvoicesServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -171,6 +175,7 @@ describe('UpdateProviderUseCase', () => {
             providerRepository,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            ragReindexProviderInvoicesService: new RagReindexProviderInvoicesServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -198,6 +203,7 @@ describe('UpdateProviderUseCase', () => {
             providerRepository,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            ragReindexProviderInvoicesService: new RagReindexProviderInvoicesServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -236,6 +242,7 @@ describe('UpdateProviderUseCase', () => {
             providerRepository,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            ragReindexProviderInvoicesService: new RagReindexProviderInvoicesServiceStub(),
         });
 
         const result = await useCase.execute({

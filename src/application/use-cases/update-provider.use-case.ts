@@ -3,9 +3,11 @@ import type { ProviderRepository } from '../ports/provider.repository.js';
 import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
+import type { RagReindexProviderInvoicesHandler } from '../services/rag-reindex-provider-invoices.service.js';
 import { ProviderNotFoundError } from '../../domain/errors/provider-not-found.error.js';
 import { ProviderAlreadyExistsError } from '../../domain/errors/provider-already-exists.error.js';
 import { InvalidCifError } from '../../domain/errors/invalid-cif.error.js';
+import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
 import type { Provider } from '../../domain/entities/provider.entity.js';
 import { Cif } from '../../domain/value-objects/cif.value-object.js';
 import { ok, fail, type Result } from '../../shared/result.js';
@@ -14,12 +16,14 @@ export type UpdateProviderDependencies = {
     providerRepository: ProviderRepository;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
+    ragReindexProviderInvoicesService: RagReindexProviderInvoicesHandler;
 };
 
 export type UpdateProviderError =
     | ProviderNotFoundError
     | ProviderAlreadyExistsError
     | InvalidCifError
+    | InvoiceNotFoundError
     | PortError;
 
 export class UpdateProviderUseCase {
@@ -68,6 +72,13 @@ export class UpdateProviderUseCase {
         });
         if (!auditResult.success) {
             return fail(auditResult.error);
+        }
+
+        const reindexResult = await this.dependencies.ragReindexProviderInvoicesService.reindexByProviderId(
+            updatedProvider.id,
+        );
+        if (!reindexResult.success) {
+            return fail(reindexResult.error);
         }
 
         return ok(undefined);

@@ -5,6 +5,7 @@ import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
 import type { InvoiceMovementIdGenerator } from '../ports/invoice-movement-id-generator.js';
+import type { RagReindexInvoiceHandler } from '../services/rag-reindex-invoice.service.js';
 import type { Invoice } from '../../domain/entities/invoice.entity.js';
 import { InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '../../domain/entities/invoice.entity.js';
 import { InvoiceMovement } from '../../domain/entities/invoice-movement.entity.js';
@@ -20,6 +21,7 @@ export type UpdateManualInvoiceDependencies = {
     invoiceMovementIdGenerator: InvoiceMovementIdGenerator;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
+    ragReindexInvoiceService: RagReindexInvoiceHandler;
 };
 
 export type UpdateManualInvoiceError = InvoiceNotFoundError | InvalidInvoiceStatusError | InvalidInvoiceTotalsError | PortError;
@@ -99,6 +101,11 @@ export class UpdateManualInvoiceUseCase {
         });
         if (!auditResult.success) {
             return fail(auditResult.error);
+        }
+
+        const reindexResult = await this.dependencies.ragReindexInvoiceService.reindex(updated.id);
+        if (!reindexResult.success) {
+            return fail(reindexResult.error);
         }
 
         return ok(this.mapResponse(updated));
