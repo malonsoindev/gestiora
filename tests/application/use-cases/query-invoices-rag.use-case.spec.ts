@@ -43,6 +43,7 @@ describe('QueryInvoicesRagUseCase', () => {
     it('returns an answer based on retrieved documents', async () => {
         const retriever = new RagRetrieverStub([
             { text: 'doc-1', metadata: { invoiceId: 'invoice-1' } },
+            { text: 'doc-2', metadata: { invoiceId: 'invoice-1' } },
         ]);
         const generator = new RagAnswerGeneratorStub('respuesta');
         const useCase = new QueryInvoicesRagUseCase({
@@ -58,6 +59,7 @@ describe('QueryInvoicesRagUseCase', () => {
             expect(result.value.answer).toBe('respuesta');
             expect(result.value.references).toHaveLength(1);
             expect(result.value.references[0]?.documentId).toBe('invoice-1');
+            expect(result.value.references[0]?.snippets.length).toBe(2);
         }
     });
 

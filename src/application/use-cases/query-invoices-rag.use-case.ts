@@ -49,23 +49,26 @@ export class QueryInvoicesRagUseCase {
     }
 
     private buildReferences(documents: Array<{ text: string; metadata?: Record<string, string> }>) {
-        return documents.map((doc, index) => ({
-            documentId: this.buildDocumentId(doc.metadata, index),
-            snippets: this.buildSnippets(doc.text),
+        const grouped = new Map<string, string[]>();
+
+        documents.forEach((doc, index) => {
+            const documentId = this.buildDocumentId(doc.metadata, index);
+            const snippets = this.buildSnippets(doc.text);
+            if (snippets.length === 0) {
+                return;
+            }
+            const existing = grouped.get(documentId) ?? [];
+            grouped.set(documentId, existing.concat(snippets));
+        });
+
+        return Array.from(grouped.entries()).map(([documentId, snippets]) => ({
+            documentId,
+            snippets,
         }));
     }
 
     private buildDocumentId(metadata: Record<string, string> | undefined, index: number): string {
-        const baseId = metadata?.invoiceId ?? `doc-${index + 1}`;
-        const chunkType = metadata?.chunkType;
-        const chunkIndex = metadata?.chunkIndex;
-        const suffixParts = [chunkType, chunkIndex].filter(
-            (value): value is string => typeof value === 'string' && value.length > 0,
-        );
-        if (suffixParts.length === 0) {
-            return baseId;
-        }
-        return `${baseId}:${suffixParts.join(':')}`;
+        return metadata?.invoiceId ?? `doc-${index + 1}`;
     }
 
     private buildSnippets(text: string): string[] {
