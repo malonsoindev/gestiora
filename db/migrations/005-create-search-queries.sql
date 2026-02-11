@@ -5,7 +5,7 @@ create table if not exists search_queries (
     normalized_query text not null,
     query_key text not null,
     answer text not null,
-    references jsonb not null,
+    references_json jsonb not null,
     created_at timestamptz not null
 );
 

@@ -21,6 +21,7 @@
     "rag": "tsx rag.ts",
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
+    "db:deploy": "tsx db/scripts/deploy-db.ts",
     "db:apply": "tsx db/scripts/apply-sql.ts",
     "db:seed": "tsx db/scripts/seed-users.ts && tsx db/scripts/seed-providers.ts",
     "api:smoke": "tsx scripts/api-smoke.ts"

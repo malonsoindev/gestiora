@@ -13,7 +13,7 @@ type SearchQueryRow = {
     normalized_query: string;
     query_key: string;
     answer: string;
-    references: unknown;
+    references_json: unknown;
     created_at: Date | string;
 };
 
@@ -62,7 +62,7 @@ export class PostgresSearchQueryRepository implements SearchQueryRepository {
                     normalized_query,
                     query_key,
                     answer,
-                    references,
+                    references_json,
                     created_at
                 ) values (
                     ${record.queryId},
@@ -90,7 +90,7 @@ export class PostgresSearchQueryRepository implements SearchQueryRepository {
             normalizedQuery: row.normalized_query,
             key: row.query_key,
             answer: row.answer,
-            references: this.toReferences(row.references),
+            references: this.toReferences(row.references_json),
             createdAt: toDate(row.created_at),
         };
     }
