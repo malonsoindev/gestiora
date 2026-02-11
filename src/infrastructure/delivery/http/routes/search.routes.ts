@@ -19,7 +19,7 @@ export const registerSearchRoutes = async (
     );
 
     app.get<{ Params: { queryId: string } }>(
-        '/search/{queryId}',
+        '/search/:queryId',
         {
             preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
             schema: searchSchemas.getById,
