@@ -1,20 +1,13 @@
-import type { QueryInvoicesRagRequest, QueryInvoicesRagResponse } from './query-invoices-rag.use-case.js';
-import type { SearchQueryRepository, SearchReference } from '../ports/search-query.repository.js';
+import type { QueryInvoicesRagRequest } from '../dto/query-invoices-rag.request.js';
+import type { QueryInvoicesRagResponse } from '../dto/query-invoices-rag.response.js';
+import type { SearchQueryRepository } from '../ports/search-query.repository.js';
 import type { SearchQueryIdGenerator } from '../ports/search-query-id-generator.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
 import { ok, fail, type Result } from '../../shared/result.js';
-
-export type ProcessSearchQueryRequest = {
-    userId: string;
-    query: string;
-};
-
-export type ProcessSearchQueryResponse = {
-    queryId: string;
-    answer: string;
-    references: SearchReference[];
-};
+import { SearchFilterDetector } from '../services/search-filter-detector.service.js';
+import type { ProcessSearchQueryRequest } from '../dto/process-search-query.request.js';
+import type { ProcessSearchQueryResponse } from '../dto/process-search-query.response.js';
 
 export type ProcessSearchQueryDependencies = {
     queryInvoicesRagUseCase: {
@@ -28,6 +21,8 @@ export type ProcessSearchQueryDependencies = {
 export type ProcessSearchQueryError = PortError;
 
 export class ProcessSearchQueryUseCase {
+    private readonly filterDetector = new SearchFilterDetector();
+
     constructor(private readonly dependencies: ProcessSearchQueryDependencies) {}
 
     async execute(request: ProcessSearchQueryRequest): Promise<Result<ProcessSearchQueryResponse, ProcessSearchQueryError>> {
@@ -46,8 +41,10 @@ export class ProcessSearchQueryUseCase {
             });
         }
 
+        const filters = this.filterDetector.detect(request.query);
         const queryResult = await this.dependencies.queryInvoicesRagUseCase.execute({
             query: request.query,
+            filters,
         });
         if (!queryResult.success) {
             return fail(queryResult.error);

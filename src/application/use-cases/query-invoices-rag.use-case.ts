@@ -2,15 +2,8 @@ import { ok, fail, type Result } from '../../shared/result.js';
 import type { PortError } from '../errors/port.error.js';
 import type { RagRetriever } from '../ports/rag-retriever.js';
 import type { RagAnswerGenerator } from '../ports/rag-answer-generator.js';
-
-export type QueryInvoicesRagRequest = {
-    query: string;
-};
-
-export type QueryInvoicesRagResponse = {
-    answer: string;
-    references: Array<{ documentId: string; snippets: string[] }>;
-};
+import type { QueryInvoicesRagRequest } from '../dto/query-invoices-rag.request.js';
+import type { QueryInvoicesRagResponse } from '../dto/query-invoices-rag.response.js';
 
 export type QueryInvoicesRagDependencies = {
     ragRetriever: RagRetriever;
@@ -34,9 +27,11 @@ export class QueryInvoicesRagUseCase {
             return fail(retrieveResult.error);
         }
 
+        const filteredDocs = this.applyFilters(retrieveResult.value, request.filters);
+
         const generateResult = await this.dependencies.ragAnswerGenerator.generate({
             query: request.query,
-            documents: retrieveResult.value,
+            documents: filteredDocs,
         });
         if (!generateResult.success) {
             return fail(generateResult.error);
@@ -44,7 +39,7 @@ export class QueryInvoicesRagUseCase {
 
         return ok({
             answer: generateResult.value,
-            references: this.buildReferences(retrieveResult.value),
+            references: this.buildReferences(filteredDocs),
         });
     }
 
@@ -79,5 +74,121 @@ export class QueryInvoicesRagUseCase {
         const maxLength = 240;
         const snippet = trimmed.length > maxLength ? `${trimmed.slice(0, maxLength)}...` : trimmed;
         return [snippet];
+    }
+
+    private applyFilters(
+        documents: Array<{ text: string; metadata?: Record<string, string> }>,
+        filters: {
+            providerName?: string;
+            dateFrom?: string;
+            dateTo?: string;
+            minTotal?: number;
+            maxTotal?: number;
+        } | undefined,
+    ) {
+        if (!filters) {
+            return documents;
+        }
+        return documents.filter((doc) => this.matchesFilters(doc.text, filters));
+    }
+
+    private matchesFilters(
+        text: string,
+        filters: {
+            providerName?: string;
+            dateFrom?: string;
+            dateTo?: string;
+            minTotal?: number;
+            maxTotal?: number;
+        },
+    ): boolean {
+        const payload = this.parseInvoicePayload(text);
+        if (!payload) {
+            return false;
+        }
+        return (
+            this.matchesProvider(payload, filters) &&
+            this.matchesDate(payload, filters) &&
+            this.matchesTotal(payload, filters)
+        );
+    }
+
+    private matchesProvider(
+        payload: { providerName: string },
+        filters: { providerName?: string },
+    ): boolean {
+        if (!filters.providerName) {
+            return true;
+        }
+        const providerName = this.normalizeText(payload.providerName);
+        const expected = this.normalizeText(filters.providerName);
+        return providerName.includes(expected);
+    }
+
+    private matchesDate(
+        payload: { fechaOperacion?: string | undefined },
+        filters: { dateFrom?: string; dateTo?: string },
+    ): boolean {
+        if (!filters.dateFrom && !filters.dateTo) {
+            return true;
+        }
+        const invoiceDate = payload.fechaOperacion;
+        if (!invoiceDate) {
+            return false;
+        }
+        if (filters.dateFrom && invoiceDate < filters.dateFrom) {
+            return false;
+        }
+        if (filters.dateTo && invoiceDate > filters.dateTo) {
+            return false;
+        }
+        return true;
+    }
+
+    private matchesTotal(
+        payload: { total?: number | undefined },
+        filters: { minTotal?: number; maxTotal?: number },
+    ): boolean {
+        if (filters.minTotal === undefined && filters.maxTotal === undefined) {
+            return true;
+        }
+        const total = payload.total;
+        if (total === undefined) {
+            return false;
+        }
+        if (filters.minTotal !== undefined && total < filters.minTotal) {
+            return false;
+        }
+        if (filters.maxTotal !== undefined && total > filters.maxTotal) {
+            return false;
+        }
+        return true;
+    }
+
+    private parseInvoicePayload(text: string): {
+        providerName: string;
+        fechaOperacion?: string | undefined;
+        total?: number | undefined;
+    } | null {
+        try {
+            const parsed = JSON.parse(text) as {
+                invoice?: { fechaOperacion?: string; total?: number };
+                provider?: { razonSocial?: string } | null;
+            };
+            const providerName = parsed.provider?.razonSocial ?? '';
+            return {
+                providerName,
+                ...(parsed.invoice?.fechaOperacion === undefined
+                    ? {}
+                    : { fechaOperacion: parsed.invoice.fechaOperacion }),
+                ...(parsed.invoice?.total === undefined ? {} : { total: parsed.invoice.total }),
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    private normalizeText(value: string): string {
+        return value.trim().replaceAll(/\s+/g, ' ').toLowerCase();
     }
 }

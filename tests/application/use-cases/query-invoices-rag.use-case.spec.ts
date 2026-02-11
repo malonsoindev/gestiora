@@ -42,8 +42,8 @@ class RagAnswerGeneratorStub implements RagAnswerGenerator {
 describe('QueryInvoicesRagUseCase', () => {
     it('returns an answer based on retrieved documents', async () => {
         const retriever = new RagRetrieverStub([
-            { text: 'doc-1', metadata: { invoiceId: 'invoice-1' } },
-            { text: 'doc-2', metadata: { invoiceId: 'invoice-1' } },
+            { text: '{"invoice":{"fechaOperacion":"2026-02-10","total":100},"provider":{"razonSocial":"Proveedor Demo"}}', metadata: { invoiceId: 'invoice-1' } },
+            { text: '{"invoice":{"fechaOperacion":"2026-02-11","total":200},"provider":{"razonSocial":"Proveedor Demo"}}', metadata: { invoiceId: 'invoice-1' } },
         ]);
         const generator = new RagAnswerGeneratorStub('respuesta');
         const useCase = new QueryInvoicesRagUseCase({
@@ -60,6 +60,34 @@ describe('QueryInvoicesRagUseCase', () => {
             expect(result.value.references).toHaveLength(1);
             expect(result.value.references[0]?.documentId).toBe('invoice-1');
             expect(result.value.references[0]?.snippets.length).toBe(2);
+        }
+    });
+
+    it('applies provider and date filters', async () => {
+        const retriever = new RagRetrieverStub([
+            { text: '{"invoice":{"fechaOperacion":"2026-02-10","total":100},"provider":{"razonSocial":"Proveedor Demo"}}', metadata: { invoiceId: 'invoice-1' } },
+            { text: '{"invoice":{"fechaOperacion":"2026-02-12","total":100},"provider":{"razonSocial":"Otro"}}', metadata: { invoiceId: 'invoice-2' } },
+        ]);
+        const generator = new RagAnswerGeneratorStub('respuesta');
+        const useCase = new QueryInvoicesRagUseCase({
+            ragRetriever: retriever,
+            ragAnswerGenerator: generator,
+            topK: 5,
+        });
+
+        const result = await useCase.execute({
+            query: 'facturas',
+            filters: {
+                providerName: 'proveedor demo',
+                dateFrom: '2026-02-10',
+                dateTo: '2026-02-11',
+            },
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.value.references).toHaveLength(1);
+            expect(result.value.references[0]?.documentId).toBe('invoice-1');
         }
     });
 

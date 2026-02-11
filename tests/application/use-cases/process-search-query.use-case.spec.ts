@@ -4,7 +4,7 @@ import type { SearchQueryRepository, SearchQueryRecord } from '../../../src/appl
 import type { SearchQueryIdGenerator } from '../../../src/application/ports/search-query-id-generator.js';
 import type { DateProvider } from '../../../src/application/ports/date-provider.js';
 import { PortError } from '../../../src/application/errors/port.error.js';
-import { ok, fail, type Result } from '../../../src/shared/result.js';
+import { ok, type Result } from '../../../src/shared/result.js';
 
 const fixedNow = new Date('2026-02-20T10:00:00.000Z');
 
@@ -38,6 +38,12 @@ class SearchQueryRepositoryStub implements SearchQueryRepository {
     async save(record: SearchQueryRecord): Promise<Result<void, PortError>> {
         this.byKey.set(record.key, record);
         this.byId.set(record.queryId, record);
+        return ok(undefined);
+    }
+
+    async clearAll(): Promise<Result<void, PortError>> {
+        this.byKey.clear();
+        this.byId.clear();
         return ok(undefined);
     }
 }

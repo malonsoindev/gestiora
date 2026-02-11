@@ -1,16 +1,10 @@
-import type { Invoice } from '../../domain/entities/invoice.entity.js';
-import type { Provider } from '../../domain/entities/provider.entity.js';
 import { ok, fail, type Result } from '../../shared/result.js';
 import type { PortError } from '../errors/port.error.js';
 import type { RagDocument, RagIndexer } from '../ports/rag-indexer.js';
-
-export type IndexInvoicesForRagRequest = {
-    rows: Array<{ invoice: Invoice; provider: Provider | null }>;
-};
-
-export type IndexInvoicesForRagResponse = {
-    documentsIndexed: number;
-};
+import type { IndexInvoicesForRagRequest } from '../dto/index-invoices-for-rag.request.js';
+import type { IndexInvoicesForRagResponse } from '../dto/index-invoices-for-rag.response.js';
+import type { Invoice } from '../../domain/entities/invoice.entity.js';
+import type { Provider } from '../../domain/entities/provider.entity.js';
 
 export type IndexInvoicesForRagDependencies = {
     ragIndexer: RagIndexer;

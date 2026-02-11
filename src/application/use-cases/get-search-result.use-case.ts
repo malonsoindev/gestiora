@@ -1,16 +1,9 @@
-import type { SearchQueryRepository, SearchReference } from '../ports/search-query.repository.js';
+import type { SearchQueryRepository } from '../ports/search-query.repository.js';
 import type { PortError } from '../errors/port.error.js';
 import { SearchQueryNotFoundError } from '../../domain/errors/search-query-not-found.error.js';
 import { ok, fail, type Result } from '../../shared/result.js';
-
-export type GetSearchResultRequest = {
-    queryId: string;
-};
-
-export type GetSearchResultResponse = {
-    answer: string;
-    references: SearchReference[];
-};
+import type { GetSearchResultRequest } from '../dto/get-search-result.request.js';
+import type { GetSearchResultResponse } from '../dto/get-search-result.response.js';
 
 export type GetSearchResultDependencies = {
     searchQueryRepository: SearchQueryRepository;
