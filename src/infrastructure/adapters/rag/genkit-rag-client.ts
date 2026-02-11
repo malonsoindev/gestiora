@@ -16,7 +16,7 @@ export const createGenkitRagClient = (config: GenkitRagClientConfig): Genkit =>
             devLocalVectorstore([
                 {
                     indexName: config.indexName,
-                    embedder: openAI.embedder(config.embedderModel),
+                    embedder: openAI.embedder(config.embedderModel || 'text-embedding-3-small'),
                 },
             ]),
         ],
