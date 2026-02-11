@@ -17,4 +17,13 @@ export const registerSearchRoutes = async (
         },
         async (request, reply) => controller.search(request, reply),
     );
+
+    app.get<{ Params: { queryId: string } }>(
+        '/search/{queryId}',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, false),
+            schema: searchSchemas.getById,
+        },
+        async (request, reply) => controller.getById(request, reply),
+    );
 };

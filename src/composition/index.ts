@@ -74,6 +74,10 @@ import { IndexInvoicesForRagUseCase } from '../application/use-cases/index-invoi
 import { QueryInvoicesRagUseCase } from '../application/use-cases/query-invoices-rag.use-case.js';
 import { RagReindexInvoiceService } from '../application/services/rag-reindex-invoice.service.js';
 import { RagReindexProviderInvoicesService } from '../application/services/rag-reindex-provider-invoices.service.js';
+import { InMemorySearchQueryRepository } from '../infrastructure/adapters/in-memory/in-memory-search-query.repository.js';
+import { SearchQueryIdGeneratorCrypto } from '../infrastructure/adapters/crypto/search-query-id-generator.js';
+import { ProcessSearchQueryUseCase } from '../application/use-cases/process-search-query.use-case.js';
+import { GetSearchResultUseCase } from '../application/use-cases/get-search-result.use-case.js';
 
 const ACCESS_TOKEN_TTL_SECONDS = 900;
 const REFRESH_TOKEN_TTL_SECONDS = 2_592_000;
@@ -134,6 +138,8 @@ const loginRateLimiter = new InMemoryLoginRateLimiter(
     MAX_LOGIN_ATTEMPTS,
     LOGIN_WINDOW_MINUTES,
 );
+const searchQueryRepository = new InMemorySearchQueryRepository();
+const searchQueryIdGenerator = new SearchQueryIdGeneratorCrypto();
 
 const genkitRagClient = createGenkitRagClient({
     indexName: config.RAG_INDEX_NAME,
@@ -161,6 +167,15 @@ const queryInvoicesRagUseCase = new QueryInvoicesRagUseCase({
     ragRetriever,
     ragAnswerGenerator,
     topK: 5,
+});
+const processSearchQueryUseCase = new ProcessSearchQueryUseCase({
+    queryInvoicesRagUseCase,
+    searchQueryRepository,
+    searchQueryIdGenerator,
+    dateProvider,
+});
+const getSearchResultUseCase = new GetSearchResultUseCase({
+    searchQueryRepository,
 });
 const ragReindexInvoiceService = new RagReindexInvoiceService({
     invoiceRepository,
@@ -499,6 +514,8 @@ export const compositionRoot = {
     antiBruteForceUseCase,
     indexInvoicesForRagUseCase,
     queryInvoicesRagUseCase,
+    processSearchQueryUseCase,
+    getSearchResultUseCase,
 };
 
 export const seedUsers = async (): Promise<void> => {

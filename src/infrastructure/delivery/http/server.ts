@@ -12,12 +12,14 @@ import { AdminUsersController } from './controllers/admin-users.controller.js';
 import { UsersController } from './controllers/users.controller.js';
 import { ProvidersController } from './controllers/providers.controller.js';
 import { InvoicesController } from './controllers/invoices.controller.js';
+import { SearchController } from './controllers/search.controller.js';
 import { registerAuthRoutes } from './routes/auth.routes.js';
 import { registerAdminRoutes } from './routes/admin.routes.js';
 import { registerAdminUsersRoutes } from './routes/admin-users.routes.js';
 import { registerUsersRoutes } from './routes/users.routes.js';
 import { registerProvidersRoutes } from './routes/providers.routes.js';
 import { registerInvoicesRoutes } from './routes/invoices.routes.js';
+import { registerSearchRoutes } from './routes/search.routes.js';
 import { compositionRoot } from '../../../composition/index.js';
 import { config, isDevelopment, isProduction } from '../../../config/env.js';
 
@@ -141,6 +143,10 @@ export const buildServer = async (): Promise<FastifyInstance> => {
         compositionRoot.confirmInvoiceHeaderUseCase,
         compositionRoot.reprocessInvoiceExtractionUseCase,
     );
+    const searchController = new SearchController(
+        compositionRoot.processSearchQueryUseCase,
+        compositionRoot.getSearchResultUseCase,
+    );
 
     await registerAuthRoutes(app, authController, compositionRoot.authorizeRequestUseCase);
     await registerAdminRoutes(app, adminController, compositionRoot.authorizeRequestUseCase);
@@ -148,6 +154,7 @@ export const buildServer = async (): Promise<FastifyInstance> => {
     await registerUsersRoutes(app, usersController, compositionRoot.authorizeRequestUseCase);
     await registerProvidersRoutes(app, providersController, compositionRoot.authorizeRequestUseCase);
     await registerInvoicesRoutes(app, invoicesController, compositionRoot.authorizeRequestUseCase);
+    await registerSearchRoutes(app, searchController, compositionRoot.authorizeRequestUseCase);
 
     return app;
 };
