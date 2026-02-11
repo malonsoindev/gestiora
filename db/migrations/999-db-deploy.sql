@@ -1,3 +1,11 @@
+drop table if exists search_queries cascade;
+drop table if exists invoice_movements cascade;
+drop table if exists invoices cascade;
+drop table if exists providers cascade;
+drop table if exists login_attempts cascade;
+drop table if exists sessions cascade;
+drop table if exists users cascade;
+
 create table if not exists users (
     id text primary key,
     name text null,
