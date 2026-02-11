@@ -56,6 +56,8 @@ describe('QueryInvoicesRagUseCase', () => {
         expect(result.success).toBe(true);
         if (result.success) {
             expect(result.value.answer).toBe('respuesta');
+            expect(result.value.references).toHaveLength(1);
+            expect(result.value.references[0]?.documentId).toBe('invoice-1');
         }
     });
 

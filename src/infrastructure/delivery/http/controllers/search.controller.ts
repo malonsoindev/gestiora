@@ -17,7 +17,7 @@ export class SearchController {
         if (result.success) {
             return reply.code(200).send({
                 answer: result.value.answer,
-                references: [],
+                references: result.value.references,
             });
         }
 
