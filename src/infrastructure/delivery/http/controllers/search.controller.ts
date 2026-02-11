@@ -3,6 +3,7 @@ import type { ProcessSearchQueryUseCase } from '../../../../application/use-case
 import type { GetSearchResultUseCase } from '../../../../application/use-cases/get-search-result.use-case.js';
 import { PortError } from '../../../../application/errors/port.error.js';
 import { SearchQueryNotFoundError } from '../../../../domain/errors/search-query-not-found.error.js';
+import { QueryTooAmbiguousError } from '../../../../application/errors/query-too-ambiguous.error.js';
 
 export type SearchBody = {
     query: string;
@@ -30,6 +31,10 @@ export class SearchController {
                 answer: result.value.answer,
                 references: result.value.references,
             });
+        }
+
+        if (result.error instanceof QueryTooAmbiguousError) {
+            return reply.code(400).send({ error: 'QUERY_TOO_AMBIGUOUS' });
         }
 
         if (result.error instanceof PortError) {

@@ -32,10 +32,9 @@ export const searchSchemas = {
             },
             400: {
                 type: 'object',
-                required: ['error', 'message'],
+                required: ['error'],
                 properties: {
                     error: { type: 'string' },
-                    message: { type: 'string' },
                 },
             },
             401: {

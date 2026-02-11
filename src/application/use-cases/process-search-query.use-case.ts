@@ -6,8 +6,10 @@ import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
 import { ok, fail, type Result } from '../../shared/result.js';
 import { SearchFilterDetector } from '../services/search-filter-detector.service.js';
+import { SearchAmbiguityDetector } from '../services/search-ambiguity-detector.service.js';
 import type { ProcessSearchQueryRequest } from '../dto/process-search-query.request.js';
 import type { ProcessSearchQueryResponse } from '../dto/process-search-query.response.js';
+import { QueryTooAmbiguousError } from '../errors/query-too-ambiguous.error.js';
 
 export type ProcessSearchQueryDependencies = {
     queryInvoicesRagUseCase: {
@@ -18,15 +20,22 @@ export type ProcessSearchQueryDependencies = {
     dateProvider: DateProvider;
 };
 
-export type ProcessSearchQueryError = PortError;
+export type ProcessSearchQueryError = QueryTooAmbiguousError | PortError;
 
 export class ProcessSearchQueryUseCase {
     private readonly filterDetector = new SearchFilterDetector();
+    private readonly ambiguityDetector = new SearchAmbiguityDetector();
 
     constructor(private readonly dependencies: ProcessSearchQueryDependencies) {}
 
     async execute(request: ProcessSearchQueryRequest): Promise<Result<ProcessSearchQueryResponse, ProcessSearchQueryError>> {
         const normalizedQuery = this.normalizeQuery(request.query);
+        const filters = this.filterDetector.detect(request.query);
+
+        if (this.ambiguityDetector.isAmbiguous(normalizedQuery, filters)) {
+            return fail(new QueryTooAmbiguousError());
+        }
+
         const key = this.buildKey(request.userId, normalizedQuery);
 
         const existingResult = await this.dependencies.searchQueryRepository.findByKey(key);
@@ -41,7 +50,6 @@ export class ProcessSearchQueryUseCase {
             });
         }
 
-        const filters = this.filterDetector.detect(request.query);
         const queryResult = await this.dependencies.queryInvoicesRagUseCase.execute({
             query: request.query,
             filters,

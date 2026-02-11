@@ -5,6 +5,7 @@ import type { SearchQueryIdGenerator } from '../../../src/application/ports/sear
 import type { DateProvider } from '../../../src/application/ports/date-provider.js';
 import { PortError } from '../../../src/application/errors/port.error.js';
 import { ok, type Result } from '../../../src/shared/result.js';
+import { QueryTooAmbiguousError } from '../../../src/application/errors/query-too-ambiguous.error.js';
 
 const fixedNow = new Date('2026-02-20T10:00:00.000Z');
 
@@ -114,6 +115,26 @@ describe('ProcessSearchQueryUseCase', () => {
         if (result.success) {
             expect(result.value.queryId).toBe('query-9');
             expect(result.value.answer).toBe('respuesta');
+        }
+    });
+
+    it('returns error when query is ambiguous', async () => {
+        const repository = new SearchQueryRepositoryStub();
+        const useCase = new ProcessSearchQueryUseCase({
+            queryInvoicesRagUseCase: new QueryInvoicesRagUseCaseStub('respuesta'),
+            searchQueryRepository: repository,
+            searchQueryIdGenerator: new SearchQueryIdGeneratorStub('query-9'),
+            dateProvider: new DateProviderStub(),
+        });
+
+        const result = await useCase.execute({
+            userId: 'user-1',
+            query: 'facturas de marzo',
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error).toBeInstanceOf(QueryTooAmbiguousError);
         }
     });
 });
