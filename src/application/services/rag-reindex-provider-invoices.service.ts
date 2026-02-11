@@ -1,5 +1,6 @@
 import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { ProviderRepository } from '../ports/provider.repository.js';
+import type { SearchQueryRepository } from '../ports/search-query.repository.js';
 import type { PortError } from '../errors/port.error.js';
 import type {
     IndexInvoicesForRagRequest,
@@ -13,6 +14,7 @@ import { ok, fail, type Result } from '../../shared/result.js';
 export type RagReindexProviderInvoicesDependencies = {
     invoiceRepository: InvoiceRepository;
     providerRepository: ProviderRepository;
+    searchQueryRepository: SearchQueryRepository;
     indexInvoicesForRagUseCase: {
         execute(request: IndexInvoicesForRagRequest): Promise<Result<IndexInvoicesForRagResponse, IndexInvoicesForRagError>>;
     };
@@ -90,6 +92,11 @@ export class RagReindexProviderInvoicesService implements RagReindexProviderInvo
                 break;
             }
             page += 1;
+        }
+
+        const clearResult = await this.dependencies.searchQueryRepository.clearAll();
+        if (!clearResult.success) {
+            return fail(clearResult.error);
         }
 
         return ok(undefined);

@@ -183,11 +183,13 @@ const getSearchResultUseCase = new GetSearchResultUseCase({
 const ragReindexInvoiceService = new RagReindexInvoiceService({
     invoiceRepository,
     providerRepository,
+    searchQueryRepository,
     indexInvoicesForRagUseCase,
 });
 const ragReindexProviderInvoicesService = new RagReindexProviderInvoicesService({
     invoiceRepository,
     providerRepository,
+    searchQueryRepository,
     indexInvoicesForRagUseCase,
     pageSize: 200,
 });

@@ -11,5 +11,5 @@ example/
 storage/
 .prettierrc
 .genkit/
-__db_gestiora-invoices.json
+__db_*.json
 hist_pruebas/

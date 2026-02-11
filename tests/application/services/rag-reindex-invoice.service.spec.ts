@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { RagReindexInvoiceService } from '../../../src/application/services/rag-reindex-invoice.service.js';
 import type { InvoiceRepository } from '../../../src/application/ports/invoice.repository.js';
 import type { ProviderRepository } from '../../../src/application/ports/provider.repository.js';
+import type { SearchQueryRepository, SearchQueryRecord } from '../../../src/application/ports/search-query.repository.js';
 import { PortError } from '../../../src/application/errors/port.error.js';
 import { Invoice, InvoiceStatus } from '../../../src/domain/entities/invoice.entity.js';
 import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
@@ -83,6 +84,27 @@ class IndexInvoicesForRagUseCaseStub {
     }
 }
 
+class SearchQueryRepositoryStub implements SearchQueryRepository {
+    cleared = false;
+
+    async findByKey(): Promise<Result<SearchQueryRecord | null, PortError>> {
+        return ok(null);
+    }
+
+    async findById(): Promise<Result<SearchQueryRecord | null, PortError>> {
+        return ok(null);
+    }
+
+    async save(): Promise<Result<void, PortError>> {
+        return ok(undefined);
+    }
+
+    async clearAll(): Promise<Result<void, PortError>> {
+        this.cleared = true;
+        return ok(undefined);
+    }
+}
+
 const createInvoice = (): Invoice =>
     Invoice.create({
         id: 'invoice-1',
@@ -124,6 +146,7 @@ describe('RagReindexInvoiceService', () => {
         const service = new RagReindexInvoiceService({
             invoiceRepository: new InvoiceRepositoryStub(invoice),
             providerRepository: new ProviderRepositoryStub(provider),
+            searchQueryRepository: new SearchQueryRepositoryStub(),
             indexInvoicesForRagUseCase: new IndexInvoicesForRagUseCaseStub(),
         });
 
@@ -136,6 +159,7 @@ describe('RagReindexInvoiceService', () => {
         const service = new RagReindexInvoiceService({
             invoiceRepository: new InvoiceRepositoryStub(null),
             providerRepository: new ProviderRepositoryStub(null),
+            searchQueryRepository: new SearchQueryRepositoryStub(),
             indexInvoicesForRagUseCase: new IndexInvoicesForRagUseCaseStub(),
         });
 
@@ -153,6 +177,7 @@ describe('RagReindexInvoiceService', () => {
         const service = new RagReindexInvoiceService({
             invoiceRepository: new InvoiceRepositoryStub(invoice),
             providerRepository: new ProviderRepositoryStub(provider),
+            searchQueryRepository: new SearchQueryRepositoryStub(),
             indexInvoicesForRagUseCase: new IndexInvoicesForRagUseCaseStub(true),
         });
 

@@ -19,4 +19,10 @@ export class InMemorySearchQueryRepository implements SearchQueryRepository {
         this.queriesByKey.set(record.key, record);
         return ok(undefined);
     }
+
+    async clearAll(): Promise<Result<void, PortError>> {
+        this.queriesById.clear();
+        this.queriesByKey.clear();
+        return ok(undefined);
+    }
 }

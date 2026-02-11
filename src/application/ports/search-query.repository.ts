@@ -21,4 +21,5 @@ export interface SearchQueryRepository {
     findByKey(key: string): Promise<Result<SearchQueryRecord | null, PortError>>;
     findById(queryId: string): Promise<Result<SearchQueryRecord | null, PortError>>;
     save(record: SearchQueryRecord): Promise<Result<void, PortError>>;
+    clearAll(): Promise<Result<void, PortError>>;
 }

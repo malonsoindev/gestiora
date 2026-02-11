@@ -82,6 +82,18 @@ export class PostgresSearchQueryRepository implements SearchQueryRepository {
         }
     }
 
+    async clearAll(): Promise<Result<void, PortError>> {
+        try {
+            await this.sql`
+                delete from search_queries
+            `;
+            return ok(undefined);
+        } catch (error) {
+            const cause = error instanceof Error ? error : new Error('Unknown error');
+            return fail(new PortError('SearchQueryRepository', 'Failed to clear search queries', cause));
+        }
+    }
+
     private mapRow(row: SearchQueryRow): SearchQueryRecord {
         return {
             queryId: row.query_id,
