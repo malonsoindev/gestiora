@@ -9,7 +9,7 @@ import type { UserRepository } from '../../../src/application/ports/user.reposit
 import { AuthInvalidRefreshTokenError } from '../../../src/domain/errors/auth-invalid-refresh-token.error.js';
 import { Session, SessionStatus } from '../../../src/domain/entities/session.entity.js';
 import type { SessionProps } from '../../../src/domain/entities/session.entity.js';
-import { User, UserStatus } from '../../../src/domain/entities/user.entity.js';
+import { User } from '../../../src/domain/entities/user.entity.js';
 import type { UserProps } from '../../../src/domain/entities/user.entity.js';
 import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
 import { ok } from '../../../src/shared/result.js';

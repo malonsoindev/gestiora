@@ -3,7 +3,6 @@ import { UpdateUserStatusUseCase } from '../../../src/application/use-cases/upda
 import type { UserRepository } from '../../../src/application/ports/user.repository.js';
 import { User, UserStatus } from '../../../src/domain/entities/user.entity.js';
 import type { UserProps } from '../../../src/domain/entities/user.entity.js';
-import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
 import { UserNotFoundError } from '../../../src/domain/errors/user-not-found.error.js';
 import { InvalidUserStatusError } from '../../../src/domain/errors/invalid-user-status.error.js';
 import { ok } from '../../../src/shared/result.js';
