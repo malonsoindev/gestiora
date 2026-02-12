@@ -35,6 +35,9 @@ class AuditLoggerSpy implements AuditLogger {
     }
 }
 
+// TEST-NET-1 (RFC 5737) reserved for documentation/examples.
+const TEST_IP = '192.0.2.1';
+
 describe('AntiBruteForceUseCase', () => {
     it('allows login when attempts are below limit', async () => {
         const repo = new LoginAttemptRepositoryStub();
@@ -49,7 +52,7 @@ describe('AntiBruteForceUseCase', () => {
             lockMinutes: 30,
         });
 
-        const result = await useCase.execute({ email: 'user@example.com', ip: '1.2.3.4' });
+        const result = await useCase.execute({ email: 'user@example.com', ip: TEST_IP });
 
         expect(result.success).toBe(true);
     });
@@ -68,7 +71,7 @@ describe('AntiBruteForceUseCase', () => {
             lockMinutes: 30,
         });
 
-        const result = await useCase.execute({ email: 'user@example.com', ip: '1.2.3.4' });
+        const result = await useCase.execute({ email: 'user@example.com', ip: TEST_IP });
 
         expect(result.success).toBe(false);
         if (!result.success) {
