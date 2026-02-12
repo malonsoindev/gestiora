@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { ReprocessInvoiceExtractionUseCase } from '../../../src/application/use-cases/reprocess-invoice-extraction.use-case.js';
 import type { FileStorage } from '../../../src/application/ports/file-storage.js';
 import type { InvoiceExtractionAgent } from '../../../src/application/ports/invoice-extraction-agent.js';
-import type { PortError } from '../../../src/application/errors/port.error.js';
 import {
     Invoice,
     InvoiceHeaderSource,
