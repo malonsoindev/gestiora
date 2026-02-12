@@ -2,11 +2,11 @@ import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { ProviderRepository } from '../ports/provider.repository.js';
 import type { SearchQueryRepository } from '../ports/search-query.repository.js';
 import type { PortError } from '../errors/port.error.js';
-import type {
-    IndexInvoicesForRagRequest,
-    IndexInvoicesForRagResponse,
-    IndexInvoicesForRagError,
-} from '../use-cases/index-invoices-for-rag.use-case.js';
+import type { IndexInvoicesForRagError } from '../use-cases/index-invoices-for-rag.use-case.js';
+import type { IndexInvoicesForRagRequest } from '../dto/index-invoices-for-rag.request.js';
+import type { IndexInvoicesForRagResponse } from '../dto/index-invoices-for-rag.response.js';
+import type { Invoice } from '../../domain/entities/invoice.entity.js';
+import type { Provider } from '../../domain/entities/provider.entity.js';
 import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
 import { ProviderNotFoundError } from '../../domain/errors/provider-not-found.error.js';
 import { ok, fail, type Result } from '../../shared/result.js';
@@ -36,13 +36,9 @@ export class RagReindexProviderInvoicesService implements RagReindexProviderInvo
      * @returns Resultado de la operacion de reindexado.
      */
     async reindexByProviderId(providerId: string): Promise<Result<void, RagReindexProviderInvoicesError>> {
-        const providerResult = await this.dependencies.providerRepository.findById(providerId);
+        const providerResult = await this.getProvider(providerId);
         if (!providerResult.success) {
             return fail(providerResult.error);
-        }
-        const provider = providerResult.value;
-        if (!provider) {
-            return fail(new ProviderNotFoundError());
         }
 
         let page = 1;
@@ -50,11 +46,7 @@ export class RagReindexProviderInvoicesService implements RagReindexProviderInvo
         let total = 0;
 
         while (true) {
-            const listResult = await this.dependencies.invoiceRepository.list({
-                page,
-                pageSize: this.dependencies.pageSize,
-                providerId,
-            });
+            const listResult = await this.listProviderInvoices(providerId, page);
             if (!listResult.success) {
                 return fail(listResult.error);
             }
@@ -67,24 +59,14 @@ export class RagReindexProviderInvoicesService implements RagReindexProviderInvo
                 break;
             }
 
-            const rows = [] as Array<{ invoice: (typeof listResult.value.items)[number]; provider: typeof provider }>;
-            for (const invoice of listResult.value.items) {
-                const detailResult = await this.dependencies.invoiceRepository.getDetail(invoice.id);
-                if (!detailResult.success) {
-                    return fail(detailResult.error);
-                }
-                const detail = detailResult.value;
-                if (!detail) {
-                    return fail(new InvoiceNotFoundError());
-                }
-                rows.push({ invoice: detail, provider });
+            const rowsResult = await this.buildRows(listResult.value.items, providerResult.value);
+            if (!rowsResult.success) {
+                return fail(rowsResult.error);
             }
 
-            if (rows.length > 0) {
-                const indexResult = await this.dependencies.indexInvoicesForRagUseCase.execute({ rows });
-                if (!indexResult.success) {
-                    return fail(indexResult.error);
-                }
+            const indexResult = await this.indexRows(rowsResult.value);
+            if (!indexResult.success) {
+                return fail(indexResult.error);
             }
 
             processed += listResult.value.items.length;
@@ -99,6 +81,63 @@ export class RagReindexProviderInvoicesService implements RagReindexProviderInvo
             return fail(clearResult.error);
         }
 
+        return ok(undefined);
+    }
+
+    private async getProvider(providerId: string): Promise<Result<Provider, RagReindexProviderInvoicesError>> {
+        const providerResult = await this.dependencies.providerRepository.findById(providerId);
+        if (!providerResult.success) {
+            return fail(providerResult.error);
+        }
+        const provider = providerResult.value;
+        if (!provider) {
+            return fail(new ProviderNotFoundError());
+        }
+        return ok(provider);
+    }
+
+    private async listProviderInvoices(
+        providerId: string,
+        page: number,
+    ): Promise<Result<{ items: Invoice[]; total: number }, RagReindexProviderInvoicesError>> {
+        const listResult = await this.dependencies.invoiceRepository.list({
+            page,
+            pageSize: this.dependencies.pageSize,
+            providerId,
+        });
+        if (!listResult.success) {
+            return fail(listResult.error);
+        }
+        return ok(listResult.value);
+    }
+
+    private async buildRows(
+        invoices: Invoice[],
+        provider: Provider,
+    ): Promise<Result<IndexInvoicesForRagRequest['rows'], RagReindexProviderInvoicesError>> {
+        const rows: IndexInvoicesForRagRequest['rows'] = [];
+        for (const invoice of invoices) {
+            const detailResult = await this.dependencies.invoiceRepository.getDetail(invoice.id);
+            if (!detailResult.success) {
+                return fail(detailResult.error);
+            }
+            const detail = detailResult.value;
+            if (!detail) {
+                return fail(new InvoiceNotFoundError());
+            }
+            rows.push({ invoice: detail, provider });
+        }
+        return ok(rows);
+    }
+
+    private async indexRows(rows: IndexInvoicesForRagRequest['rows']): Promise<Result<void, RagReindexProviderInvoicesError>> {
+        if (rows.length === 0) {
+            return ok(undefined);
+        }
+        const indexResult = await this.dependencies.indexInvoicesForRagUseCase.execute({ rows });
+        if (!indexResult.success) {
+            return fail(indexResult.error);
+        }
         return ok(undefined);
     }
 }
