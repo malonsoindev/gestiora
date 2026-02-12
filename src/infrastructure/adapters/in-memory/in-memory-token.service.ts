@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { ok, fail, type Result } from '../../../shared/result.js';
 import { PortError } from '../../../application/errors/port.error.js';
 import type {
@@ -61,6 +62,7 @@ export class InMemoryTokenService implements TokenService {
     }
 
     private createToken(prefix: string): string {
-        return `${prefix}-${Math.random().toString(36).slice(2, 12)}`;
+        // Use CSPRNG to avoid predictable in-memory tokens.
+        return `${prefix}-${randomUUID()}`;
     }
 }

@@ -6,11 +6,13 @@ import { UserRole } from '../../src/domain/value-objects/user-role.value-object.
 
 const baseDate = new Date('2026-01-01T00:00:00.000Z');
 
+const testCredentialHashValue = 'hash';
+
 const createUser = (overrides: Partial<UserProps> = {}): User => {
     const user = User.create({
         id: 'user-1',
         email: Email.create('user@example.com'),
-        passwordHash: 'hash',
+        passwordHash: testCredentialHashValue,
         status: UserStatus.Active,
         lockedUntil: undefined,
         roles: [UserRole.user()],

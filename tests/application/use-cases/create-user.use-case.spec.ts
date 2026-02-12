@@ -4,7 +4,6 @@ import type { AuditEvent, AuditLogger } from '../../../src/application/ports/aud
 import type { DateProvider } from '../../../src/application/ports/date-provider.js';
 import type { PasswordHasher } from '../../../src/application/ports/password-hasher.js';
 import type { UserIdGenerator } from '../../../src/application/ports/user-id-generator.js';
-import type { UserRepository } from '../../../src/application/ports/user.repository.js';
 import { InvalidPasswordError } from '../../../src/domain/errors/invalid-password.error.js';
 import { InvalidUserRolesError } from '../../../src/domain/errors/invalid-user-roles.error.js';
 import { InvalidUserStatusError } from '../../../src/domain/errors/invalid-user-status.error.js';
@@ -15,18 +14,22 @@ import { UserRole } from '../../../src/domain/value-objects/user-role.value-obje
 import { Email } from '../../../src/domain/value-objects/email.value-object.js';
 import { ok, type Result } from '../../../src/shared/result.js';
 import type { PortError } from '../../../src/application/errors/port.error.js';
+import { createTestUser } from '../../shared/fixtures/user.fixture.js';
+import { UserRepositorySpy } from '../../shared/spies/user-repository.spy.js';
 
 const fixedNow = new Date('2026-02-02T10:00:00.000Z');
 
+const validNewCredential = 'StrongPass1!a';
+const invalidNewCredential = 'weak';
+
 const createUserEntity = (): User =>
-    User.create({
-        id: 'user-1',
-        email: Email.create('existing@example.com'),
-        passwordHash: 'hash',
-        status: UserStatus.Active,
-        roles: [UserRole.user()],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
+    createTestUser({
+        now: fixedNow,
+        overrides: {
+            email: Email.create('existing@example.com'),
+            name: undefined,
+            avatar: undefined,
+        },
     });
 
 class DateProviderStub implements DateProvider {
@@ -62,55 +65,41 @@ class PasswordHasherStub implements PasswordHasher {
     }
 }
 
-class UserRepositorySpy implements UserRepository {
-    createdUser: User | null = null;
-    private readonly existingUser: User | null;
+type SutOverrides = Partial<{
+    existingUser: User | null;
+    passwordHasher: PasswordHasher;
+}>;
 
-    constructor(existingUser: User | null = null) {
-        this.existingUser = existingUser;
-    }
+const makeSut = (overrides: SutOverrides = {}) => {
+    const userRepository = new UserRepositorySpy(overrides.existingUser ?? null);
+    const auditLogger = new AuditLoggerSpy();
+    const userIdGenerator = new UserIdGeneratorStub('user-fixed');
 
-    async findByEmail() {
-        return ok(this.existingUser);
-    }
+    const useCase = new CreateUserUseCase({
+        userRepository,
+        passwordHasher: overrides.passwordHasher ?? new PasswordHasherStub(),
+        auditLogger,
+        dateProvider: new DateProviderStub(),
+        userIdGenerator,
+    });
 
-    async findById() {
-        return ok(this.existingUser);
-    }
+    return { useCase, userRepository, auditLogger };
+};
 
-    async create(user: User) {
-        this.createdUser = user;
-        return ok(undefined);
-    }
+const baseRequest = {
+    actorUserId: 'admin-1',
+    email: 'new@example.com',
+    password: validNewCredential,
+    roles: [UserRole.user()],
+};
 
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async update() {
-        return ok(undefined);
-    }
-}
 
 describe('CreateUserUseCase', () => {
     it('creates a user and audits the action', async () => {
-        const userRepository = new UserRepositorySpy();
-        const auditLogger = new AuditLoggerSpy();
-        const userIdGenerator = new UserIdGeneratorStub('user-fixed');
-
-        const useCase = new CreateUserUseCase({
-            userRepository,
-            passwordHasher: new PasswordHasherStub(),
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            userIdGenerator,
-        });
+        const { useCase, userRepository, auditLogger } = makeSut();
 
         const result = await useCase.execute({
-            actorUserId: 'admin-1',
-            email: 'new@example.com',
-            password: 'StrongPass1!a',
-            roles: [UserRole.user()],
+            ...baseRequest,
             name: 'New User',
             avatar: 'avatar.png',
         });
@@ -119,7 +108,7 @@ describe('CreateUserUseCase', () => {
         expect(userRepository.createdUser).not.toBeNull();
         expect(userRepository.createdUser?.id).toBe('user-fixed');
         expect(userRepository.createdUser?.email).toBe('new@example.com');
-        expect(userRepository.createdUser?.passwordHash).toBe('hashed:StrongPass1!a');
+        expect(userRepository.createdUser?.passwordHash).toBe(`hashed:${validNewCredential}`);
         expect(userRepository.createdUser?.status).toBe(UserStatus.Active);
         expect(userRepository.createdUser?.roles[0]?.getValue()).toBe('USER');
         expect(userRepository.createdUser?.createdAt).toBe(fixedNow);
@@ -128,23 +117,13 @@ describe('CreateUserUseCase', () => {
     });
 
     it('rejects when user already exists', async () => {
-        const userRepository = new UserRepositorySpy(createUserEntity());
-        const auditLogger = new AuditLoggerSpy();
-        const userIdGenerator = new UserIdGeneratorStub('user-fixed');
-
-        const useCase = new CreateUserUseCase({
-            userRepository,
-            passwordHasher: new PasswordHasherStub(),
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            userIdGenerator,
+        const { useCase, userRepository, auditLogger } = makeSut({
+            existingUser: createUserEntity(),
         });
 
         const result = await useCase.execute({
-            actorUserId: 'admin-1',
+            ...baseRequest,
             email: 'existing@example.com',
-            password: 'StrongPass1!a',
-            roles: [UserRole.user()],
         });
 
         expect(result.success).toBe(false);
@@ -156,23 +135,11 @@ describe('CreateUserUseCase', () => {
     });
 
     it('rejects invalid passwords', async () => {
-        const userRepository = new UserRepositorySpy();
-        const auditLogger = new AuditLoggerSpy();
-        const userIdGenerator = new UserIdGeneratorStub('user-fixed');
-
-        const useCase = new CreateUserUseCase({
-            userRepository,
-            passwordHasher: new PasswordHasherStub(),
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            userIdGenerator,
-        });
+        const { useCase, userRepository, auditLogger } = makeSut();
 
         const result = await useCase.execute({
-            actorUserId: 'admin-1',
-            email: 'new@example.com',
-            password: 'weak',
-            roles: [UserRole.user()],
+            ...baseRequest,
+            password: invalidNewCredential,
         });
 
         expect(result.success).toBe(false);
@@ -184,23 +151,11 @@ describe('CreateUserUseCase', () => {
     });
 
     it('rejects invalid emails', async () => {
-        const userRepository = new UserRepositorySpy();
-        const auditLogger = new AuditLoggerSpy();
-        const userIdGenerator = new UserIdGeneratorStub('user-fixed');
-
-        const useCase = new CreateUserUseCase({
-            userRepository,
-            passwordHasher: new PasswordHasherStub(),
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            userIdGenerator,
-        });
+        const { useCase, userRepository, auditLogger } = makeSut();
 
         const result = await useCase.execute({
-            actorUserId: 'admin-1',
+            ...baseRequest,
             email: 'not-an-email',
-            password: 'StrongPass1!a',
-            roles: [UserRole.user()],
         });
 
         expect(result.success).toBe(false);
@@ -212,22 +167,10 @@ describe('CreateUserUseCase', () => {
     });
 
     it('rejects when roles are empty', async () => {
-        const userRepository = new UserRepositorySpy();
-        const auditLogger = new AuditLoggerSpy();
-        const userIdGenerator = new UserIdGeneratorStub('user-fixed');
-
-        const useCase = new CreateUserUseCase({
-            userRepository,
-            passwordHasher: new PasswordHasherStub(),
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            userIdGenerator,
-        });
+        const { useCase, userRepository, auditLogger } = makeSut();
 
         const result = await useCase.execute({
-            actorUserId: 'admin-1',
-            email: 'new@example.com',
-            password: 'StrongPass1!a',
+            ...baseRequest,
             roles: [],
         });
 
@@ -240,23 +183,10 @@ describe('CreateUserUseCase', () => {
     });
 
     it('rejects deleted status on creation', async () => {
-        const userRepository = new UserRepositorySpy();
-        const auditLogger = new AuditLoggerSpy();
-        const userIdGenerator = new UserIdGeneratorStub('user-fixed');
-
-        const useCase = new CreateUserUseCase({
-            userRepository,
-            passwordHasher: new PasswordHasherStub(),
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            userIdGenerator,
-        });
+        const { useCase, userRepository, auditLogger } = makeSut();
 
         const result = await useCase.execute({
-            actorUserId: 'admin-1',
-            email: 'new@example.com',
-            password: 'StrongPass1!a',
-            roles: [UserRole.user()],
+            ...baseRequest,
             status: UserStatus.Deleted,
         });
 

@@ -9,11 +9,11 @@ import type { UserRepository } from '../../../src/application/ports/user.reposit
 import { AuthInvalidRefreshTokenError } from '../../../src/domain/errors/auth-invalid-refresh-token.error.js';
 import { Session, SessionStatus } from '../../../src/domain/entities/session.entity.js';
 import type { SessionProps } from '../../../src/domain/entities/session.entity.js';
-import { User, UserStatus } from '../../../src/domain/entities/user.entity.js';
+import { User } from '../../../src/domain/entities/user.entity.js';
 import type { UserProps } from '../../../src/domain/entities/user.entity.js';
 import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
-import { Email } from '../../../src/domain/value-objects/email.value-object.js';
 import { ok } from '../../../src/shared/result.js';
+import { createTestUser } from '../../shared/fixtures/user.fixture.js';
 
 const fixedNow = new Date('2026-01-29T12:00:00.000Z');
 
@@ -134,11 +134,15 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
     };
 };
 
+const validRefreshTokenValue = 'refresh-token';
+const invalidRefreshTokenValue = 'invalid';
+const baseRequest = { refreshToken: validRefreshTokenValue };
+
 const createSession = (overrides: Partial<SessionProps> = {}): Session =>
     Session.create({
         id: 'session-1',
         userId: 'user-1',
-        refreshTokenHash: 'hashed:refresh-token',
+        refreshTokenHash: `hashed:${validRefreshTokenValue}`,
         status: SessionStatus.Active,
         createdAt: fixedNow,
         lastUsedAt: fixedNow,
@@ -147,16 +151,12 @@ const createSession = (overrides: Partial<SessionProps> = {}): Session =>
     });
 
 const createUser = (overrides: Partial<UserProps> = {}): User =>
-    User.create({
-        id: 'user-1',
-        email: Email.create('user@example.com'),
-        passwordHash: 'hash',
-        status: UserStatus.Active,
-        lockedUntil: undefined,
-        roles: [UserRole.user()],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        ...overrides,
+    createTestUser({
+        now: fixedNow,
+        overrides: {
+            lockedUntil: undefined,
+            ...overrides,
+        },
     });
 
 describe('RefreshAccessTokenUseCase', () => {
@@ -165,7 +165,7 @@ describe('RefreshAccessTokenUseCase', () => {
         const { useCase, auditLogger, tokenService, sessionRepository } = createUseCase();
         sessionRepository.session = session;
 
-        const result = await useCase.execute({ refreshToken: 'refresh-token' });
+        const result = await useCase.execute(baseRequest);
 
         expect(result.success).toBe(true);
         if (result.success) {
@@ -183,7 +183,7 @@ describe('RefreshAccessTokenUseCase', () => {
         const { useCase, auditLogger, sessionRepository } = createUseCase();
         sessionRepository.session = null;
 
-        const result = await useCase.execute({ refreshToken: 'invalid' });
+        const result = await useCase.execute({ refreshToken: invalidRefreshTokenValue });
 
         expect(result.success).toBe(false);
         if (!result.success) {
@@ -200,7 +200,7 @@ describe('RefreshAccessTokenUseCase', () => {
         const { useCase, auditLogger, sessionRepository } = createUseCase();
         sessionRepository.session = session;
 
-        const result = await useCase.execute({ refreshToken: 'refresh-token' });
+        const result = await useCase.execute(baseRequest);
 
         expect(result.success).toBe(false);
         if (!result.success) {
@@ -215,7 +215,7 @@ describe('RefreshAccessTokenUseCase', () => {
         const { useCase, auditLogger, sessionRepository } = createUseCase();
         sessionRepository.session = session;
 
-        const result = await useCase.execute({ refreshToken: 'refresh-token' });
+        const result = await useCase.execute(baseRequest);
 
         expect(result.success).toBe(false);
         if (!result.success) {
@@ -232,7 +232,7 @@ describe('RefreshAccessTokenUseCase', () => {
         });
         sessionRepository.session = session;
 
-        const result = await useCase.execute({ refreshToken: 'refresh-token' });
+        const result = await useCase.execute(baseRequest);
 
         expect(result.success).toBe(true);
         if (result.success) {

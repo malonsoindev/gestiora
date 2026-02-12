@@ -14,7 +14,7 @@ type Tokens = {
 
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@example.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'AdminPass1!a';
+const adminLoginCredential = process.env.ADMIN_PASSWORD ?? 'AdminPass1!a';
 
 const OPENAPI_PATH = new URL('../docs/openapi.yaml', import.meta.url);
 
@@ -150,7 +150,7 @@ const login = async (email: string, password: string): Promise<Tokens> => {
 const run = async (): Promise<void> => {
     await assertOpenApiCoverage();
 
-    const adminTokens = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
+    const adminTokens = await login(ADMIN_EMAIL, adminLoginCredential);
 
     const adminPayload = decodeJwtPayload(adminTokens.accessToken);
     const adminRoles = Array.isArray(adminPayload?.roles) ? adminPayload?.roles : [];
@@ -160,14 +160,14 @@ const run = async (): Promise<void> => {
 
     const uniqueSuffix = Date.now().toString(36);
     const userEmail = `smoke-${uniqueSuffix}@example.com`;
-    const userPassword = 'TestPass1!aa1';
+    const userLoginCredential = 'TestPass1!aa1';
 
     const createUserResult = await requestJson(
         'POST',
         '/admin/users',
         {
             email: userEmail,
-            password: userPassword,
+            password: userLoginCredential,
             roles: ['Usuario'],
             status: 'ACTIVE',
             name: 'Smoke User',
@@ -182,7 +182,7 @@ const run = async (): Promise<void> => {
     }
     const createdUserId = createPayload.userId;
 
-    const userTokens = await login(userEmail, userPassword);
+    const userTokens = await login(userEmail, userLoginCredential);
 
     const updateOwnProfileResult = await requestJson(
         'PATCH',

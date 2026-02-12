@@ -23,11 +23,15 @@ import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
 import { fixedNow } from '../../shared/fixed-now.js';
 
+const testCredentialHashValue = 'hashed-password';
+const validLoginCredential = 'valid-password';
+const invalidLoginCredential = 'wrong-password';
+
 const createUser = (overrides: Partial<UserProps> = {}): User =>
     User.create({
         id: 'user-1',
         email: Email.create('user@example.com'),
-        passwordHash: 'hashed-password',
+        passwordHash: testCredentialHashValue,
         status: UserStatus.Active,
         lockedUntil: undefined,
         roles: [UserRole.user()],
@@ -195,7 +199,7 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
 
 const buildLoginRequest = (overrides: Partial<{ email: string; password: string; ip: string; userAgent: string }> = {}) => ({
     email: 'user@example.com',
-    password: 'valid-password',
+    password: validLoginCredential,
     ip: '127.0.0.1',
     userAgent: 'unit-test',
     ...overrides,
@@ -236,7 +240,7 @@ describe('LoginUserUseCase', () => {
 
         const result = await useCase.execute(buildLoginRequest({
             email: user.email,
-            password: 'wrong-password',
+            password: invalidLoginCredential,
         }));
 
         expect(result.success).toBe(false);
