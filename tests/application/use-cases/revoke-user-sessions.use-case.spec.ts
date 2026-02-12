@@ -5,25 +5,19 @@ import type { SessionRepository } from '../../../src/application/ports/session.r
 import { User, UserStatus } from '../../../src/domain/entities/user.entity.js';
 import type { UserProps } from '../../../src/domain/entities/user.entity.js';
 import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
-import { Email } from '../../../src/domain/value-objects/email.value-object.js';
 import { UserNotFoundError } from '../../../src/domain/errors/user-not-found.error.js';
 import { ok } from '../../../src/shared/result.js';
+import { createTestUser } from '../../shared/fixtures/user.fixture.js';
 
 const fixedNow = new Date('2026-02-03T17:00:00.000Z');
 
-const testCredentialHashValue = 'hash';
-
 const createUser = (overrides: Partial<UserProps> = {}): User =>
-    User.create({
-        id: 'user-1',
-        email: Email.create('user@example.com'),
-        passwordHash: testCredentialHashValue,
-        status: UserStatus.Active,
-        roles: [UserRole.user()],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        deletedAt: undefined,
-        ...overrides,
+    createTestUser({
+        now: fixedNow,
+        overrides: {
+            deletedAt: undefined,
+            ...overrides,
+        },
     });
 
 class UserRepositorySpy implements UserRepository {

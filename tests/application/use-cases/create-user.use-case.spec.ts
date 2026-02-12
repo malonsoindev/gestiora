@@ -15,22 +15,21 @@ import { UserRole } from '../../../src/domain/value-objects/user-role.value-obje
 import { Email } from '../../../src/domain/value-objects/email.value-object.js';
 import { ok, type Result } from '../../../src/shared/result.js';
 import type { PortError } from '../../../src/application/errors/port.error.js';
+import { createTestUser } from '../../shared/fixtures/user.fixture.js';
 
 const fixedNow = new Date('2026-02-02T10:00:00.000Z');
 
-const testCredentialHashValue = 'hash';
 const validNewCredential = 'StrongPass1!a';
 const invalidNewCredential = 'weak';
 
 const createUserEntity = (): User =>
-    User.create({
-        id: 'user-1',
-        email: Email.create('existing@example.com'),
-        passwordHash: testCredentialHashValue,
-        status: UserStatus.Active,
-        roles: [UserRole.user()],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
+    createTestUser({
+        now: fixedNow,
+        overrides: {
+            email: Email.create('existing@example.com'),
+            name: undefined,
+            avatar: undefined,
+        },
     });
 
 class DateProviderStub implements DateProvider {

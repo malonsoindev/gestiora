@@ -12,8 +12,8 @@ import type { SessionProps } from '../../../src/domain/entities/session.entity.j
 import { User, UserStatus } from '../../../src/domain/entities/user.entity.js';
 import type { UserProps } from '../../../src/domain/entities/user.entity.js';
 import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
-import { Email } from '../../../src/domain/value-objects/email.value-object.js';
 import { ok } from '../../../src/shared/result.js';
+import { createTestUser } from '../../shared/fixtures/user.fixture.js';
 
 const fixedNow = new Date('2026-01-29T12:00:00.000Z');
 
@@ -134,7 +134,6 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
     };
 };
 
-const testCredentialHashValue = 'hash';
 const validRefreshTokenValue = 'refresh-token';
 const invalidRefreshTokenValue = 'invalid';
 
@@ -151,16 +150,12 @@ const createSession = (overrides: Partial<SessionProps> = {}): Session =>
     });
 
 const createUser = (overrides: Partial<UserProps> = {}): User =>
-    User.create({
-        id: 'user-1',
-        email: Email.create('user@example.com'),
-        passwordHash: testCredentialHashValue,
-        status: UserStatus.Active,
-        lockedUntil: undefined,
-        roles: [UserRole.user()],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        ...overrides,
+    createTestUser({
+        now: fixedNow,
+        overrides: {
+            lockedUntil: undefined,
+            ...overrides,
+        },
     });
 
 describe('RefreshAccessTokenUseCase', () => {
