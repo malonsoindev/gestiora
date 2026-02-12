@@ -203,6 +203,7 @@ const loginUserUseCase = new LoginUserUseCase({
     sessionIdGenerator,
     auditLogger,
     loginRateLimiter,
+    loginAttemptRepository,
     dateProvider,
     accessTokenTtlSeconds: ACCESS_TOKEN_TTL_SECONDS,
     refreshTokenTtlSeconds: REFRESH_TOKEN_TTL_SECONDS,

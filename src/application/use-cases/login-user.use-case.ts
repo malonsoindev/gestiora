@@ -1,6 +1,7 @@
 import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { LoginRateLimiter } from '../ports/login-rate-limiter.js';
+import type { LoginAttemptRepository } from '../ports/login-attempt.repository.js';
 import type { PasswordHasher } from '../ports/password-hasher.js';
 import type { RefreshTokenHasher } from '../ports/refresh-token-hasher.js';
 import type { SessionIdGenerator } from '../ports/session-id-generator.js';
@@ -27,6 +28,7 @@ export type LoginUserDependencies = {
     sessionIdGenerator: SessionIdGenerator;
     auditLogger: AuditLogger;
     loginRateLimiter: LoginRateLimiter;
+    loginAttemptRepository: LoginAttemptRepository;
     dateProvider: DateProvider;
     accessTokenTtlSeconds: number;
     refreshTokenTtlSeconds: number;
@@ -244,6 +246,18 @@ export class LoginUserUseCase {
         request: LoginUserRequest,
         now: Date,
     ): Promise<Result<void, PortError>> {
+        const recordResult = await this.dependencies.loginAttemptRepository.recordAttempt(
+            {
+                email: request.email,
+                ...(request.ip ? { ip: request.ip } : {}),
+            },
+            true,
+            now,
+        );
+        if (!recordResult.success) {
+            return fail(recordResult.error);
+        }
+
         return this.dependencies.auditLogger.log({
             action: 'LOGIN_SUCCESS',
             actorUserId: userId,
@@ -258,6 +272,18 @@ export class LoginUserUseCase {
         now: Date,
         targetUserId?: string,
     ): Promise<Result<void, PortError>> {
+        const recordResult = await this.dependencies.loginAttemptRepository.recordAttempt(
+            {
+                email: request.email,
+                ...(request.ip ? { ip: request.ip } : {}),
+            },
+            false,
+            now,
+        );
+        if (!recordResult.success) {
+            return fail(recordResult.error);
+        }
+
         const event = {
             action: 'LOGIN_FAIL',
             metadata: buildMetadata(request),
