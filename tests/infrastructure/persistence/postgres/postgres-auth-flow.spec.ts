@@ -33,9 +33,10 @@ class AuditLoggerStub {
     }
 }
 
+const validLoginCredential = 'AdminPass1!a';
 const baseLoginRequest = {
     email: 'user@example.com',
-    password: 'AdminPass1!a',
+    password: validLoginCredential,
     ip: '127.0.0.1',
     userAgent: 'vitest',
 };
@@ -140,7 +141,7 @@ describeIf('Postgres auth flow', () => {
     });
 
     it('logs in, rotates refresh token, and revokes session on logout', async () => {
-        const passwordHashResult = await passwordHasher.hash('AdminPass1!a');
+        const passwordHashResult = await passwordHasher.hash(validLoginCredential);
         if (!passwordHashResult.success) {
             throw passwordHashResult.error;
         }

@@ -1,8 +1,7 @@
 import type { UserRepository } from '../../../src/application/ports/user.repository.js';
 import type { PortError } from '../../../src/application/errors/port.error.js';
-import type { User } from '../../../src/domain/entities/user.entity.js';
+import type { User, UserStatus } from '../../../src/domain/entities/user.entity.js';
 import type { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
-import type { UserStatus } from '../../../src/domain/entities/user.entity.js';
 import { ok } from '../../../src/shared/result.js';
 
 export class UserRepositorySpy implements UserRepository {
