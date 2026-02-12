@@ -14,13 +14,13 @@ import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
 import { UserRepositorySpy } from '../../shared/spies/user-repository.spy.js';
 import { fixedNow } from '../../shared/fixed-now.js';
 
-const testPasswordHash = 'hash';
+const testCredentialHashValue = 'hash';
 
 const createUser = (overrides: Partial<UserProps> = {}): User =>
     User.create({
         id: 'user-1',
         email: Email.create('user@example.com'),
-        passwordHash: testPasswordHash,
+        passwordHash: testCredentialHashValue,
         name: 'Test User',
         avatar: 'avatar.png',
         status: UserStatus.Active,
@@ -30,10 +30,10 @@ const createUser = (overrides: Partial<UserProps> = {}): User =>
         ...overrides,
     });
 
-const validCurrentPassword = 'Current1!a';
-const validNewPassword = 'NewPassword1!a';
-const invalidNewPassword = 'short';
-const invalidCurrentPassword = 'WrongPass1!a';
+const validCurrentCredential = 'Current1!a';
+const validNewCredential = 'NewPassword1!a';
+const invalidNewCredential = 'short';
+const invalidCurrentCredential = 'WrongPass1!a';
 
 class PasswordHasherStub implements PasswordHasher {
     constructor(private readonly isValid: boolean) {}
@@ -74,12 +74,12 @@ describe('ChangeOwnPasswordUseCase', () => {
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
-            currentPassword: validCurrentPassword,
-            newPassword: validNewPassword,
+            currentPassword: validCurrentCredential,
+            newPassword: validNewCredential,
         });
 
         expect(result.success).toBe(true);
-        expect(userRepository.updatedUser?.passwordHash).toBe(`hashed:${validNewPassword}`);
+        expect(userRepository.updatedUser?.passwordHash).toBe(`hashed:${validNewCredential}`);
         expect(auditLogger.events.some((event) => event.action === 'USER_PASSWORD_CHANGED')).toBe(true);
     });
 
@@ -88,8 +88,8 @@ describe('ChangeOwnPasswordUseCase', () => {
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
-            currentPassword: invalidCurrentPassword,
-            newPassword: validNewPassword,
+            currentPassword: invalidCurrentCredential,
+            newPassword: validNewCredential,
         });
 
         expect(result.success).toBe(false);
@@ -104,8 +104,8 @@ describe('ChangeOwnPasswordUseCase', () => {
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
-            currentPassword: validCurrentPassword,
-            newPassword: invalidNewPassword,
+            currentPassword: validCurrentCredential,
+            newPassword: invalidNewCredential,
         });
 
         expect(result.success).toBe(false);
@@ -120,8 +120,8 @@ describe('ChangeOwnPasswordUseCase', () => {
 
         const result = await useCase.execute({
             actorUserId: 'missing-user',
-            currentPassword: validCurrentPassword,
-            newPassword: validNewPassword,
+            currentPassword: validCurrentCredential,
+            newPassword: validNewCredential,
         });
 
         expect(result.success).toBe(false);
