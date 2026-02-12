@@ -3,8 +3,8 @@ import { UpdateUserStatusUseCase } from '@application/use-cases/update-user-stat
 import { UserStatus } from '@domain/entities/user.entity.js';
 import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
 import { InvalidUserStatusError } from '@domain/errors/invalid-user-status.error.js';
-import { createTestUser } from '../../shared/fixtures/user.fixture.js';
-import { buildUserUseCaseSut } from '../../shared/helpers/user-use-case-sut.js';
+import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
+import { buildUserUseCaseSut } from '@tests/shared/helpers/user-use-case-sut.js';
 
 const fixedNow = new Date('2026-02-03T14:00:00.000Z');
 

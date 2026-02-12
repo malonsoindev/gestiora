@@ -19,9 +19,9 @@ import type { UserProps } from '@domain/entities/user.entity.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { Email } from '@domain/value-objects/email.value-object.js';
 import { fail, ok } from '@shared/result.js';
-import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
-import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
-import { fixedNow } from '../../shared/fixed-now.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import { fixedNow } from '@tests/shared/fixed-now.js';
 
 const testCredentialHashValue = 'hashed-password';
 const validLoginCredential = 'valid-password';
@@ -33,7 +33,6 @@ const createUser = (overrides: Partial<UserProps> = {}): User =>
         email: Email.create('user@example.com'),
         passwordHash: testCredentialHashValue,
         status: UserStatus.Active,
-        lockedUntil: undefined,
         roles: [UserRole.user()],
         createdAt: fixedNow,
         updatedAt: fixedNow,
@@ -140,7 +139,12 @@ class LoginAttemptRepositorySpy implements LoginAttemptRepository {
         succeeded: boolean,
         timestamp: Date,
     ) {
-        this.attempts.push({ email: key.email, ip: key.ip, succeeded, timestamp });
+        this.attempts.push({
+            email: key.email,
+            succeeded,
+            timestamp,
+            ...(key.ip === undefined ? {} : { ip: key.ip }),
+        });
         return ok(undefined);
     }
 }

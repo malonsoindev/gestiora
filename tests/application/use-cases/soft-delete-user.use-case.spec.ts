@@ -4,8 +4,8 @@ import { UserStatus } from '@domain/entities/user.entity.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
 import { SelfDeletionNotAllowedError } from '@domain/errors/self-deletion-not-allowed.error.js';
-import { createTestUser } from '../../shared/fixtures/user.fixture.js';
-import { buildUserSessionUseCaseSut } from '../../shared/helpers/user-use-case-sut.js';
+import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
+import { buildUserSessionUseCaseSut } from '@tests/shared/helpers/user-use-case-sut.js';
 
 const fixedNow = new Date('2026-02-03T15:00:00.000Z');
 

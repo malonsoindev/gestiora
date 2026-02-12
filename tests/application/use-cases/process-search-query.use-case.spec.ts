@@ -5,8 +5,8 @@ import type { SearchQueryIdGenerator } from '@application/ports/search-query-id-
 import { PortError } from '@application/errors/port.error.js';
 import { ok, type Result } from '@shared/result.js';
 import { QueryTooAmbiguousError } from '@application/errors/query-too-ambiguous.error.js';
-import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
-import { fixedNow } from '../../shared/fixed-now.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { fixedNow } from '@tests/shared/fixed-now.js';
 
 class QueryInvoicesRagUseCaseStub {
     private readonly answer: string;

@@ -9,9 +9,9 @@ import { Money } from '@domain/value-objects/money.value-object.js';
 import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { ok, fail, type Result } from '@shared/result.js';
-import { InvoiceRepositoryStub } from '../../shared/stubs/invoice-repository.stub.js';
-import { ProviderRepositoryStub } from '../../shared/stubs/provider-repository.stub.js';
-import { fixedNow } from '../../shared/fixed-now.js';
+import { InvoiceRepositoryStub } from '@tests/shared/stubs/invoice-repository.stub.js';
+import { ProviderRepositoryStub } from '@tests/shared/stubs/provider-repository.stub.js';
+import { fixedNow } from '@tests/shared/fixed-now.js';
 
 class IndexInvoicesForRagUseCaseStub {
     private readonly shouldFail: boolean;

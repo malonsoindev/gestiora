@@ -15,8 +15,8 @@ import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { SessionStatus } from '@domain/entities/session.entity.js';
 import { AuthInvalidRefreshTokenError } from '@domain/errors/auth-invalid-refresh-token.error.js';
 import { ok } from '@shared/result.js';
-import { DateProviderStub } from '../../../shared/stubs/date-provider.stub.js';
-import { fixedNow } from '../../../shared/fixed-now.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { fixedNow } from '@tests/shared/fixed-now.js';
 
 const describeIf = process.env.DATABASE_URL ? describe : describe.skip;
 class SessionIdGeneratorStub {

@@ -6,11 +6,11 @@ import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.j
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import type { ProviderProps } from '@domain/entities/provider.entity.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
-import { RagReindexProviderInvoicesServiceStub } from '../stubs/rag-reindex-provider-invoices.service.stub.js';
-import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
-import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
-import { ProviderRepositorySpy } from '../../shared/spies/provider-repository.spy.js';
-import { fixedNow } from '../../shared/fixed-now.js';
+import { RagReindexProviderInvoicesServiceStub } from '@tests/application/stubs/rag-reindex-provider-invoices.service.stub.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import { ProviderRepositorySpy } from '@tests/shared/spies/provider-repository.spy.js';
+import { fixedNow } from '@tests/shared/fixed-now.js';
 
 const createProvider = (overrides: Partial<ProviderProps> = {}): Provider =>
     Provider.create({

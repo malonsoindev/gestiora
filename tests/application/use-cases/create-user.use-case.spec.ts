@@ -14,8 +14,8 @@ import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { Email } from '@domain/value-objects/email.value-object.js';
 import { ok, type Result } from '@shared/result.js';
 import type { PortError } from '@application/errors/port.error.js';
-import { createTestUser } from '../../shared/fixtures/user.fixture.js';
-import { UserRepositorySpy } from '../../shared/spies/user-repository.spy.js';
+import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
+import { UserRepositorySpy } from '@tests/shared/spies/user-repository.spy.js';
 
 const fixedNow = new Date('2026-02-02T10:00:00.000Z');
 
@@ -27,8 +27,6 @@ const createUserEntity = (): User =>
         now: fixedNow,
         overrides: {
             email: Email.create('existing@example.com'),
-            name: undefined,
-            avatar: undefined,
         },
     });
 

@@ -11,7 +11,7 @@ import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js'
 import { Money } from '@domain/value-objects/money.value-object.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { ok, type Result } from '@shared/result.js';
-import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
+import { RagReindexInvoiceServiceStub } from '@tests/application/stubs/rag-reindex-invoice.service.stub.js';
 
 const fixedNow = new Date('2026-02-22T10:00:00.000Z');
 

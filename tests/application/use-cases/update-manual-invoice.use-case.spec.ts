@@ -8,12 +8,12 @@ import { Money } from '@domain/value-objects/money.value-object.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
 import { InvalidInvoiceTotalsError } from '@domain/errors/invalid-invoice-totals.error.js';
-import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
-import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
-import { InvoiceMovementIdGeneratorStub } from '../../shared/stubs/invoice-movement-id-generator.stub.js';
-import { InvoiceRepositoryStub } from '../../shared/stubs/invoice-repository.stub.js';
-import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
-import { fixedNow } from '../../shared/fixed-now.js';
+import { RagReindexInvoiceServiceStub } from '@tests/application/stubs/rag-reindex-invoice.service.stub.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { InvoiceMovementIdGeneratorStub } from '@tests/shared/stubs/invoice-movement-id-generator.stub.js';
+import { InvoiceRepositoryStub } from '@tests/shared/stubs/invoice-repository.stub.js';
+import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import { fixedNow } from '@tests/shared/fixed-now.js';
 
 const createMovement = (id: string, total: number): InvoiceMovement =>
     InvoiceMovement.create({

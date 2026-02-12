@@ -9,10 +9,10 @@ import { InvalidPasswordError } from '@domain/errors/invalid-password.error.js';
 import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
 import { AuthInvalidCredentialsError } from '@domain/errors/auth-invalid-credentials.error.js';
 import { ok } from '@shared/result.js';
-import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
-import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
-import { UserRepositorySpy } from '../../shared/spies/user-repository.spy.js';
-import { fixedNow } from '../../shared/fixed-now.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import { UserRepositorySpy } from '@tests/shared/spies/user-repository.spy.js';
+import { fixedNow } from '@tests/shared/fixed-now.js';
 
 const testCredentialHashValue = 'hash';
 

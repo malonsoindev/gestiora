@@ -19,6 +19,7 @@ export default defineConfig({
             '@composition': resolve(currentDir, './src/composition'),
             '@config': resolve(currentDir, './src/config'),
             '@shared': resolve(currentDir, './src/shared'),
+            '@tests': resolve(currentDir, './tests'),
         },
     },
 });

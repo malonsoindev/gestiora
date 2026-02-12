@@ -13,7 +13,7 @@ import { User } from '@domain/entities/user.entity.js';
 import type { UserProps } from '@domain/entities/user.entity.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { ok } from '@shared/result.js';
-import { createTestUser } from '../../shared/fixtures/user.fixture.js';
+import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 
 const fixedNow = new Date('2026-01-29T12:00:00.000Z');
 
@@ -153,10 +153,7 @@ const createSession = (overrides: Partial<SessionProps> = {}): Session =>
 const createUser = (overrides: Partial<UserProps> = {}): User =>
     createTestUser({
         now: fixedNow,
-        overrides: {
-            lockedUntil: undefined,
-            ...overrides,
-        },
+        overrides,
     });
 
 describe('RefreshAccessTokenUseCase', () => {
