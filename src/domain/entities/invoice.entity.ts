@@ -1,7 +1,7 @@
-import type { InvoiceMovement } from './invoice-movement.entity.js';
-import type { FileRef } from '../value-objects/file-ref.value-object.js';
-import type { InvoiceDate } from '../value-objects/invoice-date.value-object.js';
-import type { Money } from '../value-objects/money.value-object.js';
+import type { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
+import type { FileRef } from '@domain/value-objects/file-ref.value-object.js';
+import type { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
+import type { Money } from '@domain/value-objects/money.value-object.js';
 
 export enum InvoiceStatus {
     Draft = 'DRAFT',

@@ -1,10 +1,10 @@
-import type { UpdateUserStatusRequest } from '../dto/update-user-status.request.js';
-import type { UserRepository } from '../ports/user.repository.js';
-import type { PortError } from '../errors/port.error.js';
-import { UserNotFoundError } from '../../domain/errors/user-not-found.error.js';
-import { InvalidUserStatusError } from '../../domain/errors/invalid-user-status.error.js';
-import { UserStatus } from '../../domain/entities/user.entity.js';
-import { fail, ok, type Result } from '../../shared/result.js';
+import type { UpdateUserStatusRequest } from '@application/dto/update-user-status.request.js';
+import type { UserRepository } from '@application/ports/user.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
+import { InvalidUserStatusError } from '@domain/errors/invalid-user-status.error.js';
+import { UserStatus } from '@domain/entities/user.entity.js';
+import { fail, ok, type Result } from '@shared/result.js';
 
 export type UpdateUserStatusDependencies = {
     userRepository: UserRepository;

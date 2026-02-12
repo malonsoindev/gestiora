@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
-import { fail, ok, type Result } from '../../shared/result.js';
-import { PortError } from '../../application/errors/port.error.js';
-import type { PasswordHasher } from '../../application/ports/password-hasher.js';
+import { fail, ok, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
+import type { PasswordHasher } from '@application/ports/password-hasher.js';
 
 export class BcryptPasswordHasher implements PasswordHasher {
     constructor(private readonly saltRounds: number = 12) {}

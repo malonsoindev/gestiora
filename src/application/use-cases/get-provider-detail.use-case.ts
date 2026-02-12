@@ -1,9 +1,9 @@
-import type { ProviderRepository } from '../ports/provider.repository.js';
-import type { ProviderDetailResponse } from '../dto/get-provider-detail.response.js';
-import type { GetProviderDetailRequest } from '../dto/get-provider-detail.request.js';
-import type { PortError } from '../errors/port.error.js';
-import { ProviderNotFoundError } from '../../domain/errors/provider-not-found.error.js';
-import { ok, fail, type Result } from '../../shared/result.js';
+import type { ProviderRepository } from '@application/ports/provider.repository.js';
+import type { ProviderDetailResponse } from '@application/dto/get-provider-detail.response.js';
+import type { GetProviderDetailRequest } from '@application/dto/get-provider-detail.request.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
+import { ok, fail, type Result } from '@shared/result.js';
 
 export type GetProviderDetailDependencies = {
     providerRepository: ProviderRepository;

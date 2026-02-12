@@ -1,8 +1,8 @@
 import type { Sql } from 'postgres';
-import { ok, fail, type Result } from '../../../shared/result.js';
-import { PortError } from '../../../application/errors/port.error.js';
-import type { SearchQueryRecord, SearchQueryRepository, SearchReference } from '../../../application/ports/search-query.repository.js';
-import { toDate } from '../../../shared/date-utils.js';
+import { ok, fail, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
+import type { SearchQueryRecord, SearchQueryRepository, SearchReference } from '@application/ports/search-query.repository.js';
+import { toDate } from '@shared/date-utils.js';
 
 type SqlClient = Sql<{}>;
 

@@ -1,12 +1,12 @@
 import type { FastifyInstance } from 'fastify';
-import type { AuthorizeRequestUseCase } from '../../../../application/use-cases/authorize-request.use-case.js';
+import type { AuthorizeRequestUseCase } from '@application/use-cases/authorize-request.use-case.js';
 import type {
     UsersController,
     UpdateOwnProfileBody,
     UpdateOwnPasswordBody,
-} from '../controllers/users.controller.js';
-import { buildAuthorizeMiddleware } from '../middlewares/authorize.middleware.js';
-import { usersSchemas } from '../schemas/users.schemas.js';
+} from '@infrastructure/delivery/http/controllers/users.controller.js';
+import { buildAuthorizeMiddleware } from '@infrastructure/delivery/http/middlewares/authorize.middleware.js';
+import { usersSchemas } from '@infrastructure/delivery/http/schemas/users.schemas.js';
 
 export const registerUsersRoutes = async (
     app: FastifyInstance,

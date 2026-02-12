@@ -1,9 +1,9 @@
-import type { GetUserDetailRequest } from '../dto/get-user-detail.request.js';
-import type { GetUserDetailResponse } from '../dto/get-user-detail.response.js';
-import type { UserRepository } from '../ports/user.repository.js';
-import type { PortError } from '../errors/port.error.js';
-import { UserNotFoundError } from '../../domain/errors/user-not-found.error.js';
-import { fail, ok, type Result } from '../../shared/result.js';
+import type { GetUserDetailRequest } from '@application/dto/get-user-detail.request.js';
+import type { GetUserDetailResponse } from '@application/dto/get-user-detail.response.js';
+import type { UserRepository } from '@application/ports/user.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
+import { fail, ok, type Result } from '@shared/result.js';
 
 export type GetUserDetailDependencies = {
     userRepository: UserRepository;

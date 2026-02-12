@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { FileStorage, FileToStore, StoredFile, StoredFileContent } from '../../../application/ports/file-storage.js';
-import { ok, fail, type Result } from '../../../shared/result.js';
-import { PortError } from '../../../application/errors/port.error.js';
+import type { FileStorage, FileToStore, StoredFile, StoredFileContent } from '@application/ports/file-storage.js';
+import { ok, fail, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
 
 export class InMemoryFileStorage implements FileStorage {
     private readonly files = new Map<string, { metadata: StoredFile; content: Buffer }>();

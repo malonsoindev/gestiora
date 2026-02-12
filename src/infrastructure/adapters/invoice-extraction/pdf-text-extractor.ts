@@ -1,5 +1,5 @@
-import { PortError } from '../../../application/errors/port.error.js';
-import { fail, ok, type Result } from '../../../shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
+import { fail, ok, type Result } from '@shared/result.js';
 
 type PdfParser = (content: Buffer) => Promise<{ text: string }>;
 

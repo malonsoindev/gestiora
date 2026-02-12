@@ -1,12 +1,12 @@
-import type { AuditLogger } from '../ports/audit-logger.js';
-import type { DateProvider } from '../ports/date-provider.js';
-import type { RefreshTokenHasher } from '../ports/refresh-token-hasher.js';
-import type { SessionRepository } from '../ports/session.repository.js';
-import type { LogoutUserRequest } from '../dto/logout-user.request.js';
-import type { LogoutUserResponse } from '../dto/logout-user.response.js';
-import type { PortError } from '../errors/port.error.js';
-import { Session, SessionStatus } from '../../domain/entities/session.entity.js';
-import { fail, ok, type Result } from '../../shared/result.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher.js';
+import type { SessionRepository } from '@application/ports/session.repository.js';
+import type { LogoutUserRequest } from '@application/dto/logout-user.request.js';
+import type { LogoutUserResponse } from '@application/dto/logout-user.response.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { Session, SessionStatus } from '@domain/entities/session.entity.js';
+import { fail, ok, type Result } from '@shared/result.js';
 
 export type LogoutUserDependencies = {
     sessionRepository: SessionRepository;

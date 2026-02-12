@@ -1,4 +1,4 @@
-import { InvalidFileRefError } from '../errors/invalid-file-ref.error.js';
+import { InvalidFileRefError } from '@domain/errors/invalid-file-ref.error.js';
 
 export type FileRefProps = {
     storageKey: string;

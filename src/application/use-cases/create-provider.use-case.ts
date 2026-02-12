@@ -1,16 +1,16 @@
-import type { CreateProviderRequest } from '../dto/create-provider.request.js';
-import type { CreateProviderResponse } from '../dto/create-provider.response.js';
-import type { ProviderRepository } from '../ports/provider.repository.js';
-import type { ProviderIdGenerator } from '../ports/provider-id-generator.js';
-import type { AuditLogger } from '../ports/audit-logger.js';
-import type { DateProvider } from '../ports/date-provider.js';
-import type { PortError } from '../errors/port.error.js';
-import { Provider, ProviderStatus } from '../../domain/entities/provider.entity.js';
-import { ProviderAlreadyExistsError } from '../../domain/errors/provider-already-exists.error.js';
-import { InvalidCifError } from '../../domain/errors/invalid-cif.error.js';
-import { InvalidProviderStatusError } from '../../domain/errors/invalid-provider-status.error.js';
-import { Cif } from '../../domain/value-objects/cif.value-object.js';
-import { ok, fail, type Result } from '../../shared/result.js';
+import type { CreateProviderRequest } from '@application/dto/create-provider.request.js';
+import type { CreateProviderResponse } from '@application/dto/create-provider.response.js';
+import type { ProviderRepository } from '@application/ports/provider.repository.js';
+import type { ProviderIdGenerator } from '@application/ports/provider-id-generator.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import { ProviderAlreadyExistsError } from '@domain/errors/provider-already-exists.error.js';
+import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
+import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
+import { Cif } from '@domain/value-objects/cif.value-object.js';
+import { ok, fail, type Result } from '@shared/result.js';
 
 export type CreateProviderDependencies = {
     providerRepository: ProviderRepository;

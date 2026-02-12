@@ -1,9 +1,9 @@
 import { mkdir, readFile, writeFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import type { FileStorage, FileToStore, StoredFile, StoredFileContent } from '../../../application/ports/file-storage.js';
-import { ok, fail, type Result } from '../../../shared/result.js';
-import { PortError } from '../../../application/errors/port.error.js';
+import type { FileStorage, FileToStore, StoredFile, StoredFileContent } from '@application/ports/file-storage.js';
+import { ok, fail, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
 
 export class LocalFileStorage implements FileStorage {
     constructor(private readonly basePath: string) {}

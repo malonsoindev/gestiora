@@ -1,13 +1,13 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import type { LoginUserUseCase } from '../../../../application/use-cases/login-user.use-case.js';
-import type { RefreshAccessTokenUseCase } from '../../../../application/use-cases/refresh-access-token.use-case.js';
-import type { LogoutUserUseCase } from '../../../../application/use-cases/logout-user.use-case.js';
-import { AuthInvalidCredentialsError } from '../../../../domain/errors/auth-invalid-credentials.error.js';
-import { AuthUserDisabledError } from '../../../../domain/errors/auth-user-disabled.error.js';
-import { AuthUserLockedError } from '../../../../domain/errors/auth-user-locked.error.js';
-import { AuthRateLimitedError } from '../../../../domain/errors/auth-rate-limited.error.js';
-import { AuthInvalidRefreshTokenError } from '../../../../domain/errors/auth-invalid-refresh-token.error.js';
-import { PortError } from '../../../../application/errors/port.error.js';
+import type { LoginUserUseCase } from '@application/use-cases/login-user.use-case.js';
+import type { RefreshAccessTokenUseCase } from '@application/use-cases/refresh-access-token.use-case.js';
+import type { LogoutUserUseCase } from '@application/use-cases/logout-user.use-case.js';
+import { AuthInvalidCredentialsError } from '@domain/errors/auth-invalid-credentials.error.js';
+import { AuthUserDisabledError } from '@domain/errors/auth-user-disabled.error.js';
+import { AuthUserLockedError } from '@domain/errors/auth-user-locked.error.js';
+import { AuthRateLimitedError } from '@domain/errors/auth-rate-limited.error.js';
+import { AuthInvalidRefreshTokenError } from '@domain/errors/auth-invalid-refresh-token.error.js';
+import { PortError } from '@application/errors/port.error.js';
 
 type LoginBody = {
     email: string;

@@ -1,11 +1,11 @@
-import type { AuditLogger } from '../ports/audit-logger.js';
-import type { PasswordHasher } from '../ports/password-hasher.js';
-import type { UserRepository } from '../ports/user.repository.js';
-import type { PortError } from '../errors/port.error.js';
-import { InvalidPasswordError } from '../../domain/errors/invalid-password.error.js';
-import { Password } from '../../domain/value-objects/password.value-object.js';
-import type { User } from '../../domain/entities/user.entity.js';
-import { fail, ok, type Result } from '../../shared/result.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
+import type { PasswordHasher } from '@application/ports/password-hasher.js';
+import type { UserRepository } from '@application/ports/user.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { InvalidPasswordError } from '@domain/errors/invalid-password.error.js';
+import { Password } from '@domain/value-objects/password.value-object.js';
+import type { User } from '@domain/entities/user.entity.js';
+import { fail, ok, type Result } from '@shared/result.js';
 
 export type ApplyPasswordChangeDependencies = {
     userRepository: UserRepository;

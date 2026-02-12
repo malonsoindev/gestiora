@@ -1,4 +1,4 @@
-import type { SearchFilters } from './search-filter-detector.service.js';
+import type { SearchFilters } from '@application/services/search-filter-detector.service.js';
 
 const MONTH_NAMES = [
     'enero',

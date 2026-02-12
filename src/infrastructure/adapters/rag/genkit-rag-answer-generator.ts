@@ -1,8 +1,8 @@
 import type { Genkit } from 'genkit';
 import { Document } from 'genkit/retriever';
-import { ok, fail, type Result } from '../../../shared/result.js';
-import { PortError } from '../../../application/errors/port.error.js';
-import type { RagAnswerGenerator, RagGenerateRequest } from '../../../application/ports/rag-answer-generator.js';
+import { ok, fail, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
+import type { RagAnswerGenerator, RagGenerateRequest } from '@application/ports/rag-answer-generator.js';
 import { openAI } from '@genkit-ai/compat-oai/openai';
 
 export type GenkitRagAnswerGeneratorDependencies = {

@@ -1,4 +1,4 @@
-import type { UserRole } from '../../../../domain/value-objects/user-role.value-object.js';
+import type { UserRole } from '@domain/value-objects/user-role.value-object.js';
 
 declare module 'fastify' {
     interface FastifyRequest {

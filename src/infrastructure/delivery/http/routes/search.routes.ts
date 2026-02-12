@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify';
-import type { AuthorizeRequestUseCase } from '../../../../application/use-cases/authorize-request.use-case.js';
-import type { SearchController, SearchBody } from '../controllers/search.controller.js';
-import { buildAuthorizeMiddleware } from '../middlewares/authorize.middleware.js';
-import { searchSchemas } from '../schemas/search.schemas.js';
+import type { AuthorizeRequestUseCase } from '@application/use-cases/authorize-request.use-case.js';
+import type { SearchController, SearchBody } from '@infrastructure/delivery/http/controllers/search.controller.js';
+import { buildAuthorizeMiddleware } from '@infrastructure/delivery/http/middlewares/authorize.middleware.js';
+import { searchSchemas } from '@infrastructure/delivery/http/schemas/search.schemas.js';
 
 export const registerSearchRoutes = async (
     app: FastifyInstance,

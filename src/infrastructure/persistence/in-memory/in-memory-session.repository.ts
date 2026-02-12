@@ -1,7 +1,7 @@
-import { ok, type Result } from '../../../shared/result.js';
-import { PortError } from '../../../application/errors/port.error.js';
-import type { SessionRepository } from '../../../application/ports/session.repository.js';
-import { Session, SessionStatus } from '../../../domain/entities/session.entity.js';
+import { ok, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
+import type { SessionRepository } from '@application/ports/session.repository.js';
+import { Session, SessionStatus } from '@domain/entities/session.entity.js';
 
 export class InMemorySessionRepository implements SessionRepository {
     private readonly sessionsById = new Map<string, Session>();

@@ -1,7 +1,7 @@
-import { User, UserStatus } from '../../domain/entities/user.entity.js';
-import type { UserRole } from '../../domain/value-objects/user-role.value-object.js';
-import type { Result } from '../../shared/result.js';
-import type { PortError } from '../errors/port.error.js';
+import { User, UserStatus } from '@domain/entities/user.entity.js';
+import type { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import type { Result } from '@shared/result.js';
+import type { PortError } from '@application/errors/port.error.js';
 
 export interface UserRepository {
     findByEmail(email: string): Promise<Result<User | null, PortError>>;

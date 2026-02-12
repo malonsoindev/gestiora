@@ -1,10 +1,10 @@
 import type { Sql } from 'postgres';
-import { fail, ok, type Result } from '../../../shared/result.js';
-import { toDate } from '../../../shared/date-utils.js';
-import { toText } from '../../../shared/text-utils.js';
-import { PortError } from '../../../application/errors/port.error.js';
-import type { SessionRepository } from '../../../application/ports/session.repository.js';
-import { Session, SessionStatus } from '../../../domain/entities/session.entity.js';
+import { fail, ok, type Result } from '@shared/result.js';
+import { toDate } from '@shared/date-utils.js';
+import { toText } from '@shared/text-utils.js';
+import { PortError } from '@application/errors/port.error.js';
+import type { SessionRepository } from '@application/ports/session.repository.js';
+import { Session, SessionStatus } from '@domain/entities/session.entity.js';
 
 type SqlClient = Sql<{}>;
 

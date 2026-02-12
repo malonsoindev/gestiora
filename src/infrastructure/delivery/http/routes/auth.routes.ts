@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify';
-import type { AuthController, AuthLoginBody, AuthRefreshBody } from '../controllers/auth.controller.js';
-import type { AuthorizeRequestUseCase } from '../../../../application/use-cases/authorize-request.use-case.js';
-import { buildAuthorizeMiddleware } from '../middlewares/authorize.middleware.js';
-import { authSchemas } from '../schemas/auth.schemas.js';
+import type { AuthController, AuthLoginBody, AuthRefreshBody } from '@infrastructure/delivery/http/controllers/auth.controller.js';
+import type { AuthorizeRequestUseCase } from '@application/use-cases/authorize-request.use-case.js';
+import { buildAuthorizeMiddleware } from '@infrastructure/delivery/http/middlewares/authorize.middleware.js';
+import { authSchemas } from '@infrastructure/delivery/http/schemas/auth.schemas.js';
 
 export const registerAuthRoutes = async (
     app: FastifyInstance,

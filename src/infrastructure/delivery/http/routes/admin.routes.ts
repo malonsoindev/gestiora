@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
-import type { AuthorizeRequestUseCase } from '../../../../application/use-cases/authorize-request.use-case.js';
-import type { AdminController } from '../controllers/admin.controller.js';
-import { buildAuthorizeMiddleware } from '../middlewares/authorize.middleware.js';
+import type { AuthorizeRequestUseCase } from '@application/use-cases/authorize-request.use-case.js';
+import type { AdminController } from '@infrastructure/delivery/http/controllers/admin.controller.js';
+import { buildAuthorizeMiddleware } from '@infrastructure/delivery/http/middlewares/authorize.middleware.js';
 
 export const registerAdminRoutes = async (
     app: FastifyInstance,

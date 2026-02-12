@@ -1,9 +1,9 @@
-import type { SearchQueryRepository } from '../ports/search-query.repository.js';
-import type { PortError } from '../errors/port.error.js';
-import { SearchQueryNotFoundError } from '../../domain/errors/search-query-not-found.error.js';
-import { ok, fail, type Result } from '../../shared/result.js';
-import type { GetSearchResultRequest } from '../dto/get-search-result.request.js';
-import type { GetSearchResultResponse } from '../dto/get-search-result.response.js';
+import type { SearchQueryRepository } from '@application/ports/search-query.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { SearchQueryNotFoundError } from '@domain/errors/search-query-not-found.error.js';
+import { ok, fail, type Result } from '@shared/result.js';
+import type { GetSearchResultRequest } from '@application/dto/get-search-result.request.js';
+import type { GetSearchResultResponse } from '@application/dto/get-search-result.response.js';
 
 export type GetSearchResultDependencies = {
     searchQueryRepository: SearchQueryRepository;

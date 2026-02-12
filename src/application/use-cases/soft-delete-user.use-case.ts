@@ -1,11 +1,11 @@
-import type { SoftDeleteUserRequest } from '../dto/soft-delete-user.request.js';
-import type { UserRepository } from '../ports/user.repository.js';
-import type { SessionRepository } from '../ports/session.repository.js';
-import type { PortError } from '../errors/port.error.js';
-import { UserNotFoundError } from '../../domain/errors/user-not-found.error.js';
-import { SelfDeletionNotAllowedError } from '../../domain/errors/self-deletion-not-allowed.error.js';
-import { UserStatus } from '../../domain/entities/user.entity.js';
-import { fail, ok, type Result } from '../../shared/result.js';
+import type { SoftDeleteUserRequest } from '@application/dto/soft-delete-user.request.js';
+import type { UserRepository } from '@application/ports/user.repository.js';
+import type { SessionRepository } from '@application/ports/session.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
+import { SelfDeletionNotAllowedError } from '@domain/errors/self-deletion-not-allowed.error.js';
+import { UserStatus } from '@domain/entities/user.entity.js';
+import { fail, ok, type Result } from '@shared/result.js';
 
 export type SoftDeleteUserDependencies = {
     userRepository: UserRepository;

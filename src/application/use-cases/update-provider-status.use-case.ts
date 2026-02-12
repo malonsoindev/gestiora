@@ -1,14 +1,14 @@
-import type { UpdateProviderStatusRequest } from '../dto/update-provider-status.request.js';
-import type { ProviderRepository } from '../ports/provider.repository.js';
-import type { AuditLogger } from '../ports/audit-logger.js';
-import type { DateProvider } from '../ports/date-provider.js';
-import type { PortError } from '../errors/port.error.js';
-import type { RagReindexProviderInvoicesHandler } from '../services/rag-reindex-provider-invoices.service.js';
-import { ProviderNotFoundError } from '../../domain/errors/provider-not-found.error.js';
-import { InvalidProviderStatusError } from '../../domain/errors/invalid-provider-status.error.js';
-import { ProviderStatus } from '../../domain/entities/provider.entity.js';
-import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
-import { ok, fail, type Result } from '../../shared/result.js';
+import type { UpdateProviderStatusRequest } from '@application/dto/update-provider-status.request.js';
+import type { ProviderRepository } from '@application/ports/provider.repository.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { PortError } from '@application/errors/port.error.js';
+import type { RagReindexProviderInvoicesHandler } from '@application/services/rag-reindex-provider-invoices.service.js';
+import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
+import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
+import { ProviderStatus } from '@domain/entities/provider.entity.js';
+import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
+import { ok, fail, type Result } from '@shared/result.js';
 
 export type UpdateProviderStatusDependencies = {
     providerRepository: ProviderRepository;

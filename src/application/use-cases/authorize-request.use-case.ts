@@ -1,12 +1,12 @@
-import type { AuditLogger } from '../ports/audit-logger.js';
-import type { DateProvider } from '../ports/date-provider.js';
-import type { TokenService } from '../ports/token.service.js';
-import type { AuthorizeRequest } from '../dto/authorize-request.request.js';
-import type { AuthorizeResponse } from '../dto/authorize-request.response.js';
-import type { PortError } from '../errors/port.error.js';
-import { AuthorizationError } from '../errors/authorization.error.js';
-import { UserRole } from '../../domain/value-objects/user-role.value-object.js';
-import { fail, ok, type Result } from '../../shared/result.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { TokenService } from '@application/ports/token.service.js';
+import type { AuthorizeRequest } from '@application/dto/authorize-request.request.js';
+import type { AuthorizeResponse } from '@application/dto/authorize-request.response.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { AuthorizationError } from '@application/errors/authorization.error.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import { fail, ok, type Result } from '@shared/result.js';
 
 export type AuthorizeRequestDependencies = {
     tokenService: TokenService;
