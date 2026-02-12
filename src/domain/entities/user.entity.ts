@@ -99,6 +99,7 @@ export class User {
         avatar?: string;
         roles?: UserRole[];
         status?: UserStatus;
+        passwordHash?: string;
         deletedAt?: Date;
         updatedAt: Date;
     }): User {
@@ -106,6 +107,7 @@ export class User {
             ...this.props,
             roles: update.roles ?? this.props.roles,
             status: update.status ?? this.props.status,
+            passwordHash: update.passwordHash ?? this.props.passwordHash,
             updatedAt: update.updatedAt,
             ...(update.name === undefined ? {} : { name: update.name }),
             ...(update.avatar === undefined ? {} : { avatar: update.avatar }),

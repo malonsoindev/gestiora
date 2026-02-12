@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { LoginUserUseCase } from '../../../src/application/use-cases/login-user.use-case.js';
-import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
 import type { DateProvider } from '../../../src/application/ports/date-provider.js';
 import type { LoginRateLimiter } from '../../../src/application/ports/login-rate-limiter.js';
+import type { LoginAttemptRepository } from '../../../src/application/ports/login-attempt.repository.js';
 import type { PasswordHasher } from '../../../src/application/ports/password-hasher.js';
 import type { RefreshTokenHasher } from '../../../src/application/ports/refresh-token-hasher.js';
 import type { SessionIdGenerator } from '../../../src/application/ports/session-id-generator.js';
@@ -19,8 +19,9 @@ import type { UserProps } from '../../../src/domain/entities/user.entity.js';
 import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
 import { Email } from '../../../src/domain/value-objects/email.value-object.js';
 import { fail, ok } from '../../../src/shared/result.js';
-
-const fixedNow = new Date('2026-01-29T10:00:00.000Z');
+import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
+import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
+import { fixedNow } from '../../shared/fixed-now.js';
 
 const createUser = (overrides: Partial<UserProps> = {}): User =>
     User.create({
@@ -43,14 +44,6 @@ const buildUserRepository = (user: User | null): UserRepository => ({
     update: async () => ok(undefined),
 });
 
-class FixedDateProvider implements DateProvider {
-    constructor(private readonly date: Date) {}
-
-    now() {
-        return ok(this.date);
-    }
-}
-
 class SessionRepositorySpy implements SessionRepository {
     created: Session | null = null;
     updated: Session | null = null;
@@ -70,15 +63,6 @@ class SessionRepositorySpy implements SessionRepository {
     }
 
     async revokeByUserId() {
-        return ok(undefined);
-    }
-}
-
-class AuditLoggerSpy implements AuditLogger {
-    events: AuditEvent[] = [];
-
-    async log(event: AuditEvent) {
-        this.events.push(event);
         return ok(undefined);
     }
 }
@@ -140,14 +124,32 @@ class SessionIdGeneratorStub implements SessionIdGenerator {
     }
 }
 
+class LoginAttemptRepositorySpy implements LoginAttemptRepository {
+    attempts: Array<{ email: string; ip?: string; succeeded: boolean; timestamp: Date }> = [];
+
+    async countFailedAttempts() {
+        return ok(0);
+    }
+
+    async recordAttempt(
+        key: { email: string; ip?: string },
+        succeeded: boolean,
+        timestamp: Date,
+    ) {
+        this.attempts.push({ email: key.email, ip: key.ip, succeeded, timestamp });
+        return ok(undefined);
+    }
+}
+
 type UseCaseDependencies = {
     userRepository: UserRepository;
     sessionRepository: SessionRepository;
     passwordHasher: PasswordHasher;
     tokenService: TokenService;
     refreshTokenHasher: RefreshTokenHasher;
-    auditLogger: AuditLogger;
+    auditLogger: AuditLoggerSpy;
     loginRateLimiter: LoginRateLimiter;
+    loginAttemptRepository: LoginAttemptRepository;
     dateProvider: DateProvider;
     sessionIdGenerator: SessionIdGenerator;
     accessTokenTtlSeconds: number;
@@ -159,10 +161,12 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
     sessionRepository: SessionRepositorySpy;
     auditLogger: AuditLoggerSpy;
     tokenService: TokenServiceStub;
+    loginAttemptRepository: LoginAttemptRepositorySpy;
 } => {
     const sessionRepository = new SessionRepositorySpy();
     const auditLogger = new AuditLoggerSpy();
     const tokenService = new TokenServiceStub();
+    const loginAttemptRepository = new LoginAttemptRepositorySpy();
 
     const resolvedDependencies: UseCaseDependencies = {
         userRepository: buildUserRepository(createUser()),
@@ -172,7 +176,8 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
         refreshTokenHasher: new RefreshTokenHasherStub(),
         auditLogger,
         loginRateLimiter: new AllowAllRateLimiter(),
-        dateProvider: new FixedDateProvider(fixedNow),
+        loginAttemptRepository,
+        dateProvider: new DateProviderStub(fixedNow),
         sessionIdGenerator: new SessionIdGeneratorStub('session-fixed'),
         accessTokenTtlSeconds: 900,
         refreshTokenTtlSeconds: 2_592_000,
@@ -184,22 +189,26 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
         sessionRepository,
         auditLogger,
         tokenService,
+        loginAttemptRepository,
     };
 };
+
+const buildLoginRequest = (overrides: Partial<{ email: string; password: string; ip: string; userAgent: string }> = {}) => ({
+    email: 'user@example.com',
+    password: 'valid-password',
+    ip: '127.0.0.1',
+    userAgent: 'unit-test',
+    ...overrides,
+});
 
 describe('LoginUserUseCase', () => {
     it('authenticates a user and returns tokens', async () => {
         const user = createUser();
-        const { useCase, sessionRepository, auditLogger, tokenService } = createUseCase({
+        const { useCase, sessionRepository, auditLogger, tokenService, loginAttemptRepository } = createUseCase({
             userRepository: buildUserRepository(user),
         });
 
-        const result = await useCase.execute({
-            email: user.email,
-            password: 'valid-password',
-            ip: '127.0.0.1',
-            userAgent: 'unit-test',
-        });
+        const result = await useCase.execute(buildLoginRequest({ email: user.email }));
 
         expect(result.success).toBe(true);
         if (result.success) {
@@ -214,21 +223,21 @@ describe('LoginUserUseCase', () => {
         expect(tokenService.accessPayloads[0]?.roles).toHaveLength(1);
         expect(tokenService.accessPayloads[0]?.roles[0]?.getValue()).toBe('USER');
         expect(auditLogger.events.some((event) => event.action === 'LOGIN_SUCCESS')).toBe(true);
+        expect(loginAttemptRepository.attempts).toHaveLength(1);
+        expect(loginAttemptRepository.attempts[0]?.succeeded).toBe(true);
     });
 
     it('rejects invalid credentials with a generic error', async () => {
         const user = createUser();
-        const { useCase, sessionRepository, auditLogger } = createUseCase({
+        const { useCase, sessionRepository, auditLogger, loginAttemptRepository } = createUseCase({
             userRepository: buildUserRepository(user),
             passwordHasher: new PasswordHasherStub(false),
         });
 
-        const result = await useCase.execute({
+        const result = await useCase.execute(buildLoginRequest({
             email: user.email,
             password: 'wrong-password',
-            ip: '127.0.0.1',
-            userAgent: 'unit-test',
-        });
+        }));
 
         expect(result.success).toBe(false);
         if (!result.success) {
@@ -237,20 +246,17 @@ describe('LoginUserUseCase', () => {
 
         expect(sessionRepository.created).toBeNull();
         expect(auditLogger.events.some((event) => event.action === 'LOGIN_FAIL')).toBe(true);
+        expect(loginAttemptRepository.attempts).toHaveLength(1);
+        expect(loginAttemptRepository.attempts[0]?.succeeded).toBe(false);
     });
 
     it('rejects inactive users', async () => {
         const user = createUser({ status: UserStatus.Inactive });
-        const { useCase, sessionRepository, auditLogger } = createUseCase({
+        const { useCase, sessionRepository, auditLogger, loginAttemptRepository } = createUseCase({
             userRepository: buildUserRepository(user),
         });
 
-        const result = await useCase.execute({
-            email: user.email,
-            password: 'valid-password',
-            ip: '127.0.0.1',
-            userAgent: 'unit-test',
-        });
+        const result = await useCase.execute(buildLoginRequest({ email: user.email }));
 
         expect(result.success).toBe(false);
         if (!result.success) {
@@ -259,22 +265,20 @@ describe('LoginUserUseCase', () => {
 
         expect(sessionRepository.created).toBeNull();
         expect(auditLogger.events.some((event) => event.action === 'LOGIN_FAIL')).toBe(true);
+        expect(loginAttemptRepository.attempts).toHaveLength(1);
+        expect(loginAttemptRepository.attempts[0]?.succeeded).toBe(false);
     });
 
     it('rejects locked users', async () => {
         const user = createUser({
             lockedUntil: new Date('2026-01-29T10:10:00.000Z'),
         });
-        const { useCase, sessionRepository, auditLogger } = createUseCase({
+        const { useCase, sessionRepository, auditLogger, loginAttemptRepository } = createUseCase({
             userRepository: buildUserRepository(user),
+            dateProvider: new DateProviderStub(new Date('2026-01-29T10:00:00.000Z')),
         });
 
-        const result = await useCase.execute({
-            email: user.email,
-            password: 'valid-password',
-            ip: '127.0.0.1',
-            userAgent: 'unit-test',
-        });
+        const result = await useCase.execute(buildLoginRequest({ email: user.email }));
 
         expect(result.success).toBe(false);
         if (!result.success) {
@@ -283,21 +287,18 @@ describe('LoginUserUseCase', () => {
 
         expect(sessionRepository.created).toBeNull();
         expect(auditLogger.events.some((event) => event.action === 'LOGIN_FAIL')).toBe(true);
+        expect(loginAttemptRepository.attempts).toHaveLength(1);
+        expect(loginAttemptRepository.attempts[0]?.succeeded).toBe(false);
     });
 
     it('rejects rate-limited attempts', async () => {
         const user = createUser();
-        const { useCase, sessionRepository, auditLogger } = createUseCase({
+        const { useCase, sessionRepository, auditLogger, loginAttemptRepository } = createUseCase({
             userRepository: buildUserRepository(user),
             loginRateLimiter: new BlockingRateLimiter(),
         });
 
-        const result = await useCase.execute({
-            email: user.email,
-            password: 'valid-password',
-            ip: '127.0.0.1',
-            userAgent: 'unit-test',
-        });
+        const result = await useCase.execute(buildLoginRequest({ email: user.email }));
 
         expect(result.success).toBe(false);
         if (!result.success) {
@@ -306,5 +307,7 @@ describe('LoginUserUseCase', () => {
 
         expect(sessionRepository.created).toBeNull();
         expect(auditLogger.events.some((event) => event.action === 'LOGIN_FAIL')).toBe(true);
+        expect(loginAttemptRepository.attempts).toHaveLength(1);
+        expect(loginAttemptRepository.attempts[0]?.succeeded).toBe(false);
     });
 });

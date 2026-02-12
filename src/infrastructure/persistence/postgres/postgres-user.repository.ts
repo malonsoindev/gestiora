@@ -148,6 +148,7 @@ export class PostgresUserRepository implements UserRepository {
                     avatar = ${user.avatar ?? null},
                     status = ${user.status},
                     roles = ${user.roles.map((role) => role.getValue())},
+                    password_hash = ${user.passwordHash},
                     updated_at = ${user.updatedAt},
                     deleted_at = ${user.deletedAt ?? null}
                 where id = ${user.id}

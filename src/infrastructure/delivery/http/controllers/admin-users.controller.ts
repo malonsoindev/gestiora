@@ -6,6 +6,7 @@ import type { UpdateUserUseCase } from '../../../../application/use-cases/update
 import type { UpdateUserStatusUseCase } from '../../../../application/use-cases/update-user-status.use-case.js';
 import type { SoftDeleteUserUseCase } from '../../../../application/use-cases/soft-delete-user.use-case.js';
 import type { RevokeUserSessionsUseCase } from '../../../../application/use-cases/revoke-user-sessions.use-case.js';
+import type { ChangeUserPasswordUseCase } from '../../../../application/use-cases/change-user-password.use-case.js';
 import { InvalidEmailError } from '../../../../domain/errors/invalid-email.error.js';
 import { InvalidPasswordError } from '../../../../domain/errors/invalid-password.error.js';
 import { InvalidUserRolesError } from '../../../../domain/errors/invalid-user-roles.error.js';
@@ -33,6 +34,10 @@ export type AdminUpdateUserBody = {
     avatar?: string;
 };
 
+export type AdminChangePasswordBody = {
+    newPassword: string;
+};
+
 type AdminUserStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED';
 type AdminUserRole = 'Usuario' | 'Administrador';
 type AdminListUsersQuery = {
@@ -54,6 +59,7 @@ export class AdminUsersController {
         private readonly updateUserStatusUseCase: UpdateUserStatusUseCase,
         private readonly softDeleteUserUseCase: SoftDeleteUserUseCase,
         private readonly revokeUserSessionsUseCase: RevokeUserSessionsUseCase,
+        private readonly changeUserPasswordUseCase: ChangeUserPasswordUseCase,
     ) {}
 
     async createUser(request: FastifyRequest<{ Body: AdminCreateUserBody }>, reply: FastifyReply) {
@@ -289,6 +295,40 @@ export class AdminUsersController {
 
         if (result.error instanceof UserNotFoundError) {
             return reply.code(404).send({ error: 'NOT_FOUND' });
+        }
+
+        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+    }
+
+    async changeUserPassword(
+        request: FastifyRequest<{ Params: { userId: string }; Body: AdminChangePasswordBody }>,
+        reply: FastifyReply,
+    ) {
+        const actorUserId = request.auth?.userId;
+        if (!actorUserId) {
+            return reply.code(403).send({ error: 'FORBIDDEN' });
+        }
+
+        const result = await this.changeUserPasswordUseCase.execute({
+            actorUserId,
+            userId: request.params.userId,
+            newPassword: request.body.newPassword,
+        });
+
+        if (result.success) {
+            return reply.code(204).send();
+        }
+
+        if (result.error instanceof UserNotFoundError) {
+            return reply.code(404).send({ error: 'NOT_FOUND' });
+        }
+
+        if (result.error instanceof InvalidPasswordError) {
+            return reply.code(400).send({ error: 'VALIDATION_ERROR' });
+        }
+
+        if (result.error instanceof PortError) {
+            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
         }
 
         return reply.code(500).send({ error: 'INTERNAL_ERROR' });

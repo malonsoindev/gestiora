@@ -120,8 +120,12 @@ export const buildServer = async (): Promise<FastifyInstance> => {
         compositionRoot.updateUserStatusUseCase,
         compositionRoot.softDeleteUserUseCase,
         compositionRoot.revokeUserSessionsUseCase,
+        compositionRoot.changeUserPasswordUseCase,
     );
-    const usersController = new UsersController(compositionRoot.updateOwnProfileUseCase);
+    const usersController = new UsersController(
+        compositionRoot.updateOwnProfileUseCase,
+        compositionRoot.changeOwnPasswordUseCase,
+    );
     const providersController = new ProvidersController(
         compositionRoot.createProviderUseCase,
         compositionRoot.listProvidersUseCase,
