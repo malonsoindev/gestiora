@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { ok, fail, type Result } from '../../../shared/result.js';
-import { PortError } from '../../../application/errors/port.error.js';
+import { ok, fail, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
 import type {
     AccessTokenPayload,
     RefreshTokenPayload,
     TokenService,
-} from '../../../application/ports/token.service.js';
-import { UserRole } from '../../../domain/value-objects/user-role.value-object.js';
+} from '@application/ports/token.service.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 
 type StoredAccessToken = {
     token: string;

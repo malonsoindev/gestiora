@@ -1,11 +1,11 @@
-import { ok, type Result } from '../../../shared/result.js';
-import { PortError } from '../../../application/errors/port.error.js';
+import { ok, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
 import type {
     ProviderListFilters,
     ProviderListResult,
     ProviderRepository,
-} from '../../../application/ports/provider.repository.js';
-import type { Provider } from '../../../domain/entities/provider.entity.js';
+} from '@application/ports/provider.repository.js';
+import type { Provider } from '@domain/entities/provider.entity.js';
 
 export class InMemoryProviderRepository implements ProviderRepository {
     private readonly providersById = new Map<string, Provider>();

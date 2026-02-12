@@ -1,14 +1,14 @@
 import type { Sql } from 'postgres';
-import { fail, ok, type Result } from '../../../shared/result.js';
-import { toDate } from '../../../shared/date-utils.js';
-import { PortError } from '../../../application/errors/port.error.js';
+import { fail, ok, type Result } from '@shared/result.js';
+import { toDate } from '@shared/date-utils.js';
+import { PortError } from '@application/errors/port.error.js';
 import type {
     ProviderListFilters,
     ProviderListResult,
     ProviderRepository,
-} from '../../../application/ports/provider.repository.js';
-import { Provider, ProviderStatus } from '../../../domain/entities/provider.entity.js';
-import { Cif } from '../../../domain/value-objects/cif.value-object.js';
+} from '@application/ports/provider.repository.js';
+import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import { Cif } from '@domain/value-objects/cif.value-object.js';
 
 type SqlClient = Sql<{}>;
 

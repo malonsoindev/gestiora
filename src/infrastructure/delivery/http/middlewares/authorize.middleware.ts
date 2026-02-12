@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest, HookHandlerDoneFunction } from 'fastify';
-import type { AuthorizeRequestUseCase } from '../../../../application/use-cases/authorize-request.use-case.js';
-import { AuthorizationError } from '../../../../application/errors/authorization.error.js';
-import { PortError } from '../../../../application/errors/port.error.js';
+import type { AuthorizeRequestUseCase } from '@application/use-cases/authorize-request.use-case.js';
+import { AuthorizationError } from '@application/errors/authorization.error.js';
+import { PortError } from '@application/errors/port.error.js';
 
 export const buildAuthorizeMiddleware = (
     authorizeRequestUseCase: AuthorizeRequestUseCase,

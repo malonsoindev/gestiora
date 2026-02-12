@@ -1,7 +1,7 @@
-import { ok, type Result } from '../../../shared/result.js';
-import { PortError } from '../../../application/errors/port.error.js';
-import type { InvoiceRepository, InvoiceListFilters, InvoiceListResult } from '../../../application/ports/invoice.repository.js';
-import type { Invoice } from '../../../domain/entities/invoice.entity.js';
+import { ok, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
+import type { InvoiceRepository, InvoiceListFilters, InvoiceListResult } from '@application/ports/invoice.repository.js';
+import type { Invoice } from '@domain/entities/invoice.entity.js';
 
 export class InMemoryInvoiceRepository implements InvoiceRepository {
     private readonly invoicesById = new Map<string, Invoice>();

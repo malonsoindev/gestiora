@@ -1,15 +1,15 @@
-import type { InvoiceRepository } from '../ports/invoice.repository.js';
-import type { ProviderRepository } from '../ports/provider.repository.js';
-import type { SearchQueryRepository } from '../ports/search-query.repository.js';
-import type { PortError } from '../errors/port.error.js';
-import type { IndexInvoicesForRagError } from '../use-cases/index-invoices-for-rag.use-case.js';
-import type { IndexInvoicesForRagRequest } from '../dto/index-invoices-for-rag.request.js';
-import type { IndexInvoicesForRagResponse } from '../dto/index-invoices-for-rag.response.js';
-import type { Invoice } from '../../domain/entities/invoice.entity.js';
-import type { Provider } from '../../domain/entities/provider.entity.js';
-import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
-import { ProviderNotFoundError } from '../../domain/errors/provider-not-found.error.js';
-import { ok, fail, type Result } from '../../shared/result.js';
+import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
+import type { ProviderRepository } from '@application/ports/provider.repository.js';
+import type { SearchQueryRepository } from '@application/ports/search-query.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import type { IndexInvoicesForRagError } from '@application/use-cases/index-invoices-for-rag.use-case.js';
+import type { IndexInvoicesForRagRequest } from '@application/dto/index-invoices-for-rag.request.js';
+import type { IndexInvoicesForRagResponse } from '@application/dto/index-invoices-for-rag.response.js';
+import type { Invoice } from '@domain/entities/invoice.entity.js';
+import type { Provider } from '@domain/entities/provider.entity.js';
+import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
+import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
+import { ok, fail, type Result } from '@shared/result.js';
 
 export type RagReindexProviderInvoicesDependencies = {
     invoiceRepository: InvoiceRepository;

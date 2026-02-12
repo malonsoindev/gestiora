@@ -1,8 +1,8 @@
-import type { InvoiceRepository } from '../ports/invoice.repository.js';
-import type { PortError } from '../errors/port.error.js';
-import type { ListInvoicesRequest } from '../dto/list-invoices.request.js';
-import type { ListInvoicesResponse } from '../dto/list-invoices.response.js';
-import { ok, type Result } from '../../shared/result.js';
+import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import type { ListInvoicesRequest } from '@application/dto/list-invoices.request.js';
+import type { ListInvoicesResponse } from '@application/dto/list-invoices.response.js';
+import { ok, type Result } from '@shared/result.js';
 
 export class ListInvoicesUseCase {
     constructor(private readonly dependencies: { invoiceRepository: InvoiceRepository }) {}

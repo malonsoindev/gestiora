@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken';
-import { ok, fail, type Result } from '../../shared/result.js';
-import { PortError } from '../../application/errors/port.error.js';
-import type { AccessTokenPayload, RefreshTokenPayload, TokenService } from '../../application/ports/token.service.js';
-import { UserRole } from '../../domain/value-objects/user-role.value-object.js';
+import { ok, fail, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
+import type { AccessTokenPayload, RefreshTokenPayload, TokenService } from '@application/ports/token.service.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 
 type JwtAccessPayload = {
     sub: string;

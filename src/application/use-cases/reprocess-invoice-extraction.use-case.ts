@@ -1,28 +1,28 @@
-import type { AuditLogger } from '../ports/audit-logger.js';
-import type { DateProvider } from '../ports/date-provider.js';
-import type { FileStorage } from '../ports/file-storage.js';
-import type { InvoiceExtractionAgent } from '../ports/invoice-extraction-agent.js';
-import type { InvoiceMovementIdGenerator } from '../ports/invoice-movement-id-generator.js';
-import type { InvoiceRepository } from '../ports/invoice.repository.js';
-import type { PortError } from '../errors/port.error.js';
-import type { RagReindexInvoiceHandler } from '../services/rag-reindex-invoice.service.js';
-import type { ReprocessInvoiceExtractionRequest } from '../dto/reprocess-invoice-extraction.request.js';
-import type { ReprocessInvoiceExtractionResponse } from '../dto/reprocess-invoice-extraction.response.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { FileStorage } from '@application/ports/file-storage.js';
+import type { InvoiceExtractionAgent } from '@application/ports/invoice-extraction-agent.js';
+import type { InvoiceMovementIdGenerator } from '@application/ports/invoice-movement-id-generator.js';
+import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
+import type { ReprocessInvoiceExtractionRequest } from '@application/dto/reprocess-invoice-extraction.request.js';
+import type { ReprocessInvoiceExtractionResponse } from '@application/dto/reprocess-invoice-extraction.response.js';
 import {
     InvoiceHeaderSource,
     InvoiceHeaderStatus,
     InvoiceStatus,
-} from '../../domain/entities/invoice.entity.js';
+} from '@domain/entities/invoice.entity.js';
 import {
     InvoiceMovement,
     InvoiceMovementSource,
     InvoiceMovementStatus,
-} from '../../domain/entities/invoice-movement.entity.js';
-import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
-import { InvalidInvoiceStatusError } from '../../domain/errors/invalid-invoice-status.error.js';
-import { InvoiceDate } from '../../domain/value-objects/invoice-date.value-object.js';
-import { Money } from '../../domain/value-objects/money.value-object.js';
-import { ok, fail, type Result } from '../../shared/result.js';
+} from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
+import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
+import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
+import { Money } from '@domain/value-objects/money.value-object.js';
+import { ok, fail, type Result } from '@shared/result.js';
 
 
 export type ReprocessInvoiceExtractionDependencies = {

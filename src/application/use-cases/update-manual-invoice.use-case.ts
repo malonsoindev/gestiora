@@ -1,20 +1,20 @@
-import type { UpdateManualInvoiceRequest } from '../dto/update-manual-invoice.request.js';
-import type { UpdateManualInvoiceResponse } from '../dto/update-manual-invoice.response.js';
-import type { InvoiceRepository } from '../ports/invoice.repository.js';
-import type { AuditLogger } from '../ports/audit-logger.js';
-import type { DateProvider } from '../ports/date-provider.js';
-import type { PortError } from '../errors/port.error.js';
-import type { InvoiceMovementIdGenerator } from '../ports/invoice-movement-id-generator.js';
-import type { RagReindexInvoiceHandler } from '../services/rag-reindex-invoice.service.js';
-import type { Invoice } from '../../domain/entities/invoice.entity.js';
-import { InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '../../domain/entities/invoice.entity.js';
-import { InvoiceMovement } from '../../domain/entities/invoice-movement.entity.js';
-import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
-import { InvalidInvoiceStatusError } from '../../domain/errors/invalid-invoice-status.error.js';
-import { InvalidInvoiceTotalsError } from '../../domain/errors/invalid-invoice-totals.error.js';
-import { InvoiceDate } from '../../domain/value-objects/invoice-date.value-object.js';
-import { Money } from '../../domain/value-objects/money.value-object.js';
-import { ok, fail, type Result } from '../../shared/result.js';
+import type { UpdateManualInvoiceRequest } from '@application/dto/update-manual-invoice.request.js';
+import type { UpdateManualInvoiceResponse } from '@application/dto/update-manual-invoice.response.js';
+import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { PortError } from '@application/errors/port.error.js';
+import type { InvoiceMovementIdGenerator } from '@application/ports/invoice-movement-id-generator.js';
+import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
+import type { Invoice } from '@domain/entities/invoice.entity.js';
+import { InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
+import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
+import { InvalidInvoiceTotalsError } from '@domain/errors/invalid-invoice-totals.error.js';
+import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
+import { Money } from '@domain/value-objects/money.value-object.js';
+import { ok, fail, type Result } from '@shared/result.js';
 
 export type UpdateManualInvoiceDependencies = {
     invoiceRepository: InvoiceRepository;

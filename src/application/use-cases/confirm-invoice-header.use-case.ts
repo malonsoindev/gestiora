@@ -1,16 +1,16 @@
-import type { AuditLogger } from '../ports/audit-logger.js';
-import type { DateProvider } from '../ports/date-provider.js';
-import type { InvoiceRepository } from '../ports/invoice.repository.js';
-import type { PortError } from '../errors/port.error.js';
-import type { RagReindexInvoiceHandler } from '../services/rag-reindex-invoice.service.js';
-import type { ConfirmInvoiceHeaderRequest } from '../dto/confirm-invoice-header.request.js';
-import type { ConfirmInvoiceHeaderResponse } from '../dto/confirm-invoice-header.response.js';
-import { InvoiceHeaderSource, InvoiceHeaderStatus } from '../../domain/entities/invoice.entity.js';
-import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
-import { InvalidInvoiceStatusError } from '../../domain/errors/invalid-invoice-status.error.js';
-import { InvoiceDate } from '../../domain/value-objects/invoice-date.value-object.js';
-import { Money } from '../../domain/value-objects/money.value-object.js';
-import { ok, fail, type Result } from '../../shared/result.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
+import type { ConfirmInvoiceHeaderRequest } from '@application/dto/confirm-invoice-header.request.js';
+import type { ConfirmInvoiceHeaderResponse } from '@application/dto/confirm-invoice-header.response.js';
+import { InvoiceHeaderSource, InvoiceHeaderStatus } from '@domain/entities/invoice.entity.js';
+import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
+import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
+import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
+import { Money } from '@domain/value-objects/money.value-object.js';
+import { ok, fail, type Result } from '@shared/result.js';
 
 
 export type ConfirmInvoiceHeaderDependencies = {

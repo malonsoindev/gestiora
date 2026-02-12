@@ -1,8 +1,8 @@
-import { fail, ok, type Result } from '../../../shared/result.js';
-import { PortError } from '../../../application/errors/port.error.js';
-import type { LoginRateLimiter } from '../../../application/ports/login-rate-limiter.js';
-import type { LoginAttemptRepository } from '../../../application/ports/login-attempt.repository.js';
-import { AuthRateLimitedError } from '../../../domain/errors/auth-rate-limited.error.js';
+import { fail, ok, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
+import type { LoginRateLimiter } from '@application/ports/login-rate-limiter.js';
+import type { LoginAttemptRepository } from '@application/ports/login-attempt.repository.js';
+import { AuthRateLimitedError } from '@domain/errors/auth-rate-limited.error.js';
 
 export class InMemoryLoginRateLimiter implements LoginRateLimiter {
     constructor(

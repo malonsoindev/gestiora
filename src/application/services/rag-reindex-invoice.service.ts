@@ -1,14 +1,14 @@
-import type { InvoiceRepository } from '../ports/invoice.repository.js';
-import type { ProviderRepository } from '../ports/provider.repository.js';
-import type { SearchQueryRepository } from '../ports/search-query.repository.js';
-import type { PortError } from '../errors/port.error.js';
+import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
+import type { ProviderRepository } from '@application/ports/provider.repository.js';
+import type { SearchQueryRepository } from '@application/ports/search-query.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
 import type {
     IndexInvoicesForRagRequest,
     IndexInvoicesForRagResponse,
     IndexInvoicesForRagError,
-} from '../use-cases/index-invoices-for-rag.use-case.js';
-import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
-import { ok, fail, type Result } from '../../shared/result.js';
+} from '@application/use-cases/index-invoices-for-rag.use-case.js';
+import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
+import { ok, fail, type Result } from '@shared/result.js';
 
 export type RagReindexInvoiceDependencies = {
     invoiceRepository: InvoiceRepository;

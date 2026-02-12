@@ -1,4 +1,4 @@
-import type { ProviderStatus } from '../../domain/entities/provider.entity.js';
+import type { ProviderStatus } from '@domain/entities/provider.entity.js';
 
 export type ProviderSummary = {
     providerId: string;

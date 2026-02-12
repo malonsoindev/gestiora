@@ -2,10 +2,10 @@ import type {
     InvoiceExtractionAgent,
     InvoiceExtractionFile,
     InvoiceExtractionResult,
-} from '../../../application/ports/invoice-extraction-agent.js';
-import { PortError } from '../../../application/errors/port.error.js';
-import { fail, ok, type Result } from '../../../shared/result.js';
-import type { InvoiceExtractionPromptOutput } from './genkit-invoice-extraction-prompt-runner.js';
+} from '@application/ports/invoice-extraction-agent.js';
+import { PortError } from '@application/errors/port.error.js';
+import { fail, ok, type Result } from '@shared/result.js';
+import type { InvoiceExtractionPromptOutput } from '@infrastructure/adapters/invoice-extraction/genkit-invoice-extraction-prompt-runner.js';
 
 type GenkitInvoiceExtractionAgentDependencies = {
     promptRunner: (context: string) => Promise<InvoiceExtractionPromptOutput>;

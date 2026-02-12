@@ -1,8 +1,8 @@
 import type { Genkit } from 'genkit';
 import { devLocalRetrieverRef } from '@genkit-ai/dev-local-vectorstore';
-import { ok, fail, type Result } from '../../../shared/result.js';
-import { PortError } from '../../../application/errors/port.error.js';
-import type { RagRetrieveRequest, RagRetrievedDocument, RagRetriever } from '../../../application/ports/rag-retriever.js';
+import { ok, fail, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
+import type { RagRetrieveRequest, RagRetrievedDocument, RagRetriever } from '@application/ports/rag-retriever.js';
 import type { Document } from 'genkit/retriever';
 
 export type DevLocalRagRetrieverDependencies = {

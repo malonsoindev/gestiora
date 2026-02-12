@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import type { AuthorizeRequestUseCase } from '../../../../application/use-cases/authorize-request.use-case.js';
+import type { AuthorizeRequestUseCase } from '@application/use-cases/authorize-request.use-case.js';
 import type {
     InvoicesController,
     CreateManualInvoiceBody,
@@ -7,9 +7,9 @@ import type {
     ConfirmInvoiceMovementsBody,
     ConfirmInvoiceHeaderBody,
     InvoicesListQuery,
-} from '../controllers/invoices.controller.js';
-import { buildAuthorizeMiddleware } from '../middlewares/authorize.middleware.js';
-import { invoicesSchemas } from '../schemas/invoices.schemas.js';
+} from '@infrastructure/delivery/http/controllers/invoices.controller.js';
+import { buildAuthorizeMiddleware } from '@infrastructure/delivery/http/middlewares/authorize.middleware.js';
+import { invoicesSchemas } from '@infrastructure/delivery/http/schemas/invoices.schemas.js';
 
 export const registerInvoicesRoutes = async (
     app: FastifyInstance,

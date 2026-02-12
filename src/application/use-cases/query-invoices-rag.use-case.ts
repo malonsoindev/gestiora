@@ -1,9 +1,9 @@
-import { ok, fail, type Result } from '../../shared/result.js';
-import type { PortError } from '../errors/port.error.js';
-import type { RagRetriever } from '../ports/rag-retriever.js';
-import type { RagAnswerGenerator } from '../ports/rag-answer-generator.js';
-import type { QueryInvoicesRagRequest } from '../dto/query-invoices-rag.request.js';
-import type { QueryInvoicesRagResponse } from '../dto/query-invoices-rag.response.js';
+import { ok, fail, type Result } from '@shared/result.js';
+import type { PortError } from '@application/errors/port.error.js';
+import type { RagRetriever } from '@application/ports/rag-retriever.js';
+import type { RagAnswerGenerator } from '@application/ports/rag-answer-generator.js';
+import type { QueryInvoicesRagRequest } from '@application/dto/query-invoices-rag.request.js';
+import type { QueryInvoicesRagResponse } from '@application/dto/query-invoices-rag.response.js';
 
 export type QueryInvoicesRagDependencies = {
     ragRetriever: RagRetriever;

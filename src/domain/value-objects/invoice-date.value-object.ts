@@ -1,4 +1,4 @@
-import { InvalidInvoiceDateError } from '../errors/invalid-invoice-date.error.js';
+import { InvalidInvoiceDateError } from '@domain/errors/invalid-invoice-date.error.js';
 
 export class InvoiceDate {
     private constructor(private readonly value: string) {}

@@ -1,4 +1,4 @@
-import type { UserStatus } from '../../domain/entities/user.entity.js';
+import type { UserStatus } from '@domain/entities/user.entity.js';
 
 export type UpdateUserStatusRequest = {
     userId: string;

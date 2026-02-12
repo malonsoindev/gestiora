@@ -1,4 +1,4 @@
-import type { SearchReference } from '../ports/search-query.repository.js';
+import type { SearchReference } from '@application/ports/search-query.repository.js';
 
 export type ProcessSearchQueryResponse = {
     queryId: string;

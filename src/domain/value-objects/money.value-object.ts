@@ -1,4 +1,4 @@
-import { InvalidMoneyError } from '../errors/invalid-money.error.js';
+import { InvalidMoneyError } from '@domain/errors/invalid-money.error.js';
 
 export class Money {
     private constructor(private readonly value: number) {}

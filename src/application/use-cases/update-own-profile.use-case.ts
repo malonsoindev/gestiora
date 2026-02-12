@@ -1,8 +1,8 @@
-import type { UpdateOwnProfileRequest } from '../dto/update-own-profile.request.js';
-import type { UserRepository } from '../ports/user.repository.js';
-import type { PortError } from '../errors/port.error.js';
-import { UserNotFoundError } from '../../domain/errors/user-not-found.error.js';
-import { fail, ok, type Result } from '../../shared/result.js';
+import type { UpdateOwnProfileRequest } from '@application/dto/update-own-profile.request.js';
+import type { UserRepository } from '@application/ports/user.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
+import { fail, ok, type Result } from '@shared/result.js';
 
 export type UpdateOwnProfileDependencies = {
     userRepository: UserRepository;

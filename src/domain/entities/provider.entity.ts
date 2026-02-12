@@ -1,4 +1,4 @@
-import type { Cif } from '../value-objects/cif.value-object.js';
+import type { Cif } from '@domain/value-objects/cif.value-object.js';
 
 export enum ProviderStatus {
     Active = 'ACTIVE',

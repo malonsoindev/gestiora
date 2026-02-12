@@ -1,4 +1,4 @@
-import { InvalidCifError } from '../errors/invalid-cif.error.js';
+import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
 
 export class Cif {
     private constructor(private readonly value: string) {}

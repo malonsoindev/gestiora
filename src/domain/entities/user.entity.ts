@@ -1,5 +1,5 @@
-import { UserRole } from '../value-objects/user-role.value-object.js';
-import type { Email } from '../value-objects/email.value-object.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import type { Email } from '@domain/value-objects/email.value-object.js';
 
 // Por ahora usamos enum por simplicidad; si aparecen reglas de transicion o invariantes,
 // se evaluara migrar a un Value Object para encapsular la logica.

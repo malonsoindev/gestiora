@@ -1,7 +1,7 @@
 import type { Sql } from 'postgres';
-import { fail, ok, type Result } from '../../../shared/result.js';
-import { PortError } from '../../../application/errors/port.error.js';
-import type { LoginAttemptKey, LoginAttemptRepository } from '../../../application/ports/login-attempt.repository.js';
+import { fail, ok, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
+import type { LoginAttemptKey, LoginAttemptRepository } from '@application/ports/login-attempt.repository.js';
 
 type SqlClient = Sql<{}>;
 
