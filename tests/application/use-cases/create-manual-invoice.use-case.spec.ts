@@ -12,8 +12,7 @@ import { InvoiceMovementIdGeneratorStub } from '../../shared/stubs/invoice-movem
 import { ProviderRepositoryStub } from '../../shared/stubs/provider-repository.stub.js';
 import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
 import { InvoiceRepositorySpy } from '../../shared/spies/invoice-repository.spy.js';
-
-const fixedNow = new Date('2026-02-10T10:00:00.000Z');
+import { fixedNow } from '../../shared/fixed-now.js';
 
 const createProvider = (status: ProviderStatus = ProviderStatus.Active): Provider =>
     Provider.create({
@@ -24,21 +23,27 @@ const createProvider = (status: ProviderStatus = ProviderStatus.Active): Provide
         updatedAt: fixedNow,
     });
 
-const makeSut = (options?: { provider?: Provider | null }) => {
-    const provider = options?.provider === undefined ? createProvider() : options.provider;
+type SutOverrides = Partial<{
+    provider: Provider | null;
+    invoiceId: string;
+    movementIds: string[];
+    now: Date;
+}>;
+
+const makeSut = (overrides: SutOverrides = {}) => {
+    const now = overrides.now ?? fixedNow;
+    const provider = overrides.provider ?? createProvider();
     const providerRepository = new ProviderRepositoryStub(provider);
     const invoiceRepository = new InvoiceRepositorySpy();
     const auditLogger = new AuditLoggerSpy();
-    const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
-    const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
 
     const useCase = new CreateManualInvoiceUseCase({
         providerRepository,
         invoiceRepository,
         auditLogger,
-        dateProvider: new DateProviderStub(fixedNow),
-        invoiceIdGenerator,
-        invoiceMovementIdGenerator,
+        dateProvider: new DateProviderStub(now),
+        invoiceIdGenerator: new InvoiceIdGeneratorStub(overrides.invoiceId ?? 'invoice-fixed'),
+        invoiceMovementIdGenerator: new InvoiceMovementIdGeneratorStub(overrides.movementIds ?? ['movement-1']),
         ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
     });
 
