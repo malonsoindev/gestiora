@@ -32,7 +32,7 @@ type SutOverrides = Partial<{
 
 const makeSut = (overrides: SutOverrides = {}) => {
     const now = overrides.now ?? fixedNow;
-    const provider = overrides.provider ?? createProvider();
+    const provider = overrides.provider === undefined ? createProvider() : overrides.provider;
     const providerRepository = new ProviderRepositoryStub(provider);
     const invoiceRepository = new InvoiceRepositorySpy();
     const auditLogger = new AuditLoggerSpy();
