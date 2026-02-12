@@ -5,6 +5,7 @@ import type { InvoiceExtractionAgent } from '../ports/invoice-extraction-agent.j
 import type { InvoiceMovementIdGenerator } from '../ports/invoice-movement-id-generator.js';
 import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { PortError } from '../errors/port.error.js';
+import type { RagReindexInvoiceHandler } from '../services/rag-reindex-invoice.service.js';
 import type { ReprocessInvoiceExtractionRequest } from '../dto/reprocess-invoice-extraction.request.js';
 import type { ReprocessInvoiceExtractionResponse } from '../dto/reprocess-invoice-extraction.response.js';
 import {
@@ -31,6 +32,7 @@ export type ReprocessInvoiceExtractionDependencies = {
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
     invoiceMovementIdGenerator: InvoiceMovementIdGenerator;
+    ragReindexInvoiceService: RagReindexInvoiceHandler;
 };
 
 export type ReprocessInvoiceExtractionError =
@@ -110,6 +112,11 @@ export class ReprocessInvoiceExtractionUseCase {
         });
         if (!auditResult.success) {
             return fail(auditResult.error);
+        }
+
+        const reindexResult = await this.dependencies.ragReindexInvoiceService.reindex(updated.id);
+        if (!reindexResult.success) {
+            return fail(reindexResult.error);
         }
 
         return ok({ invoiceId: updated.id });

@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ReprocessInvoiceExtractionUseCase } from '../../../src/application/use-cases/reprocess-invoice-extraction.use-case.js';
-import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
-import type { DateProvider } from '../../../src/application/ports/date-provider.js';
 import type { FileStorage } from '../../../src/application/ports/file-storage.js';
 import type { InvoiceExtractionAgent } from '../../../src/application/ports/invoice-extraction-agent.js';
-import type { InvoiceMovementIdGenerator } from '../../../src/application/ports/invoice-movement-id-generator.js';
-import type { InvoiceRepository } from '../../../src/application/ports/invoice.repository.js';
-import type { PortError } from '../../../src/application/errors/port.error.js';
 import {
     Invoice,
     InvoiceHeaderSource,
@@ -18,90 +13,14 @@ import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '.
 import { FileRef } from '../../../src/domain/value-objects/file-ref.value-object.js';
 import { InvoiceDate } from '../../../src/domain/value-objects/invoice-date.value-object.js';
 import { Money } from '../../../src/domain/value-objects/money.value-object.js';
-import { ok, type Result } from '../../../src/shared/result.js';
-
-const fixedNow = new Date('2026-03-04T10:00:00.000Z');
-
-class DateProviderStub implements DateProvider {
-    now(): Result<Date, PortError> {
-        return ok(fixedNow);
-    }
-}
-
-class AuditLoggerSpy implements AuditLogger {
-    events: AuditEvent[] = [];
-
-    async log(event: AuditEvent) {
-        this.events.push(event);
-        return ok(undefined);
-    }
-}
-
-class InvoiceMovementIdGeneratorStub implements InvoiceMovementIdGenerator {
-    private readonly ids: string[];
-
-    constructor(ids: string[]) {
-        this.ids = [...ids];
-    }
-
-    generate(): string {
-        const id = this.ids.shift();
-        return id ?? 'movement-fallback';
-    }
-}
-
-class InvoiceRepositoryStub implements InvoiceRepository {
-    updatedInvoice: Invoice | null = null;
-
-    constructor(private readonly invoice: Invoice | null) {}
-
-    async create() {
-        return ok(undefined);
-    }
-
-    async findById() {
-        return ok(this.invoice);
-    }
-
-    async update(invoice: Invoice) {
-        this.updatedInvoice = invoice;
-        return ok(undefined);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async getDetail() {
-        return ok(null);
-    }
-}
-
-class FileStorageStub implements FileStorage {
-    async store() {
-        return ok({
-            storageKey: 'invoices/2026/03/fac-1.pdf',
-            filename: 'invoice.pdf',
-            mimeType: 'application/pdf',
-            sizeBytes: 10,
-            checksum: 'checksum-1',
-        });
-    }
-
-    async delete() {
-        return ok(undefined);
-    }
-
-    async get() {
-        return ok({
-            storageKey: 'invoices/2026/03/fac-1.pdf',
-            filename: 'invoice.pdf',
-            mimeType: 'application/pdf',
-            sizeBytes: 10,
-            content: Buffer.from('pdf-content'),
-        });
-    }
-}
+import { ok } from '../../../src/shared/result.js';
+import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
+import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
+import { InvoiceMovementIdGeneratorStub } from '../../shared/stubs/invoice-movement-id-generator.stub.js';
+import { InvoiceRepositoryStub } from '../../shared/stubs/invoice-repository.stub.js';
+import { FileStorageStub } from '../../shared/stubs/file-storage.stub.js';
+import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
+import { fixedNow } from '../../shared/fixed-now.js';
 
 class ExtractionAgentStub implements InvoiceExtractionAgent {
     async extract() {
@@ -177,27 +96,63 @@ const createInvoice = (overrides: Partial<InvoiceProps> = {}): Invoice =>
         ...overrides,
     });
 
+const fileStorageOptions = {
+    storeResult: {
+        storageKey: 'invoices/2026/03/fac-1.pdf',
+        filename: 'invoice.pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: 10,
+        checksum: 'checksum-1',
+    },
+    getResult: {
+        storageKey: 'invoices/2026/03/fac-1.pdf',
+        filename: 'invoice.pdf',
+        mimeType: 'application/pdf',
+        sizeBytes: 10,
+        content: Buffer.from('pdf-content'),
+    },
+};
+
+type SutOverrides = Partial<{
+    invoice: Invoice | null;
+    now: Date;
+    extractionAgent: InvoiceExtractionAgent;
+    movementIds: string[];
+    fileStorage: FileStorage;
+}>;
+
+const makeSut = (overrides: SutOverrides = {}) => {
+    const now = overrides.now ?? fixedNow;
+    const invoice = overrides.invoice === undefined ? createInvoice() : overrides.invoice;
+    const invoiceRepository = new InvoiceRepositoryStub(invoice);
+    const fileStorage = overrides.fileStorage ?? new FileStorageStub(fileStorageOptions);
+    const extractionAgent = overrides.extractionAgent ?? new ExtractionAgentStub();
+    const auditLogger = new AuditLoggerSpy();
+    const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(overrides.movementIds ?? ['movement-ai-new']);
+
+    const useCase = new ReprocessInvoiceExtractionUseCase({
+        invoiceRepository,
+        fileStorage,
+        extractionAgent,
+        auditLogger,
+        dateProvider: new DateProviderStub(now),
+        invoiceMovementIdGenerator,
+        ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
+    });
+
+    return { useCase, invoiceRepository, fileStorage, auditLogger };
+};
+
+const baseCommand = {
+    actorUserId: 'user-1',
+    invoiceId: 'invoice-1',
+};
+
 describe('ReprocessInvoiceExtractionUseCase', () => {
     it('updates AI proposed header and movements while keeping manual confirmed', async () => {
-        const invoiceRepository = new InvoiceRepositoryStub(createInvoice());
-        const fileStorage = new FileStorageStub();
-        const extractionAgent = new ExtractionAgentStub();
-        const auditLogger = new AuditLoggerSpy();
-        const movementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-ai-new']);
+        const { useCase, invoiceRepository, auditLogger } = makeSut();
 
-        const useCase = new ReprocessInvoiceExtractionUseCase({
-            invoiceRepository,
-            fileStorage,
-            extractionAgent,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            invoiceMovementIdGenerator: movementIdGenerator,
-        });
-
-        const result = await useCase.execute({
-            actorUserId: 'user-1',
-            invoiceId: 'invoice-1',
-        });
+        const result = await useCase.execute(baseCommand);
 
         expect(result.success).toBe(true);
         const updated = invoiceRepository.updatedInvoice;
@@ -213,31 +168,15 @@ describe('ReprocessInvoiceExtractionUseCase', () => {
     });
 
     it('keeps confirmed manual header values', async () => {
-        const invoiceRepository = new InvoiceRepositoryStub(
-            createInvoice({
+        const { useCase, invoiceRepository } = makeSut({
+            invoice: createInvoice({
                 headerSource: InvoiceHeaderSource.Manual,
                 headerStatus: InvoiceHeaderStatus.Confirmed,
                 numeroFactura: 'MAN-1',
             }),
-        );
-        const fileStorage = new FileStorageStub();
-        const extractionAgent = new ExtractionAgentStub();
-        const auditLogger = new AuditLoggerSpy();
-        const movementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-ai-new']);
-
-        const useCase = new ReprocessInvoiceExtractionUseCase({
-            invoiceRepository,
-            fileStorage,
-            extractionAgent,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            invoiceMovementIdGenerator: movementIdGenerator,
         });
 
-        const result = await useCase.execute({
-            actorUserId: 'user-1',
-            invoiceId: 'invoice-1',
-        });
+        const result = await useCase.execute(baseCommand);
 
         expect(result.success).toBe(true);
         const updated = invoiceRepository.updatedInvoice;

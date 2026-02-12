@@ -1,0 +1,7 @@
+---
+input:
+  schema:
+    query: string
+---
+{{role "system"}}Responde solo con la informacion de contexto. Si no hay evidencia suficiente, responde que no hay datos disponibles.
+{{role "user"}}{{query}}

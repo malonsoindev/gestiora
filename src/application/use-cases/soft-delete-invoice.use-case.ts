@@ -3,6 +3,7 @@ import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
 import type { SoftDeleteInvoiceRequest } from '../dto/soft-delete-invoice.request.js';
+import type { RagReindexInvoiceHandler } from '../services/rag-reindex-invoice.service.js';
 import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
 import { ok, fail, type Result } from '../../shared/result.js';
 
@@ -12,6 +13,7 @@ export class SoftDeleteInvoiceUseCase {
             invoiceRepository: InvoiceRepository;
             auditLogger: AuditLogger;
             dateProvider: DateProvider;
+            ragReindexInvoiceService: RagReindexInvoiceHandler;
         },
     ) {}
 
@@ -50,6 +52,11 @@ export class SoftDeleteInvoiceUseCase {
         });
         if (!auditResult.success) {
             return fail(auditResult.error);
+        }
+
+        const reindexResult = await this.dependencies.ragReindexInvoiceService.reindex(deleted.id);
+        if (!reindexResult.success) {
+            return fail(reindexResult.error);
         }
 
         return ok(undefined);

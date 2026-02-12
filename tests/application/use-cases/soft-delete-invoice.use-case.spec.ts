@@ -11,6 +11,7 @@ import { InvoiceDate } from '../../../src/domain/value-objects/invoice-date.valu
 import { Money } from '../../../src/domain/value-objects/money.value-object.js';
 import { InvoiceNotFoundError } from '../../../src/domain/errors/invoice-not-found.error.js';
 import { ok, type Result } from '../../../src/shared/result.js';
+import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
 
 const fixedNow = new Date('2026-02-22T10:00:00.000Z');
 
@@ -92,6 +93,7 @@ describe('SoftDeleteInvoiceUseCase', () => {
             invoiceRepository,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -112,6 +114,7 @@ describe('SoftDeleteInvoiceUseCase', () => {
             invoiceRepository,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({

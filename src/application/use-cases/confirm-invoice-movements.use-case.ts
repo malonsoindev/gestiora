@@ -2,6 +2,7 @@ import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { PortError } from '../errors/port.error.js';
+import type { RagReindexInvoiceHandler } from '../services/rag-reindex-invoice.service.js';
 import type { ConfirmInvoiceMovementsRequest } from '../dto/confirm-invoice-movements.request.js';
 import type { ConfirmInvoiceMovementsResponse } from '../dto/confirm-invoice-movements.response.js';
 import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '../../domain/entities/invoice-movement.entity.js';
@@ -14,6 +15,7 @@ export type ConfirmInvoiceMovementsDependencies = {
     invoiceRepository: InvoiceRepository;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
+    ragReindexInvoiceService: RagReindexInvoiceHandler;
 };
 
 export type ConfirmInvoiceMovementsError =
@@ -77,6 +79,11 @@ export class ConfirmInvoiceMovementsUseCase {
         });
         if (!auditResult.success) {
             return fail(auditResult.error);
+        }
+
+        const reindexResult = await this.dependencies.ragReindexInvoiceService.reindex(updated.id);
+        if (!reindexResult.success) {
+            return fail(reindexResult.error);
         }
 
         return ok({ invoiceId: updated.id });

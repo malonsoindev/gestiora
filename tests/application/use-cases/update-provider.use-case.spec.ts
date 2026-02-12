@@ -1,75 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { UpdateProviderUseCase } from '../../../src/application/use-cases/update-provider.use-case.js';
-import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
-import type { DateProvider } from '../../../src/application/ports/date-provider.js';
-import type { ProviderRepository } from '../../../src/application/ports/provider.repository.js';
-import type { PortError } from '../../../src/application/errors/port.error.js';
 import { InvalidCifError } from '../../../src/domain/errors/invalid-cif.error.js';
 import { ProviderAlreadyExistsError } from '../../../src/domain/errors/provider-already-exists.error.js';
 import { ProviderNotFoundError } from '../../../src/domain/errors/provider-not-found.error.js';
 import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
 import type { ProviderProps } from '../../../src/domain/entities/provider.entity.js';
 import { Cif } from '../../../src/domain/value-objects/cif.value-object.js';
-import { ok, type Result } from '../../../src/shared/result.js';
-
-const fixedNow = new Date('2026-02-05T10:00:00.000Z');
-
-class DateProviderStub implements DateProvider {
-    now(): Result<Date, PortError> {
-        return ok(fixedNow);
-    }
-}
-
-class AuditLoggerSpy implements AuditLogger {
-    events: AuditEvent[] = [];
-
-    async log(event: AuditEvent) {
-        this.events.push(event);
-        return ok(undefined);
-    }
-}
-
-class ProviderRepositorySpy implements ProviderRepository {
-    updatedProvider: Provider | null = null;
-    private readonly existingProvider: Provider | null;
-    private readonly duplicateByCif: Provider | null;
-    private readonly duplicateByRazon: Provider | null;
-
-    constructor(options: {
-        existingProvider?: Provider | null;
-        duplicateByCif?: Provider | null;
-        duplicateByRazon?: Provider | null;
-    } = {}) {
-        this.existingProvider = options.existingProvider ?? null;
-        this.duplicateByCif = options.duplicateByCif ?? null;
-        this.duplicateByRazon = options.duplicateByRazon ?? null;
-    }
-
-    async findById(): Promise<Result<Provider | null, PortError>> {
-        return ok(this.existingProvider);
-    }
-
-    async create(): Promise<Result<void, PortError>> {
-        return ok(undefined);
-    }
-
-    async update(provider: Provider): Promise<Result<void, PortError>> {
-        this.updatedProvider = provider;
-        return ok(undefined);
-    }
-
-    async list(): Promise<Result<{ items: Provider[]; total: number }, PortError>> {
-        return ok({ items: [], total: 0 });
-    }
-
-    async findByCif(): Promise<Result<Provider | null, PortError>> {
-        return ok(this.duplicateByCif);
-    }
-
-    async findByRazonSocialNormalized(): Promise<Result<Provider | null, PortError>> {
-        return ok(this.duplicateByRazon);
-    }
-}
+import { RagReindexProviderInvoicesServiceStub } from '../stubs/rag-reindex-provider-invoices.service.stub.js';
+import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
+import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
+import { ProviderRepositorySpy } from '../../shared/spies/provider-repository.spy.js';
+import { fixedNow } from '../../shared/fixed-now.js';
 
 const createProvider = (overrides: Partial<ProviderProps> = {}): Provider =>
     Provider.create({
@@ -86,20 +27,44 @@ const createProvider = (overrides: Partial<ProviderProps> = {}): Provider =>
         ...overrides,
     });
 
+type SutOverrides = Partial<{
+    existingProvider: Provider | null;
+    duplicateByCif: Provider | null;
+    duplicateByRazon: Provider | null;
+    now: Date;
+}>;
+
+const makeSut = (overrides: SutOverrides = {}) => {
+    const now = overrides.now ?? fixedNow;
+    const existingProvider = overrides.existingProvider === undefined ? createProvider() : overrides.existingProvider;
+    const providerRepository = new ProviderRepositorySpy({
+        existingProvider,
+        duplicateByCif: overrides.duplicateByCif ?? null,
+        duplicateByRazon: overrides.duplicateByRazon ?? null,
+    });
+    const auditLogger = new AuditLoggerSpy();
+
+    const useCase = new UpdateProviderUseCase({
+        providerRepository,
+        auditLogger,
+        dateProvider: new DateProviderStub(now),
+        ragReindexProviderInvoicesService: new RagReindexProviderInvoicesServiceStub(),
+    });
+
+    return { useCase, providerRepository, auditLogger };
+};
+
+const baseCommand = {
+    actorUserId: 'user-1',
+    providerId: 'provider-1',
+};
+
 describe('UpdateProviderUseCase', () => {
     it('updates provider data and audits the action', async () => {
-        const providerRepository = new ProviderRepositorySpy({ existingProvider: createProvider() });
-        const auditLogger = new AuditLoggerSpy();
-
-        const useCase = new UpdateProviderUseCase({
-            providerRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-        });
+        const { useCase, providerRepository, auditLogger } = makeSut();
 
         const result = await useCase.execute({
-            actorUserId: 'user-1',
-            providerId: 'provider-1',
+            ...baseCommand,
             razonSocial: 'Proveedor Actualizado',
             direccion: 'Avenida Nueva 1',
             poblacion: 'Sevilla',
@@ -116,14 +81,7 @@ describe('UpdateProviderUseCase', () => {
     });
 
     it('rejects when provider does not exist', async () => {
-        const providerRepository = new ProviderRepositorySpy({ existingProvider: null });
-        const auditLogger = new AuditLoggerSpy();
-
-        const useCase = new UpdateProviderUseCase({
-            providerRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-        });
+        const { useCase, providerRepository } = makeSut({ existingProvider: null });
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
@@ -139,20 +97,12 @@ describe('UpdateProviderUseCase', () => {
     });
 
     it('rejects when provider is deleted', async () => {
-        const providerRepository = new ProviderRepositorySpy({
+        const { useCase, providerRepository } = makeSut({
             existingProvider: createProvider({ deletedAt: new Date('2026-02-01T00:00:00.000Z') }),
-        });
-        const auditLogger = new AuditLoggerSpy();
-
-        const useCase = new UpdateProviderUseCase({
-            providerRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
         });
 
         const result = await useCase.execute({
-            actorUserId: 'user-1',
-            providerId: 'provider-1',
+            ...baseCommand,
             razonSocial: 'Proveedor Actualizado',
         });
 
@@ -164,18 +114,10 @@ describe('UpdateProviderUseCase', () => {
     });
 
     it('rejects invalid cif', async () => {
-        const providerRepository = new ProviderRepositorySpy({ existingProvider: createProvider() });
-        const auditLogger = new AuditLoggerSpy();
-
-        const useCase = new UpdateProviderUseCase({
-            providerRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-        });
+        const { useCase, providerRepository, auditLogger } = makeSut();
 
         const result = await useCase.execute({
-            actorUserId: 'user-1',
-            providerId: 'provider-1',
+            ...baseCommand,
             cif: '12345678',
         });
 
@@ -188,21 +130,12 @@ describe('UpdateProviderUseCase', () => {
     });
 
     it('rejects duplicate provider by cif when changing cif', async () => {
-        const providerRepository = new ProviderRepositorySpy({
-            existingProvider: createProvider(),
+        const { useCase, providerRepository } = makeSut({
             duplicateByCif: createProvider({ id: 'provider-2', cif: Cif.create('A87654321') }),
-        });
-        const auditLogger = new AuditLoggerSpy();
-
-        const useCase = new UpdateProviderUseCase({
-            providerRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
         });
 
         const result = await useCase.execute({
-            actorUserId: 'user-1',
-            providerId: 'provider-1',
+            ...baseCommand,
             cif: 'A87654321',
         });
 
@@ -225,22 +158,13 @@ describe('UpdateProviderUseCase', () => {
             createdAt: fixedNow,
             updatedAt: fixedNow,
         });
-
-        const providerRepository = new ProviderRepositorySpy({
+        const { useCase, providerRepository } = makeSut({
             existingProvider: providerWithoutCif,
             duplicateByRazon: createProvider({ id: 'provider-2' }),
         });
-        const auditLogger = new AuditLoggerSpy();
-
-        const useCase = new UpdateProviderUseCase({
-            providerRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-        });
 
         const result = await useCase.execute({
-            actorUserId: 'user-1',
-            providerId: 'provider-1',
+            ...baseCommand,
             razonSocial: 'Proveedor Uno',
         });
 

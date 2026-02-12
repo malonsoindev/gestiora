@@ -8,6 +8,7 @@ import type { ProviderIdGenerator } from '../ports/provider-id-generator.js';
 import type { AuditLogger } from '../ports/audit-logger.js';
 import type { DateProvider } from '../ports/date-provider.js';
 import type { PortError } from '../errors/port.error.js';
+import type { RagReindexInvoiceHandler } from '../services/rag-reindex-invoice.service.js';
 import type { UploadInvoiceDocumentRequest } from '../dto/upload-invoice-document.request.js';
 import type { UploadInvoiceDocumentResponse } from '../dto/upload-invoice-document.response.js';
 import { InvalidProviderStatusError } from '../../domain/errors/invalid-provider-status.error.js';
@@ -19,12 +20,14 @@ import { Money } from '../../domain/value-objects/money.value-object.js';
 import { FileRef } from '../../domain/value-objects/file-ref.value-object.js';
 import { Cif } from '../../domain/value-objects/cif.value-object.js';
 import { InvalidCifError } from '../../domain/errors/invalid-cif.error.js';
+import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
 import { ok, fail, type Result } from '../../shared/result.js';
 
 
 export type UploadInvoiceDocumentError =
     | InvalidProviderStatusError
     | InvalidCifError
+    | InvoiceNotFoundError
     | PortError;
 
 export type UploadInvoiceDocumentDependencies = {
@@ -37,6 +40,7 @@ export type UploadInvoiceDocumentDependencies = {
     invoiceIdGenerator: InvoiceIdGenerator;
     invoiceMovementIdGenerator: InvoiceMovementIdGenerator;
     providerIdGenerator: ProviderIdGenerator;
+    ragReindexInvoiceService: RagReindexInvoiceHandler;
 };
 
 export class UploadInvoiceDocumentUseCase {
@@ -91,6 +95,11 @@ export class UploadInvoiceDocumentUseCase {
         });
         if (!auditResult.success) {
             return fail(auditResult.error);
+        }
+
+        const reindexResult = await this.dependencies.ragReindexInvoiceService.reindex(invoice.id);
+        if (!reindexResult.success) {
+            return fail(reindexResult.error);
         }
 
         return ok({ invoiceId: invoice.id });

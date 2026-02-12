@@ -10,6 +10,7 @@ import { InvoiceMovement } from '../../../src/domain/entities/invoice-movement.e
 import { InvoiceDate } from '../../../src/domain/value-objects/invoice-date.value-object.js';
 import { Money } from '../../../src/domain/value-objects/money.value-object.js';
 import { ok, type Result } from '../../../src/shared/result.js';
+import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
 
 const fixedNow = new Date('2026-03-02T10:00:00.000Z');
 
@@ -92,6 +93,7 @@ describe('ConfirmInvoiceHeaderUseCase', () => {
             invoiceRepository,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -119,6 +121,7 @@ describe('ConfirmInvoiceHeaderUseCase', () => {
             invoiceRepository,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({
@@ -151,6 +154,7 @@ describe('ConfirmInvoiceHeaderUseCase', () => {
             invoiceRepository,
             auditLogger,
             dateProvider: new DateProviderStub(),
+            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
         const result = await useCase.execute({

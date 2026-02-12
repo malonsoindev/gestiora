@@ -6,6 +6,7 @@ import type { InvoiceIdGenerator } from '../ports/invoice-id-generator.js';
 import type { InvoiceMovementIdGenerator } from '../ports/invoice-movement-id-generator.js';
 import type { InvoiceRepository } from '../ports/invoice.repository.js';
 import type { ProviderRepository } from '../ports/provider.repository.js';
+import type { RagReindexInvoiceHandler } from '../services/rag-reindex-invoice.service.js';
 import type { PortError } from '../errors/port.error.js';
 import { Invoice, InvoiceStatus } from '../../domain/entities/invoice.entity.js';
 import { InvoiceMovement } from '../../domain/entities/invoice-movement.entity.js';
@@ -15,6 +16,7 @@ import { InvalidCifError } from '../../domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '../../domain/errors/invalid-provider-status.error.js';
 import { InvalidInvoiceTotalsError } from '../../domain/errors/invalid-invoice-totals.error.js';
 import { ProviderNotFoundError } from '../../domain/errors/provider-not-found.error.js';
+import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
 import { Cif } from '../../domain/value-objects/cif.value-object.js';
 import { InvoiceDate } from '../../domain/value-objects/invoice-date.value-object.js';
 import { Money } from '../../domain/value-objects/money.value-object.js';
@@ -27,6 +29,7 @@ export type CreateManualInvoiceDependencies = {
     dateProvider: DateProvider;
     invoiceIdGenerator: InvoiceIdGenerator;
     invoiceMovementIdGenerator: InvoiceMovementIdGenerator;
+    ragReindexInvoiceService: RagReindexInvoiceHandler;
 };
 
 export type CreateManualInvoiceError =
@@ -34,6 +37,7 @@ export type CreateManualInvoiceError =
     | InvalidInvoiceTotalsError
     | InvalidCifError
     | ProviderNotFoundError
+    | InvoiceNotFoundError
     | PortError;
 
 export class CreateManualInvoiceUseCase {
@@ -112,6 +116,11 @@ export class CreateManualInvoiceUseCase {
         });
         if (!auditResult.success) {
             return fail(auditResult.error);
+        }
+
+        const reindexResult = await this.dependencies.ragReindexInvoiceService.reindex(invoice.id);
+        if (!reindexResult.success) {
+            return fail(reindexResult.error);
         }
 
         return ok({ invoiceId: invoice.id });
