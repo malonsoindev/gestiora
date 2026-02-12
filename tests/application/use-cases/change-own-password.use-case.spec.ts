@@ -14,11 +14,13 @@ import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
 import { UserRepositorySpy } from '../../shared/spies/user-repository.spy.js';
 import { fixedNow } from '../../shared/fixed-now.js';
 
+const testPasswordHash = 'hash';
+
 const createUser = (overrides: Partial<UserProps> = {}): User =>
     User.create({
         id: 'user-1',
         email: Email.create('user@example.com'),
-        passwordHash: 'hash',
+        passwordHash: testPasswordHash,
         name: 'Test User',
         avatar: 'avatar.png',
         status: UserStatus.Active,
