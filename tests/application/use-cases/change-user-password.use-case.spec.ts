@@ -13,11 +13,15 @@ import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
 import { UserRepositorySpy } from '../../shared/spies/user-repository.spy.js';
 import { fixedNow } from '../../shared/fixed-now.js';
 
+const testCredentialHashValue = 'hash';
+const validNewCredential = 'NewPassword1!a';
+const invalidNewCredential = 'short';
+
 const createUser = (overrides: Partial<UserProps> = {}): User =>
     User.create({
         id: 'user-1',
         email: Email.create('user@example.com'),
-        passwordHash: 'hash',
+        passwordHash: testCredentialHashValue,
         name: 'Test User',
         avatar: 'avatar.png',
         status: UserStatus.Active,
@@ -64,11 +68,11 @@ describe('ChangeUserPasswordUseCase', () => {
         const result = await useCase.execute({
             actorUserId: 'admin-1',
             userId: 'user-1',
-            newPassword: 'NewPassword1!a',
+            newPassword: validNewCredential,
         });
 
         expect(result.success).toBe(true);
-        expect(userRepository.updatedUser?.passwordHash).toBe('hashed:NewPassword1!a');
+        expect(userRepository.updatedUser?.passwordHash).toBe(`hashed:${validNewCredential}`);
         expect(auditLogger.events.some((event) => event.action === 'USER_PASSWORD_CHANGED')).toBe(true);
     });
 
@@ -78,7 +82,7 @@ describe('ChangeUserPasswordUseCase', () => {
         const result = await useCase.execute({
             actorUserId: 'admin-1',
             userId: 'user-1',
-            newPassword: 'short',
+            newPassword: invalidNewCredential,
         });
 
         expect(result.success).toBe(false);
@@ -94,7 +98,7 @@ describe('ChangeUserPasswordUseCase', () => {
         const result = await useCase.execute({
             actorUserId: 'admin-1',
             userId: 'missing',
-            newPassword: 'NewPassword1!a',
+            newPassword: validNewCredential,
         });
 
         expect(result.success).toBe(false);
