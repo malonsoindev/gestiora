@@ -26,6 +26,8 @@ import { SoftDeleteUserUseCase } from '../application/use-cases/soft-delete-user
 import { UpdateOwnProfileUseCase } from '../application/use-cases/update-own-profile.use-case.js';
 import { RevokeUserSessionsUseCase } from '../application/use-cases/revoke-user-sessions.use-case.js';
 import { CreateUserUseCase } from '../application/use-cases/create-user.use-case.js';
+import { ChangeUserPasswordUseCase } from '../application/use-cases/change-user-password.use-case.js';
+import { ChangeOwnPasswordUseCase } from '../application/use-cases/change-own-password.use-case.js';
 import { ListProvidersUseCase } from '../application/use-cases/list-providers.use-case.js';
 import { GetProviderDetailUseCase } from '../application/use-cases/get-provider-detail.use-case.js';
 import { UpdateProviderUseCase } from '../application/use-cases/update-provider.use-case.js';
@@ -285,6 +287,20 @@ const revokeUserSessionsUseCase = new RevokeUserSessionsUseCase({
     sessionRepository,
 });
 
+const changeUserPasswordUseCase = new ChangeUserPasswordUseCase({
+    userRepository,
+    passwordHasher,
+    auditLogger,
+    dateProvider,
+});
+
+const changeOwnPasswordUseCase = new ChangeOwnPasswordUseCase({
+    userRepository,
+    passwordHasher,
+    auditLogger,
+    dateProvider,
+});
+
 const createProviderUseCase = new CreateProviderUseCase({
     providerRepository,
     providerIdGenerator,
@@ -497,6 +513,8 @@ export const compositionRoot = {
     softDeleteUserUseCase,
     updateOwnProfileUseCase,
     revokeUserSessionsUseCase,
+    changeUserPasswordUseCase,
+    changeOwnPasswordUseCase,
     createProviderUseCase,
     listProvidersUseCase,
     getProviderDetailUseCase,

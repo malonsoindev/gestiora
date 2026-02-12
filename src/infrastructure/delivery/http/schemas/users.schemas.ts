@@ -27,4 +27,40 @@ export const usersSchemas = {
             },
         },
     },
+    changeOwnPassword: {
+        security: [{ bearerAuth: [] }],
+        body: {
+            type: 'object',
+            required: ['currentPassword', 'newPassword'],
+            additionalProperties: false,
+            properties: {
+                currentPassword: { type: 'string' },
+                newPassword: { type: 'string', minLength: 12 },
+            },
+        },
+        response: {
+            204: { type: 'null' },
+            400: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            401: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
 };

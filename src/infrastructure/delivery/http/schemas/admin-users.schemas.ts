@@ -320,4 +320,46 @@ export const adminUsersSchemas = {
             },
         },
     },
+    changePassword: {
+        security: [{ bearerAuth: [] }],
+        params: {
+            type: 'object',
+            required: ['userId'],
+            properties: {
+                userId: { type: 'string' },
+            },
+        },
+        body: {
+            type: 'object',
+            required: ['newPassword'],
+            additionalProperties: false,
+            properties: {
+                newPassword: { type: 'string', minLength: 12 },
+            },
+        },
+        response: {
+            204: { type: 'null' },
+            400: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            403: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+            404: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
+        },
+    },
 };

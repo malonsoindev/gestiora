@@ -4,6 +4,7 @@ import type {
     AdminUsersController,
     AdminCreateUserBody,
     AdminUpdateUserBody,
+    AdminChangePasswordBody,
 } from '../controllers/admin-users.controller.js';
 import { buildAuthorizeMiddleware } from '../middlewares/authorize.middleware.js';
 import { adminUsersSchemas } from '../schemas/admin-users.schemas.js';
@@ -81,5 +82,14 @@ export const registerAdminUsersRoutes = async (
             schema: adminUsersSchemas.revokeSessions,
         },
         async (request, reply) => controller.revokeUserSessions(request, reply),
+    );
+
+    app.post<{ Params: { userId: string }; Body: AdminChangePasswordBody }>(
+        '/admin/users/:userId/password',
+        {
+            preHandler: buildAuthorizeMiddleware(authorizeRequestUseCase, true),
+            schema: adminUsersSchemas.changePassword,
+        },
+        async (request, reply) => controller.changeUserPassword(request, reply),
     );
 };
