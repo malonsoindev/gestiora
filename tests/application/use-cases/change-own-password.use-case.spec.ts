@@ -28,6 +28,11 @@ const createUser = (overrides: Partial<UserProps> = {}): User =>
         ...overrides,
     });
 
+const validCurrentPassword = 'Current1!a';
+const validNewPassword = 'NewPassword1!a';
+const invalidNewPassword = 'short';
+const invalidCurrentPassword = 'WrongPass1!a';
+
 class PasswordHasherStub implements PasswordHasher {
     constructor(private readonly isValid: boolean) {}
 
@@ -67,12 +72,12 @@ describe('ChangeOwnPasswordUseCase', () => {
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
-            currentPassword: 'Current1!a',
-            newPassword: 'NewPassword1!a',
+            currentPassword: validCurrentPassword,
+            newPassword: validNewPassword,
         });
 
         expect(result.success).toBe(true);
-        expect(userRepository.updatedUser?.passwordHash).toBe('hashed:NewPassword1!a');
+        expect(userRepository.updatedUser?.passwordHash).toBe(`hashed:${validNewPassword}`);
         expect(auditLogger.events.some((event) => event.action === 'USER_PASSWORD_CHANGED')).toBe(true);
     });
 
@@ -81,8 +86,8 @@ describe('ChangeOwnPasswordUseCase', () => {
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
-            currentPassword: 'WrongPass1!a',
-            newPassword: 'NewPassword1!a',
+            currentPassword: invalidCurrentPassword,
+            newPassword: validNewPassword,
         });
 
         expect(result.success).toBe(false);
@@ -97,8 +102,8 @@ describe('ChangeOwnPasswordUseCase', () => {
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
-            currentPassword: 'Current1!a',
-            newPassword: 'short',
+            currentPassword: validCurrentPassword,
+            newPassword: invalidNewPassword,
         });
 
         expect(result.success).toBe(false);
@@ -113,8 +118,8 @@ describe('ChangeOwnPasswordUseCase', () => {
 
         const result = await useCase.execute({
             actorUserId: 'missing-user',
-            currentPassword: 'Current1!a',
-            newPassword: 'NewPassword1!a',
+            currentPassword: validCurrentPassword,
+            newPassword: validNewPassword,
         });
 
         expect(result.success).toBe(false);
