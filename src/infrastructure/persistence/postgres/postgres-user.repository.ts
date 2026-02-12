@@ -1,11 +1,11 @@
 import type { Sql } from 'postgres';
-import { fail, ok, type Result } from '../../../shared/result.js';
-import { toDate } from '../../../shared/date-utils.js';
-import { PortError } from '../../../application/errors/port.error.js';
-import type { UserRepository } from '../../../application/ports/user.repository.js';
-import { User, UserStatus } from '../../../domain/entities/user.entity.js';
-import { Email } from '../../../domain/value-objects/email.value-object.js';
-import { UserRole } from '../../../domain/value-objects/user-role.value-object.js';
+import { fail, ok, type Result } from '@shared/result.js';
+import { toDate } from '@shared/date-utils.js';
+import { PortError } from '@application/errors/port.error.js';
+import type { UserRepository } from '@application/ports/user.repository.js';
+import { User, UserStatus } from '@domain/entities/user.entity.js';
+import { Email } from '@domain/value-objects/email.value-object.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 
 type SqlClient = Sql<{}>;
 

@@ -22,6 +22,15 @@
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
+    "paths": {
+      "@domain/*": ["src/domain/*"],
+      "@application/*": ["src/application/*"],
+      "@infrastructure/*": ["src/infrastructure/*"],
+      "@composition/*": ["src/composition/*"],
+      "@config/*": ["src/config/*"],
+      "@shared/*": ["src/shared/*"],
+      "@tests/*": ["tests/*"]
+    },
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
@@ -44,6 +53,6 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
   },
-  "include": ["src/**/*", "scripts/**/*.ts", "main.ts"],
-  "exclude": ["node_modules", "dist", "tests"]
+  "include": ["src/**/*", "tests/**/*", "scripts/**/*.ts", "main.ts"],
+  "exclude": ["node_modules", "dist"]
 }

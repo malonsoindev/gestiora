@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { SoftDeleteInvoiceUseCase } from '../../../src/application/use-cases/soft-delete-invoice.use-case.js';
-import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
-import type { DateProvider } from '../../../src/application/ports/date-provider.js';
-import type { InvoiceRepository } from '../../../src/application/ports/invoice.repository.js';
-import type { PortError } from '../../../src/application/errors/port.error.js';
-import { Invoice, InvoiceStatus } from '../../../src/domain/entities/invoice.entity.js';
-import type { InvoiceProps } from '../../../src/domain/entities/invoice.entity.js';
-import { InvoiceMovement } from '../../../src/domain/entities/invoice-movement.entity.js';
-import { InvoiceDate } from '../../../src/domain/value-objects/invoice-date.value-object.js';
-import { Money } from '../../../src/domain/value-objects/money.value-object.js';
-import { InvoiceNotFoundError } from '../../../src/domain/errors/invoice-not-found.error.js';
-import { ok, type Result } from '../../../src/shared/result.js';
-import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
+import { SoftDeleteInvoiceUseCase } from '@application/use-cases/soft-delete-invoice.use-case.js';
+import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
+import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
+import { Money } from '@domain/value-objects/money.value-object.js';
+import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
+import { ok, type Result } from '@shared/result.js';
+import { RagReindexInvoiceServiceStub } from '@tests/application/stubs/rag-reindex-invoice.service.stub.js';
 
 const fixedNow = new Date('2026-02-22T10:00:00.000Z');
 

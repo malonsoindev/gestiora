@@ -1,6 +1,6 @@
-import { ok, type Result } from '../../../shared/result.js';
-import { PortError } from '../../../application/errors/port.error.js';
-import type { SearchQueryRepository, SearchQueryRecord } from '../../../application/ports/search-query.repository.js';
+import { ok, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
+import type { SearchQueryRepository, SearchQueryRecord } from '@application/ports/search-query.repository.js';
 
 export class InMemorySearchQueryRepository implements SearchQueryRepository {
     private readonly queriesById = new Map<string, SearchQueryRecord>();

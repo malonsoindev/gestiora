@@ -1,6 +1,6 @@
-import { buildServer } from './src/infrastructure/delivery/http/server.js';
-import { seedUsers } from './src/composition/index.js';
-import { config } from './src/config/env.js';
+import { buildServer } from '@infrastructure/delivery/http/server.js';
+import { seedUsers } from '@composition/index.js';
+import { config } from '@config/env.js';
 
 const start = async () => {
     await seedUsers();

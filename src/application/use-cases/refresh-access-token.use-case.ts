@@ -1,16 +1,16 @@
-import type { AuditLogger } from '../ports/audit-logger.js';
-import type { DateProvider } from '../ports/date-provider.js';
-import type { RefreshTokenHasher } from '../ports/refresh-token-hasher.js';
-import type { SessionRepository } from '../ports/session.repository.js';
-import type { TokenService } from '../ports/token.service.js';
-import type { UserRepository } from '../ports/user.repository.js';
-import type { RefreshAccessTokenRequest } from '../dto/refresh-access-token.request.js';
-import type { RefreshAccessTokenResponse } from '../dto/refresh-access-token.response.js';
-import { Session, SessionStatus } from '../../domain/entities/session.entity.js';
-import type { User } from '../../domain/entities/user.entity.js';
-import { AuthInvalidRefreshTokenError } from '../../domain/errors/auth-invalid-refresh-token.error.js';
-import { fail, ok, type Result } from '../../shared/result.js';
-import type { PortError } from '../errors/port.error.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher.js';
+import type { SessionRepository } from '@application/ports/session.repository.js';
+import type { TokenService } from '@application/ports/token.service.js';
+import type { UserRepository } from '@application/ports/user.repository.js';
+import type { RefreshAccessTokenRequest } from '@application/dto/refresh-access-token.request.js';
+import type { RefreshAccessTokenResponse } from '@application/dto/refresh-access-token.response.js';
+import { Session, SessionStatus } from '@domain/entities/session.entity.js';
+import type { User } from '@domain/entities/user.entity.js';
+import { AuthInvalidRefreshTokenError } from '@domain/errors/auth-invalid-refresh-token.error.js';
+import { fail, ok, type Result } from '@shared/result.js';
+import type { PortError } from '@application/errors/port.error.js';
 
 export type RefreshAccessTokenDependencies = {
     sessionRepository: SessionRepository;

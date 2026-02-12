@@ -1,10 +1,10 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import type { UpdateOwnProfileUseCase } from '../../../../application/use-cases/update-own-profile.use-case.js';
-import type { ChangeOwnPasswordUseCase } from '../../../../application/use-cases/change-own-password.use-case.js';
-import { UserNotFoundError } from '../../../../domain/errors/user-not-found.error.js';
-import { InvalidPasswordError } from '../../../../domain/errors/invalid-password.error.js';
-import { AuthInvalidCredentialsError } from '../../../../domain/errors/auth-invalid-credentials.error.js';
-import { PortError } from '../../../../application/errors/port.error.js';
+import type { UpdateOwnProfileUseCase } from '@application/use-cases/update-own-profile.use-case.js';
+import type { ChangeOwnPasswordUseCase } from '@application/use-cases/change-own-password.use-case.js';
+import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
+import { InvalidPasswordError } from '@domain/errors/invalid-password.error.js';
+import { AuthInvalidCredentialsError } from '@domain/errors/auth-invalid-credentials.error.js';
+import { PortError } from '@application/errors/port.error.js';
 
 export type UpdateOwnProfileBody = {
     name?: string;

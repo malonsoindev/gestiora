@@ -1,18 +1,18 @@
 import type { Sql } from 'postgres';
-import { fail, ok, type Result } from '../../../shared/result.js';
-import { toDate } from '../../../shared/date-utils.js';
-import { PortError } from '../../../application/errors/port.error.js';
-import type { InvoiceListFilters, InvoiceListResult, InvoiceRepository } from '../../../application/ports/invoice.repository.js';
+import { fail, ok, type Result } from '@shared/result.js';
+import { toDate } from '@shared/date-utils.js';
+import { PortError } from '@application/errors/port.error.js';
+import type { InvoiceListFilters, InvoiceListResult, InvoiceRepository } from '@application/ports/invoice.repository.js';
 import {
     Invoice,
     InvoiceHeaderSource,
     InvoiceHeaderStatus,
     InvoiceStatus,
-} from '../../../domain/entities/invoice.entity.js';
-import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '../../../domain/entities/invoice-movement.entity.js';
-import { FileRef } from '../../../domain/value-objects/file-ref.value-object.js';
-import { InvoiceDate } from '../../../domain/value-objects/invoice-date.value-object.js';
-import { Money } from '../../../domain/value-objects/money.value-object.js';
+} from '@domain/entities/invoice.entity.js';
+import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { FileRef } from '@domain/value-objects/file-ref.value-object.js';
+import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
+import { Money } from '@domain/value-objects/money.value-object.js';
 
 type SqlClient = Sql<{}>;
 

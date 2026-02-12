@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Password } from '../../src/domain/value-objects/password.value-object.js';
-import { InvalidPasswordError } from '../../src/domain/errors/invalid-password.error.js';
+import { Password } from '@domain/value-objects/password.value-object.js';
+import { InvalidPasswordError } from '@domain/errors/invalid-password.error.js';
 
 describe('Password', () => {
     it('accepts a valid password', () => {

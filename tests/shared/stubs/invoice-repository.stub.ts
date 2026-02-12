@@ -1,7 +1,7 @@
-import type { InvoiceRepository, InvoiceListFilters, InvoiceListResult } from '../../../src/application/ports/invoice.repository.js';
-import type { PortError } from '../../../src/application/errors/port.error.js';
-import type { Invoice } from '../../../src/domain/entities/invoice.entity.js';
-import { ok } from '../../../src/shared/result.js';
+import type { InvoiceRepository, InvoiceListFilters, InvoiceListResult } from '@application/ports/invoice.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import type { Invoice } from '@domain/entities/invoice.entity.js';
+import { ok } from '@shared/result.js';
 
 export class InvoiceRepositoryStub implements InvoiceRepository {
     updatedInvoice: Invoice | null = null;

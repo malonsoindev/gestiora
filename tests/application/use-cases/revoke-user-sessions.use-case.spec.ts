@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { RevokeUserSessionsUseCase } from '../../../src/application/use-cases/revoke-user-sessions.use-case.js';
-import { UserNotFoundError } from '../../../src/domain/errors/user-not-found.error.js';
-import { createTestUser } from '../../shared/fixtures/user.fixture.js';
-import { buildUserSessionUseCaseSut } from '../../shared/helpers/user-use-case-sut.js';
+import { RevokeUserSessionsUseCase } from '@application/use-cases/revoke-user-sessions.use-case.js';
+import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
+import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
+import { buildUserSessionUseCaseSut } from '@tests/shared/helpers/user-use-case-sut.js';
 
 const fixedNow = new Date('2026-02-03T17:00:00.000Z');
 

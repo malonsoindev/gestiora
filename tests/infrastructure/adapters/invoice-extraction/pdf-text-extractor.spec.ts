@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { PdfTextExtractor } from '../../../../src/infrastructure/adapters/invoice-extraction/pdf-text-extractor.js';
-import { PortError } from '../../../../src/application/errors/port.error.js';
+import { PdfTextExtractor } from '@infrastructure/adapters/invoice-extraction/pdf-text-extractor.js';
+import { PortError } from '@application/errors/port.error.js';
 
 type PdfParser = (content: Buffer) => Promise<{ text: string }>;
 

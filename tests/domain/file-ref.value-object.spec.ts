@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { FileRef } from '../../src/domain/value-objects/file-ref.value-object.js';
-import { InvalidFileRefError } from '../../src/domain/errors/invalid-file-ref.error.js';
+import { FileRef } from '@domain/value-objects/file-ref.value-object.js';
+import { InvalidFileRefError } from '@domain/errors/invalid-file-ref.error.js';
 
 describe('FileRef', () => {
     it('creates a file ref with valid data', () => {

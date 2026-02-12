@@ -1,6 +1,6 @@
-import { UserRole } from '../../domain/value-objects/user-role.value-object.js';
-import type { Result } from '../../shared/result.js';
-import type { PortError } from '../errors/port.error.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import type { Result } from '@shared/result.js';
+import type { PortError } from '@application/errors/port.error.js';
 
 export type AccessTokenPayload = {
     userId: string;

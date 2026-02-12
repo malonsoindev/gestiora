@@ -1,20 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { AttachInvoiceFileUseCase } from '../../../src/application/use-cases/attach-invoice-file.use-case.js';
-import type { InvoiceRepository } from '../../../src/application/ports/invoice.repository.js';
-import type { FileStorage } from '../../../src/application/ports/file-storage.js';
-import { Invoice, InvoiceStatus } from '../../../src/domain/entities/invoice.entity.js';
-import type { InvoiceProps } from '../../../src/domain/entities/invoice.entity.js';
-import { InvoiceMovement } from '../../../src/domain/entities/invoice-movement.entity.js';
-import { InvoiceDate } from '../../../src/domain/value-objects/invoice-date.value-object.js';
-import { Money } from '../../../src/domain/value-objects/money.value-object.js';
-import { FileRef } from '../../../src/domain/value-objects/file-ref.value-object.js';
-import { InvoiceNotFoundError } from '../../../src/domain/errors/invoice-not-found.error.js';
-import { InvalidInvoiceStatusError } from '../../../src/domain/errors/invalid-invoice-status.error.js';
-import { ok } from '../../../src/shared/result.js';
-import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
-import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
-import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
-import { fixedNow } from '../../shared/fixed-now.js';
+import { AttachInvoiceFileUseCase } from '@application/use-cases/attach-invoice-file.use-case.js';
+import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
+import type { FileStorage } from '@application/ports/file-storage.js';
+import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
+import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
+import { Money } from '@domain/value-objects/money.value-object.js';
+import { FileRef } from '@domain/value-objects/file-ref.value-object.js';
+import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
+import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
+import { ok } from '@shared/result.js';
+import { RagReindexInvoiceServiceStub } from '@tests/application/stubs/rag-reindex-invoice.service.stub.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import { fixedNow } from '@tests/shared/fixed-now.js';
 
 class InvoiceRepositoryStub implements InvoiceRepository {
     updatedInvoice: Invoice | null = null;

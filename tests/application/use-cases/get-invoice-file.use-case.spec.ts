@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { GetInvoiceFileUseCase } from '../../../src/application/use-cases/get-invoice-file.use-case.js';
-import type { InvoiceRepository } from '../../../src/application/ports/invoice.repository.js';
-import type { FileStorage } from '../../../src/application/ports/file-storage.js';
-import { Invoice, InvoiceStatus } from '../../../src/domain/entities/invoice.entity.js';
-import type { InvoiceProps } from '../../../src/domain/entities/invoice.entity.js';
-import { InvoiceMovement } from '../../../src/domain/entities/invoice-movement.entity.js';
-import { InvoiceDate } from '../../../src/domain/value-objects/invoice-date.value-object.js';
-import { Money } from '../../../src/domain/value-objects/money.value-object.js';
-import { FileRef } from '../../../src/domain/value-objects/file-ref.value-object.js';
-import { InvoiceNotFoundError } from '../../../src/domain/errors/invoice-not-found.error.js';
-import { InvalidInvoiceStatusError } from '../../../src/domain/errors/invalid-invoice-status.error.js';
-import { ok } from '../../../src/shared/result.js';
+import { GetInvoiceFileUseCase } from '@application/use-cases/get-invoice-file.use-case.js';
+import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
+import type { FileStorage } from '@application/ports/file-storage.js';
+import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
+import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
+import { Money } from '@domain/value-objects/money.value-object.js';
+import { FileRef } from '@domain/value-objects/file-ref.value-object.js';
+import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
+import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
+import { ok } from '@shared/result.js';
 
 const fixedNow = new Date('2026-02-23T10:00:00.000Z');
 

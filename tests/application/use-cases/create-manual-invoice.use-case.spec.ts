@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { CreateManualInvoiceUseCase } from '../../../src/application/use-cases/create-manual-invoice.use-case.js';
-import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
-import { InvalidCifError } from '../../../src/domain/errors/invalid-cif.error.js';
-import { InvalidProviderStatusError } from '../../../src/domain/errors/invalid-provider-status.error.js';
-import { InvalidInvoiceTotalsError } from '../../../src/domain/errors/invalid-invoice-totals.error.js';
-import { ProviderNotFoundError } from '../../../src/domain/errors/provider-not-found.error.js';
-import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
-import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
-import { InvoiceIdGeneratorStub } from '../../shared/stubs/invoice-id-generator.stub.js';
-import { InvoiceMovementIdGeneratorStub } from '../../shared/stubs/invoice-movement-id-generator.stub.js';
-import { ProviderRepositoryStub } from '../../shared/stubs/provider-repository.stub.js';
-import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
-import { InvoiceRepositorySpy } from '../../shared/spies/invoice-repository.spy.js';
-import { fixedNow } from '../../shared/fixed-now.js';
+import { CreateManualInvoiceUseCase } from '@application/use-cases/create-manual-invoice.use-case.js';
+import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
+import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
+import { InvalidInvoiceTotalsError } from '@domain/errors/invalid-invoice-totals.error.js';
+import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
+import { RagReindexInvoiceServiceStub } from '@tests/application/stubs/rag-reindex-invoice.service.stub.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { InvoiceIdGeneratorStub } from '@tests/shared/stubs/invoice-id-generator.stub.js';
+import { InvoiceMovementIdGeneratorStub } from '@tests/shared/stubs/invoice-movement-id-generator.stub.js';
+import { ProviderRepositoryStub } from '@tests/shared/stubs/provider-repository.stub.js';
+import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import { InvoiceRepositorySpy } from '@tests/shared/spies/invoice-repository.spy.js';
+import { fixedNow } from '@tests/shared/fixed-now.js';
 
 const createProvider = (status: ProviderStatus = ProviderStatus.Active): Provider =>
     Provider.create({

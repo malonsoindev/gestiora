@@ -1,13 +1,13 @@
 import type { FastifyInstance } from 'fastify';
-import type { AuthorizeRequestUseCase } from '../../../../application/use-cases/authorize-request.use-case.js';
+import type { AuthorizeRequestUseCase } from '@application/use-cases/authorize-request.use-case.js';
 import type {
     AdminUsersController,
     AdminCreateUserBody,
     AdminUpdateUserBody,
     AdminChangePasswordBody,
-} from '../controllers/admin-users.controller.js';
-import { buildAuthorizeMiddleware } from '../middlewares/authorize.middleware.js';
-import { adminUsersSchemas } from '../schemas/admin-users.schemas.js';
+} from '@infrastructure/delivery/http/controllers/admin-users.controller.js';
+import { buildAuthorizeMiddleware } from '@infrastructure/delivery/http/middlewares/authorize.middleware.js';
+import { adminUsersSchemas } from '@infrastructure/delivery/http/schemas/admin-users.schemas.js';
 
 export const registerAdminUsersRoutes = async (
     app: FastifyInstance,

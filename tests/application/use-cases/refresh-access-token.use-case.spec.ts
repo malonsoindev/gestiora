@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { RefreshAccessTokenUseCase } from '../../../src/application/use-cases/refresh-access-token.use-case.js';
-import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
-import type { DateProvider } from '../../../src/application/ports/date-provider.js';
-import type { RefreshTokenHasher } from '../../../src/application/ports/refresh-token-hasher.js';
-import type { SessionRepository } from '../../../src/application/ports/session.repository.js';
-import type { AccessTokenPayload, RefreshTokenPayload, TokenService } from '../../../src/application/ports/token.service.js';
-import type { UserRepository } from '../../../src/application/ports/user.repository.js';
-import { AuthInvalidRefreshTokenError } from '../../../src/domain/errors/auth-invalid-refresh-token.error.js';
-import { Session, SessionStatus } from '../../../src/domain/entities/session.entity.js';
-import type { SessionProps } from '../../../src/domain/entities/session.entity.js';
-import { User } from '../../../src/domain/entities/user.entity.js';
-import type { UserProps } from '../../../src/domain/entities/user.entity.js';
-import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
-import { ok } from '../../../src/shared/result.js';
-import { createTestUser } from '../../shared/fixtures/user.fixture.js';
+import { RefreshAccessTokenUseCase } from '@application/use-cases/refresh-access-token.use-case.js';
+import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher.js';
+import type { SessionRepository } from '@application/ports/session.repository.js';
+import type { AccessTokenPayload, RefreshTokenPayload, TokenService } from '@application/ports/token.service.js';
+import type { UserRepository } from '@application/ports/user.repository.js';
+import { AuthInvalidRefreshTokenError } from '@domain/errors/auth-invalid-refresh-token.error.js';
+import { Session, SessionStatus } from '@domain/entities/session.entity.js';
+import type { SessionProps } from '@domain/entities/session.entity.js';
+import { User } from '@domain/entities/user.entity.js';
+import type { UserProps } from '@domain/entities/user.entity.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import { ok } from '@shared/result.js';
+import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 
 const fixedNow = new Date('2026-01-29T12:00:00.000Z');
 
@@ -153,10 +153,7 @@ const createSession = (overrides: Partial<SessionProps> = {}): Session =>
 const createUser = (overrides: Partial<UserProps> = {}): User =>
     createTestUser({
         now: fixedNow,
-        overrides: {
-            lockedUntil: undefined,
-            ...overrides,
-        },
+        overrides,
     });
 
 describe('RefreshAccessTokenUseCase', () => {

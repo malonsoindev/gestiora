@@ -1,10 +1,10 @@
-import type { AuditLogger } from '../ports/audit-logger.js';
-import type { DateProvider } from '../ports/date-provider.js';
-import type { LoginAttemptRepository } from '../ports/login-attempt.repository.js';
-import type { AntiBruteForceRequest } from '../dto/anti-brute-force.request.js';
-import type { PortError } from '../errors/port.error.js';
-import { AuthRateLimitedError } from '../../domain/errors/auth-rate-limited.error.js';
-import { fail, ok, type Result } from '../../shared/result.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { LoginAttemptRepository } from '@application/ports/login-attempt.repository.js';
+import type { AntiBruteForceRequest } from '@application/dto/anti-brute-force.request.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { AuthRateLimitedError } from '@domain/errors/auth-rate-limited.error.js';
+import { fail, ok, type Result } from '@shared/result.js';
 
 export type AntiBruteForceDependencies = {
     loginAttemptRepository: LoginAttemptRepository;

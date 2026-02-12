@@ -1,11 +1,11 @@
-import type { InvoiceRepository } from '../ports/invoice.repository.js';
-import type { AuditLogger } from '../ports/audit-logger.js';
-import type { DateProvider } from '../ports/date-provider.js';
-import type { PortError } from '../errors/port.error.js';
-import type { SoftDeleteInvoiceRequest } from '../dto/soft-delete-invoice.request.js';
-import type { RagReindexInvoiceHandler } from '../services/rag-reindex-invoice.service.js';
-import { InvoiceNotFoundError } from '../../domain/errors/invoice-not-found.error.js';
-import { ok, fail, type Result } from '../../shared/result.js';
+import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { PortError } from '@application/errors/port.error.js';
+import type { SoftDeleteInvoiceRequest } from '@application/dto/soft-delete-invoice.request.js';
+import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
+import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
+import { ok, fail, type Result } from '@shared/result.js';
 
 export class SoftDeleteInvoiceUseCase {
     constructor(

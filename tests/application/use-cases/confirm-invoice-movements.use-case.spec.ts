@@ -1,20 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { ConfirmInvoiceMovementsUseCase } from '../../../src/application/use-cases/confirm-invoice-movements.use-case.js';
-import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
-import type { DateProvider } from '../../../src/application/ports/date-provider.js';
-import type { InvoiceRepository } from '../../../src/application/ports/invoice.repository.js';
-import type { PortError } from '../../../src/application/errors/port.error.js';
-import { Invoice, InvoiceStatus } from '../../../src/domain/entities/invoice.entity.js';
-import type { InvoiceProps } from '../../../src/domain/entities/invoice.entity.js';
+import { ConfirmInvoiceMovementsUseCase } from '@application/use-cases/confirm-invoice-movements.use-case.js';
+import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
 import {
     InvoiceMovement,
     InvoiceMovementSource,
     InvoiceMovementStatus,
-} from '../../../src/domain/entities/invoice-movement.entity.js';
-import { InvoiceDate } from '../../../src/domain/value-objects/invoice-date.value-object.js';
-import { Money } from '../../../src/domain/value-objects/money.value-object.js';
-import { ok, type Result } from '../../../src/shared/result.js';
-import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
+    type InvoiceMovementProps,
+} from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
+import { Money } from '@domain/value-objects/money.value-object.js';
+import { ok, type Result } from '@shared/result.js';
+import { RagReindexInvoiceServiceStub } from '@tests/application/stubs/rag-reindex-invoice.service.stub.js';
 
 const fixedNow = new Date('2026-03-01T10:00:00.000Z');
 
@@ -60,7 +61,7 @@ class InvoiceRepositoryStub implements InvoiceRepository {
     }
 }
 
-const createMovement = (overrides: Partial<InvoiceMovement> = {}): InvoiceMovement =>
+const createMovement = (overrides: Partial<InvoiceMovementProps> = {}): InvoiceMovement =>
     InvoiceMovement.create({
         id: 'movement-1',
         concepto: 'Servicio AI',
@@ -115,8 +116,17 @@ describe('ConfirmInvoiceMovementsUseCase', () => {
 
         expect(result.success).toBe(true);
         const updated = invoiceRepository.updatedInvoice;
-        expect(updated?.movements[0].status).toBe(InvoiceMovementStatus.Confirmed);
-        expect(updated?.movements[0].source).toBe(InvoiceMovementSource.Ai);
+        expect(updated).not.toBeNull();
+        if (!updated) {
+            return;
+        }
+        const movement = updated.movements[0];
+        expect(movement).toBeTruthy();
+        if (!movement) {
+            return;
+        }
+        expect(movement.status).toBe(InvoiceMovementStatus.Confirmed);
+        expect(movement.source).toBe(InvoiceMovementSource.Ai);
         expect(auditLogger.events.some((event) => event.action === 'INVOICE_MOVEMENTS_CONFIRMED')).toBe(true);
     });
 
@@ -150,10 +160,19 @@ describe('ConfirmInvoiceMovementsUseCase', () => {
 
         expect(result.success).toBe(true);
         const updated = invoiceRepository.updatedInvoice;
-        expect(updated?.movements[0].concepto).toBe('Servicio corregido');
-        expect(updated?.movements[0].cantidad).toBe(2);
-        expect(updated?.movements[0].source).toBe(InvoiceMovementSource.Manual);
-        expect(updated?.movements[0].status).toBe(InvoiceMovementStatus.Confirmed);
+        expect(updated).not.toBeNull();
+        if (!updated) {
+            return;
+        }
+        const movement = updated.movements[0];
+        expect(movement).toBeTruthy();
+        if (!movement) {
+            return;
+        }
+        expect(movement.concepto).toBe('Servicio corregido');
+        expect(movement.cantidad).toBe(2);
+        expect(movement.source).toBe(InvoiceMovementSource.Manual);
+        expect(movement.status).toBe(InvoiceMovementStatus.Confirmed);
     });
 
     it('does not overwrite manual movement when not provided', async () => {

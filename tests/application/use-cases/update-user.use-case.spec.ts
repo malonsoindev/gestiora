@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { UpdateUserUseCase } from '../../../src/application/use-cases/update-user.use-case.js';
-import { UserStatus } from '../../../src/domain/entities/user.entity.js';
-import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
-import { UserNotFoundError } from '../../../src/domain/errors/user-not-found.error.js';
-import { InvalidUserRolesError } from '../../../src/domain/errors/invalid-user-roles.error.js';
-import { InvalidUserStatusError } from '../../../src/domain/errors/invalid-user-status.error.js';
-import { createTestUser } from '../../shared/fixtures/user.fixture.js';
-import { buildUserUseCaseSut } from '../../shared/helpers/user-use-case-sut.js';
+import { UpdateUserUseCase } from '@application/use-cases/update-user.use-case.js';
+import { UserStatus } from '@domain/entities/user.entity.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
+import { InvalidUserRolesError } from '@domain/errors/invalid-user-roles.error.js';
+import { InvalidUserStatusError } from '@domain/errors/invalid-user-status.error.js';
+import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
+import { buildUserUseCaseSut } from '@tests/shared/helpers/user-use-case-sut.js';
 
 const fixedNow = new Date('2026-02-03T13:00:00.000Z');
 

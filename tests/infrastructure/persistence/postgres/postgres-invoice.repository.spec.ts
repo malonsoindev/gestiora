@@ -1,13 +1,13 @@
 import postgres from 'postgres';
 import { describe, expect, it, beforeAll, afterAll, beforeEach } from 'vitest';
-import { PostgresInvoiceRepository } from '../../../../src/infrastructure/persistence/postgres/postgres-invoice.repository.js';
-import { Invoice, InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '../../../../src/domain/entities/invoice.entity.js';
-import type { InvoiceProps } from '../../../../src/domain/entities/invoice.entity.js';
-import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '../../../../src/domain/entities/invoice-movement.entity.js';
-import type { InvoiceMovementProps } from '../../../../src/domain/entities/invoice-movement.entity.js';
-import { InvoiceDate } from '../../../../src/domain/value-objects/invoice-date.value-object.js';
-import { Money } from '../../../../src/domain/value-objects/money.value-object.js';
-import { FileRef } from '../../../../src/domain/value-objects/file-ref.value-object.js';
+import { PostgresInvoiceRepository } from '@infrastructure/persistence/postgres/postgres-invoice.repository.js';
+import { Invoice, InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
+import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import type { InvoiceMovementProps } from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
+import { Money } from '@domain/value-objects/money.value-object.js';
+import { FileRef } from '@domain/value-objects/file-ref.value-object.js';
 
 const describeIf = process.env.DATABASE_URL ? describe : describe.skip;
 const fixedNow = new Date('2026-03-10T10:00:00.000Z');

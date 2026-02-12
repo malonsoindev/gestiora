@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { QueryInvoicesRagUseCase } from '../../../src/application/use-cases/query-invoices-rag.use-case.js';
-import type { RagRetriever, RagRetrievedDocument } from '../../../src/application/ports/rag-retriever.js';
-import type { RagAnswerGenerator } from '../../../src/application/ports/rag-answer-generator.js';
-import { PortError } from '../../../src/application/errors/port.error.js';
-import { ok, fail, type Result } from '../../../src/shared/result.js';
+import { QueryInvoicesRagUseCase } from '@application/use-cases/query-invoices-rag.use-case.js';
+import type { RagRetriever, RagRetrievedDocument } from '@application/ports/rag-retriever.js';
+import type { RagAnswerGenerator } from '@application/ports/rag-answer-generator.js';
+import { PortError } from '@application/errors/port.error.js';
+import { ok, fail, type Result } from '@shared/result.js';
 
 class RagRetrieverStub implements RagRetriever {
     private readonly documents: RagRetrievedDocument[];

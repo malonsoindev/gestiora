@@ -1,8 +1,8 @@
-import { ok, type Result } from '../../../shared/result.js';
-import { PortError } from '../../../application/errors/port.error.js';
-import type { UserRepository } from '../../../application/ports/user.repository.js';
-import type { User, UserStatus } from '../../../domain/entities/user.entity.js';
-import type { UserRole } from '../../../domain/value-objects/user-role.value-object.js';
+import { ok, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
+import type { UserRepository } from '@application/ports/user.repository.js';
+import type { User, UserStatus } from '@domain/entities/user.entity.js';
+import type { UserRole } from '@domain/value-objects/user-role.value-object.js';
 
 export class InMemoryUserRepository implements UserRepository {
     private readonly usersById = new Map<string, User>();

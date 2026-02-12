@@ -1,6 +1,6 @@
-import type { ProviderRepository } from '../../../src/application/ports/provider.repository.js';
-import type { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
-import { ok } from '../../../src/shared/result.js';
+import type { ProviderRepository } from '@application/ports/provider.repository.js';
+import type { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import { ok } from '@shared/result.js';
 
 export class ProviderRepositoryStub implements ProviderRepository {
     lastCif: string | null = null;

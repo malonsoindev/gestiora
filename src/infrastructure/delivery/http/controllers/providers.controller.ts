@@ -1,16 +1,16 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import type { CreateProviderUseCase } from '../../../../application/use-cases/create-provider.use-case.js';
-import type { ListProvidersUseCase } from '../../../../application/use-cases/list-providers.use-case.js';
-import type { GetProviderDetailUseCase } from '../../../../application/use-cases/get-provider-detail.use-case.js';
-import type { UpdateProviderUseCase } from '../../../../application/use-cases/update-provider.use-case.js';
-import type { UpdateProviderStatusUseCase } from '../../../../application/use-cases/update-provider-status.use-case.js';
-import type { SoftDeleteProviderUseCase } from '../../../../application/use-cases/soft-delete-provider.use-case.js';
-import { InvalidCifError } from '../../../../domain/errors/invalid-cif.error.js';
-import { InvalidProviderStatusError } from '../../../../domain/errors/invalid-provider-status.error.js';
-import { ProviderAlreadyExistsError } from '../../../../domain/errors/provider-already-exists.error.js';
-import { ProviderNotFoundError } from '../../../../domain/errors/provider-not-found.error.js';
-import { ProviderStatus } from '../../../../domain/entities/provider.entity.js';
-import { PortError } from '../../../../application/errors/port.error.js';
+import type { CreateProviderUseCase } from '@application/use-cases/create-provider.use-case.js';
+import type { ListProvidersUseCase } from '@application/use-cases/list-providers.use-case.js';
+import type { GetProviderDetailUseCase } from '@application/use-cases/get-provider-detail.use-case.js';
+import type { UpdateProviderUseCase } from '@application/use-cases/update-provider.use-case.js';
+import type { UpdateProviderStatusUseCase } from '@application/use-cases/update-provider-status.use-case.js';
+import type { SoftDeleteProviderUseCase } from '@application/use-cases/soft-delete-provider.use-case.js';
+import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
+import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
+import { ProviderAlreadyExistsError } from '@domain/errors/provider-already-exists.error.js';
+import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
+import { ProviderStatus } from '@domain/entities/provider.entity.js';
+import { PortError } from '@application/errors/port.error.js';
 
 export type CreateProviderBody = {
     razonSocial: string;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { GenkitInvoiceExtractionAgent } from '../../../../src/infrastructure/adapters/invoice-extraction/genkit-invoice-extraction-agent.js';
-import { PortError } from '../../../../src/application/errors/port.error.js';
+import { GenkitInvoiceExtractionAgent } from '@infrastructure/adapters/invoice-extraction/genkit-invoice-extraction-agent.js';
+import { PortError } from '@application/errors/port.error.js';
 
 type PromptRunner = (context: string) => Promise<{
     providerCif?: string;

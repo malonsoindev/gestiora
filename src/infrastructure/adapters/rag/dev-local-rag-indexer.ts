@@ -1,9 +1,9 @@
 import type { Genkit } from 'genkit';
 import { Document } from 'genkit/retriever';
 import { devLocalIndexerRef } from '@genkit-ai/dev-local-vectorstore';
-import { ok, fail, type Result } from '../../../shared/result.js';
-import { PortError } from '../../../application/errors/port.error.js';
-import type { RagDocument, RagIndexer } from '../../../application/ports/rag-indexer.js';
+import { ok, fail, type Result } from '@shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
+import type { RagDocument, RagIndexer } from '@application/ports/rag-indexer.js';
 
 export type DevLocalRagIndexerDependencies = {
     ai: Genkit;

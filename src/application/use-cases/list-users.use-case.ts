@@ -1,8 +1,8 @@
-import type { ListUsersRequest } from '../dto/list-users.request.js';
-import type { ListUsersResponse, UserSummary } from '../dto/list-users.response.js';
-import type { UserRepository } from '../ports/user.repository.js';
-import type { PortError } from '../errors/port.error.js';
-import { ok, type Result } from '../../shared/result.js';
+import type { ListUsersRequest } from '@application/dto/list-users.request.js';
+import type { ListUsersResponse, UserSummary } from '@application/dto/list-users.response.js';
+import type { UserRepository } from '@application/ports/user.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { ok, type Result } from '@shared/result.js';
 
 export type ListUsersDependencies = {
     userRepository: UserRepository;

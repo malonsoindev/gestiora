@@ -1,27 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { LoginUserUseCase } from '../../../src/application/use-cases/login-user.use-case.js';
-import type { DateProvider } from '../../../src/application/ports/date-provider.js';
-import type { LoginRateLimiter } from '../../../src/application/ports/login-rate-limiter.js';
-import type { LoginAttemptRepository } from '../../../src/application/ports/login-attempt.repository.js';
-import type { PasswordHasher } from '../../../src/application/ports/password-hasher.js';
-import type { RefreshTokenHasher } from '../../../src/application/ports/refresh-token-hasher.js';
-import type { SessionIdGenerator } from '../../../src/application/ports/session-id-generator.js';
-import type { SessionRepository } from '../../../src/application/ports/session.repository.js';
-import type { AccessTokenPayload, RefreshTokenPayload, TokenService } from '../../../src/application/ports/token.service.js';
-import type { UserRepository } from '../../../src/application/ports/user.repository.js';
-import { AuthInvalidCredentialsError } from '../../../src/domain/errors/auth-invalid-credentials.error.js';
-import { AuthRateLimitedError } from '../../../src/domain/errors/auth-rate-limited.error.js';
-import { AuthUserDisabledError } from '../../../src/domain/errors/auth-user-disabled.error.js';
-import { AuthUserLockedError } from '../../../src/domain/errors/auth-user-locked.error.js';
-import { Session } from '../../../src/domain/entities/session.entity.js';
-import { User, UserStatus } from '../../../src/domain/entities/user.entity.js';
-import type { UserProps } from '../../../src/domain/entities/user.entity.js';
-import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
-import { Email } from '../../../src/domain/value-objects/email.value-object.js';
-import { fail, ok } from '../../../src/shared/result.js';
-import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
-import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
-import { fixedNow } from '../../shared/fixed-now.js';
+import { LoginUserUseCase } from '@application/use-cases/login-user.use-case.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { LoginRateLimiter } from '@application/ports/login-rate-limiter.js';
+import type { LoginAttemptRepository } from '@application/ports/login-attempt.repository.js';
+import type { PasswordHasher } from '@application/ports/password-hasher.js';
+import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher.js';
+import type { SessionIdGenerator } from '@application/ports/session-id-generator.js';
+import type { SessionRepository } from '@application/ports/session.repository.js';
+import type { AccessTokenPayload, RefreshTokenPayload, TokenService } from '@application/ports/token.service.js';
+import type { UserRepository } from '@application/ports/user.repository.js';
+import { AuthInvalidCredentialsError } from '@domain/errors/auth-invalid-credentials.error.js';
+import { AuthRateLimitedError } from '@domain/errors/auth-rate-limited.error.js';
+import { AuthUserDisabledError } from '@domain/errors/auth-user-disabled.error.js';
+import { AuthUserLockedError } from '@domain/errors/auth-user-locked.error.js';
+import { Session } from '@domain/entities/session.entity.js';
+import { User, UserStatus } from '@domain/entities/user.entity.js';
+import type { UserProps } from '@domain/entities/user.entity.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import { Email } from '@domain/value-objects/email.value-object.js';
+import { fail, ok } from '@shared/result.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import { fixedNow } from '@tests/shared/fixed-now.js';
 
 const testCredentialHashValue = 'hashed-password';
 const validLoginCredential = 'valid-password';
@@ -33,7 +33,6 @@ const createUser = (overrides: Partial<UserProps> = {}): User =>
         email: Email.create('user@example.com'),
         passwordHash: testCredentialHashValue,
         status: UserStatus.Active,
-        lockedUntil: undefined,
         roles: [UserRole.user()],
         createdAt: fixedNow,
         updatedAt: fixedNow,
@@ -140,7 +139,12 @@ class LoginAttemptRepositorySpy implements LoginAttemptRepository {
         succeeded: boolean,
         timestamp: Date,
     ) {
-        this.attempts.push({ email: key.email, ip: key.ip, succeeded, timestamp });
+        this.attempts.push({
+            email: key.email,
+            succeeded,
+            timestamp,
+            ...(key.ip === undefined ? {} : { ip: key.ip }),
+        });
         return ok(undefined);
     }
 }

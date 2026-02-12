@@ -1,21 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { CreateUserUseCase } from '../../../src/application/use-cases/create-user.use-case.js';
-import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
-import type { DateProvider } from '../../../src/application/ports/date-provider.js';
-import type { PasswordHasher } from '../../../src/application/ports/password-hasher.js';
-import type { UserIdGenerator } from '../../../src/application/ports/user-id-generator.js';
-import { InvalidPasswordError } from '../../../src/domain/errors/invalid-password.error.js';
-import { InvalidUserRolesError } from '../../../src/domain/errors/invalid-user-roles.error.js';
-import { InvalidUserStatusError } from '../../../src/domain/errors/invalid-user-status.error.js';
-import { UserAlreadyExistsError } from '../../../src/domain/errors/user-already-exists.error.js';
-import { InvalidEmailError } from '../../../src/domain/errors/invalid-email.error.js';
-import { User, UserStatus } from '../../../src/domain/entities/user.entity.js';
-import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
-import { Email } from '../../../src/domain/value-objects/email.value-object.js';
-import { ok, type Result } from '../../../src/shared/result.js';
-import type { PortError } from '../../../src/application/errors/port.error.js';
-import { createTestUser } from '../../shared/fixtures/user.fixture.js';
-import { UserRepositorySpy } from '../../shared/spies/user-repository.spy.js';
+import { CreateUserUseCase } from '@application/use-cases/create-user.use-case.js';
+import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { PasswordHasher } from '@application/ports/password-hasher.js';
+import type { UserIdGenerator } from '@application/ports/user-id-generator.js';
+import { InvalidPasswordError } from '@domain/errors/invalid-password.error.js';
+import { InvalidUserRolesError } from '@domain/errors/invalid-user-roles.error.js';
+import { InvalidUserStatusError } from '@domain/errors/invalid-user-status.error.js';
+import { UserAlreadyExistsError } from '@domain/errors/user-already-exists.error.js';
+import { InvalidEmailError } from '@domain/errors/invalid-email.error.js';
+import { User, UserStatus } from '@domain/entities/user.entity.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import { Email } from '@domain/value-objects/email.value-object.js';
+import { ok, type Result } from '@shared/result.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
+import { UserRepositorySpy } from '@tests/shared/spies/user-repository.spy.js';
 
 const fixedNow = new Date('2026-02-02T10:00:00.000Z');
 
@@ -27,8 +27,6 @@ const createUserEntity = (): User =>
         now: fixedNow,
         overrides: {
             email: Email.create('existing@example.com'),
-            name: undefined,
-            avatar: undefined,
         },
     });
 

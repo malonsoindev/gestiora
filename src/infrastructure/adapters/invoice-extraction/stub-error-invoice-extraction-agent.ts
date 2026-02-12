@@ -1,5 +1,5 @@
-import type { InvoiceExtractionAgent, InvoiceExtractionFile } from '../../../application/ports/invoice-extraction-agent.js';
-import { ok } from '../../../shared/result.js';
+import type { InvoiceExtractionAgent, InvoiceExtractionFile } from '@application/ports/invoice-extraction-agent.js';
+import { ok } from '@shared/result.js';
 
 export class StubErrorInvoiceExtractionAgent implements InvoiceExtractionAgent {
     async extract(_file: InvoiceExtractionFile) {

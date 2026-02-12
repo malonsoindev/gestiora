@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { GetProviderDetailUseCase } from '../../../src/application/use-cases/get-provider-detail.use-case.js';
-import type { ProviderRepository } from '../../../src/application/ports/provider.repository.js';
-import type { PortError } from '../../../src/application/errors/port.error.js';
-import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
-import { Cif } from '../../../src/domain/value-objects/cif.value-object.js';
-import { ok, type Result } from '../../../src/shared/result.js';
-import { ProviderNotFoundError } from '../../../src/domain/errors/provider-not-found.error.js';
+import { GetProviderDetailUseCase } from '@application/use-cases/get-provider-detail.use-case.js';
+import type { ProviderRepository } from '@application/ports/provider.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import { Cif } from '@domain/value-objects/cif.value-object.js';
+import { ok, type Result } from '@shared/result.js';
+import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
 
 const fixedNow = new Date('2026-02-04T12:00:00.000Z');
 

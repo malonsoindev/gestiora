@@ -1,7 +1,7 @@
-import type { ProviderRepository, ProviderListFilters, ProviderListResult } from '../../../src/application/ports/provider.repository.js';
-import type { PortError } from '../../../src/application/errors/port.error.js';
-import type { Provider } from '../../../src/domain/entities/provider.entity.js';
-import { ok } from '../../../src/shared/result.js';
+import type { ProviderRepository, ProviderListFilters, ProviderListResult } from '@application/ports/provider.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import type { Provider } from '@domain/entities/provider.entity.js';
+import { ok } from '@shared/result.js';
 
 export type ProviderRepositorySpyOptions = {
     existingProvider?: Provider | null;

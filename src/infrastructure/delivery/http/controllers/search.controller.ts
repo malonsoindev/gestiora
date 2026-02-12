@@ -1,9 +1,9 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import type { ProcessSearchQueryUseCase } from '../../../../application/use-cases/process-search-query.use-case.js';
-import type { GetSearchResultUseCase } from '../../../../application/use-cases/get-search-result.use-case.js';
-import { PortError } from '../../../../application/errors/port.error.js';
-import { SearchQueryNotFoundError } from '../../../../domain/errors/search-query-not-found.error.js';
-import { QueryTooAmbiguousError } from '../../../../application/errors/query-too-ambiguous.error.js';
+import type { ProcessSearchQueryUseCase } from '@application/use-cases/process-search-query.use-case.js';
+import type { GetSearchResultUseCase } from '@application/use-cases/get-search-result.use-case.js';
+import { PortError } from '@application/errors/port.error.js';
+import { SearchQueryNotFoundError } from '@domain/errors/search-query-not-found.error.js';
+import { QueryTooAmbiguousError } from '@application/errors/query-too-ambiguous.error.js';
 
 export type SearchBody = {
     query: string;

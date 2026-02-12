@@ -1,6 +1,6 @@
-import { Session } from '../../domain/entities/session.entity.js';
-import type { Result } from '../../shared/result.js';
-import type { PortError } from '../errors/port.error.js';
+import { Session } from '@domain/entities/session.entity.js';
+import type { Result } from '@shared/result.js';
+import type { PortError } from '@application/errors/port.error.js';
 
 export interface SessionRepository {
     create(session: Session): Promise<Result<void, PortError>>;
