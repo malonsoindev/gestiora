@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { ReprocessInvoiceExtractionUseCase } from '../../../src/application/use-cases/reprocess-invoice-extraction.use-case.js';
-import type { FileStorage } from '../../../src/application/ports/file-storage.js';
-import type { InvoiceExtractionAgent } from '../../../src/application/ports/invoice-extraction-agent.js';
+import { ReprocessInvoiceExtractionUseCase } from '@application/use-cases/reprocess-invoice-extraction.use-case.js';
+import type { FileStorage } from '@application/ports/file-storage.js';
+import type { InvoiceExtractionAgent } from '@application/ports/invoice-extraction-agent.js';
 import {
     Invoice,
     InvoiceHeaderSource,
     InvoiceHeaderStatus,
     InvoiceStatus,
-} from '../../../src/domain/entities/invoice.entity.js';
-import type { InvoiceProps } from '../../../src/domain/entities/invoice.entity.js';
-import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '../../../src/domain/entities/invoice-movement.entity.js';
-import { FileRef } from '../../../src/domain/value-objects/file-ref.value-object.js';
-import { InvoiceDate } from '../../../src/domain/value-objects/invoice-date.value-object.js';
-import { Money } from '../../../src/domain/value-objects/money.value-object.js';
-import { ok } from '../../../src/shared/result.js';
+} from '@domain/entities/invoice.entity.js';
+import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
+import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { FileRef } from '@domain/value-objects/file-ref.value-object.js';
+import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
+import { Money } from '@domain/value-objects/money.value-object.js';
+import { ok } from '@shared/result.js';
 import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
 import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
 import { InvoiceMovementIdGeneratorStub } from '../../shared/stubs/invoice-movement-id-generator.stub.js';

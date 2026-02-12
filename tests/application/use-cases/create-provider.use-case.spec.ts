@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { CreateProviderUseCase } from '../../../src/application/use-cases/create-provider.use-case.js';
-import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
-import type { DateProvider } from '../../../src/application/ports/date-provider.js';
-import type { ProviderIdGenerator } from '../../../src/application/ports/provider-id-generator.js';
-import type { ProviderRepository } from '../../../src/application/ports/provider.repository.js';
-import type { PortError } from '../../../src/application/errors/port.error.js';
-import { InvalidCifError } from '../../../src/domain/errors/invalid-cif.error.js';
-import { ProviderAlreadyExistsError } from '../../../src/domain/errors/provider-already-exists.error.js';
-import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
-import { Cif } from '../../../src/domain/value-objects/cif.value-object.js';
-import { ok, type Result } from '../../../src/shared/result.js';
+import { CreateProviderUseCase } from '@application/use-cases/create-provider.use-case.js';
+import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { ProviderIdGenerator } from '@application/ports/provider-id-generator.js';
+import type { ProviderRepository } from '@application/ports/provider.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
+import { ProviderAlreadyExistsError } from '@domain/errors/provider-already-exists.error.js';
+import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import { Cif } from '@domain/value-objects/cif.value-object.js';
+import { ok, type Result } from '@shared/result.js';
 
 const fixedNow = new Date('2026-02-03T10:00:00.000Z');
 

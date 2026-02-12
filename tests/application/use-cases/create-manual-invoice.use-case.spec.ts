@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { CreateManualInvoiceUseCase } from '../../../src/application/use-cases/create-manual-invoice.use-case.js';
-import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
-import { InvalidCifError } from '../../../src/domain/errors/invalid-cif.error.js';
-import { InvalidProviderStatusError } from '../../../src/domain/errors/invalid-provider-status.error.js';
-import { InvalidInvoiceTotalsError } from '../../../src/domain/errors/invalid-invoice-totals.error.js';
-import { ProviderNotFoundError } from '../../../src/domain/errors/provider-not-found.error.js';
+import { CreateManualInvoiceUseCase } from '@application/use-cases/create-manual-invoice.use-case.js';
+import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
+import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
+import { InvalidInvoiceTotalsError } from '@domain/errors/invalid-invoice-totals.error.js';
+import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
 import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
 import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
 import { InvoiceIdGeneratorStub } from '../../shared/stubs/invoice-id-generator.stub.js';

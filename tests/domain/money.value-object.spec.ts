@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Money } from '../../src/domain/value-objects/money.value-object.js';
-import { InvalidMoneyError } from '../../src/domain/errors/invalid-money.error.js';
+import { Money } from '@domain/value-objects/money.value-object.js';
+import { InvalidMoneyError } from '@domain/errors/invalid-money.error.js';
 
 describe('Money', () => {
     it('accepts zero and positive values', () => {

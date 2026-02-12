@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { ProcessSearchQueryUseCase } from '../../../src/application/use-cases/process-search-query.use-case.js';
-import type { SearchQueryRepository, SearchQueryRecord } from '../../../src/application/ports/search-query.repository.js';
-import type { SearchQueryIdGenerator } from '../../../src/application/ports/search-query-id-generator.js';
-import { PortError } from '../../../src/application/errors/port.error.js';
-import { ok, type Result } from '../../../src/shared/result.js';
-import { QueryTooAmbiguousError } from '../../../src/application/errors/query-too-ambiguous.error.js';
+import { ProcessSearchQueryUseCase } from '@application/use-cases/process-search-query.use-case.js';
+import type { SearchQueryRepository, SearchQueryRecord } from '@application/ports/search-query.repository.js';
+import type { SearchQueryIdGenerator } from '@application/ports/search-query-id-generator.js';
+import { PortError } from '@application/errors/port.error.js';
+import { ok, type Result } from '@shared/result.js';
+import { QueryTooAmbiguousError } from '@application/errors/query-too-ambiguous.error.js';
 import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
 import { fixedNow } from '../../shared/fixed-now.js';
 

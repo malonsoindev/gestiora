@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { IndexInvoicesForRagUseCase } from '../../../src/application/use-cases/index-invoices-for-rag.use-case.js';
-import type { RagDocument, RagIndexer } from '../../../src/application/ports/rag-indexer.js';
-import { PortError } from '../../../src/application/errors/port.error.js';
-import { Invoice, InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '../../../src/domain/entities/invoice.entity.js';
-import { InvoiceMovement } from '../../../src/domain/entities/invoice-movement.entity.js';
-import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
-import { InvoiceDate } from '../../../src/domain/value-objects/invoice-date.value-object.js';
-import { Money } from '../../../src/domain/value-objects/money.value-object.js';
-import { ok, fail, type Result } from '../../../src/shared/result.js';
+import { IndexInvoicesForRagUseCase } from '@application/use-cases/index-invoices-for-rag.use-case.js';
+import type { RagDocument, RagIndexer } from '@application/ports/rag-indexer.js';
+import { PortError } from '@application/errors/port.error.js';
+import { Invoice, InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
+import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
+import { Money } from '@domain/value-objects/money.value-object.js';
+import { ok, fail, type Result } from '@shared/result.js';
 
 const fixedNow = new Date('2026-02-11T10:00:00.000Z');
 

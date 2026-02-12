@@ -1,5 +1,5 @@
-import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
-import { ok } from '../../../src/shared/result.js';
+import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
+import { ok } from '@shared/result.js';
 
 export class AuditLoggerSpy implements AuditLogger {
     events: AuditEvent[] = [];

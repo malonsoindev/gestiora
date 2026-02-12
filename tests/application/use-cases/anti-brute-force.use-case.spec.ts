@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { AntiBruteForceUseCase } from '../../../src/application/use-cases/anti-brute-force.use-case.js';
-import type { LoginAttemptRepository } from '../../../src/application/ports/login-attempt.repository.js';
-import type { DateProvider } from '../../../src/application/ports/date-provider.js';
-import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
-import { AuthRateLimitedError } from '../../../src/domain/errors/auth-rate-limited.error.js';
-import { ok } from '../../../src/shared/result.js';
+import { AntiBruteForceUseCase } from '@application/use-cases/anti-brute-force.use-case.js';
+import type { LoginAttemptRepository } from '@application/ports/login-attempt.repository.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
+import { AuthRateLimitedError } from '@domain/errors/auth-rate-limited.error.js';
+import { ok } from '@shared/result.js';
 
 class FixedDateProvider implements DateProvider {
     constructor(private readonly date: Date) {}

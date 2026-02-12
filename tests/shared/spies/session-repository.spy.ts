@@ -1,6 +1,6 @@
-import type { SessionRepository } from '../../../src/application/ports/session.repository.js';
-import type { Session } from '../../../src/domain/entities/session.entity.js';
-import { ok } from '../../../src/shared/result.js';
+import type { SessionRepository } from '@application/ports/session.repository.js';
+import type { Session } from '@domain/entities/session.entity.js';
+import { ok } from '@shared/result.js';
 
 export class SessionRepositorySpy implements SessionRepository {
     revokedForUserId: string | null = null;

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { AuthorizeRequestUseCase } from '../../../src/application/use-cases/authorize-request.use-case.js';
-import type { TokenService, AccessTokenPayload } from '../../../src/application/ports/token.service.js';
-import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
-import type { DateProvider } from '../../../src/application/ports/date-provider.js';
-import { PortError } from '../../../src/application/errors/port.error.js';
-import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
-import { fail, ok } from '../../../src/shared/result.js';
+import { AuthorizeRequestUseCase } from '@application/use-cases/authorize-request.use-case.js';
+import type { TokenService, AccessTokenPayload } from '@application/ports/token.service.js';
+import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import { PortError } from '@application/errors/port.error.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import { fail, ok } from '@shared/result.js';
 
 class FixedDateProvider implements DateProvider {
     constructor(private readonly date: Date) {}

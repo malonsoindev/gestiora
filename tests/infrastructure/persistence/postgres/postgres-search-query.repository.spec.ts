@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeAll, afterAll, beforeEach } from 'vitest';
 import postgres from 'postgres';
-import { PostgresSearchQueryRepository } from '../../../../src/infrastructure/persistence/postgres/postgres-search-query.repository.js';
+import { PostgresSearchQueryRepository } from '@infrastructure/persistence/postgres/postgres-search-query.repository.js';
 
 const describeIf = process.env.DATABASE_URL ? describe : describe.skip;
 const fixedNow = new Date('2026-03-15T10:00:00.000Z');

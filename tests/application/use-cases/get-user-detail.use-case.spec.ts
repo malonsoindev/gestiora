@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { GetUserDetailUseCase } from '../../../src/application/use-cases/get-user-detail.use-case.js';
-import type { UserRepository } from '../../../src/application/ports/user.repository.js';
-import { User, UserStatus } from '../../../src/domain/entities/user.entity.js';
-import type { UserProps } from '../../../src/domain/entities/user.entity.js';
-import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
-import { Email } from '../../../src/domain/value-objects/email.value-object.js';
-import { UserNotFoundError } from '../../../src/domain/errors/user-not-found.error.js';
-import { ok } from '../../../src/shared/result.js';
+import { GetUserDetailUseCase } from '@application/use-cases/get-user-detail.use-case.js';
+import type { UserRepository } from '@application/ports/user.repository.js';
+import { User, UserStatus } from '@domain/entities/user.entity.js';
+import type { UserProps } from '@domain/entities/user.entity.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import { Email } from '@domain/value-objects/email.value-object.js';
+import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
+import { ok } from '@shared/result.js';
 
 const fixedNow = new Date('2026-02-03T12:00:00.000Z');
 

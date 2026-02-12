@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { LogoutUserUseCase } from '../../../src/application/use-cases/logout-user.use-case.js';
-import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
-import type { DateProvider } from '../../../src/application/ports/date-provider.js';
-import type { RefreshTokenHasher } from '../../../src/application/ports/refresh-token-hasher.js';
-import type { SessionRepository } from '../../../src/application/ports/session.repository.js';
-import { Session, SessionStatus } from '../../../src/domain/entities/session.entity.js';
-import type { SessionProps } from '../../../src/domain/entities/session.entity.js';
-import { ok } from '../../../src/shared/result.js';
+import { LogoutUserUseCase } from '@application/use-cases/logout-user.use-case.js';
+import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher.js';
+import type { SessionRepository } from '@application/ports/session.repository.js';
+import { Session, SessionStatus } from '@domain/entities/session.entity.js';
+import type { SessionProps } from '@domain/entities/session.entity.js';
+import { ok } from '@shared/result.js';
 
 const fixedNow = new Date('2026-01-29T15:00:00.000Z');
 
