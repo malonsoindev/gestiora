@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RagReindexProviderInvoicesService } from '../../../src/application/services/rag-reindex-provider-invoices.service.js';
 import type { InvoiceRepository, InvoiceListResult } from '../../../src/application/ports/invoice.repository.js';
-import type { ProviderRepository } from '../../../src/application/ports/provider.repository.js';
 import type { SearchQueryRepository, SearchQueryRecord } from '../../../src/application/ports/search-query.repository.js';
 import { PortError } from '../../../src/application/errors/port.error.js';
 import { Invoice, InvoiceStatus } from '../../../src/domain/entities/invoice.entity.js';
@@ -11,8 +10,8 @@ import { Money } from '../../../src/domain/value-objects/money.value-object.js';
 import { InvoiceMovement } from '../../../src/domain/entities/invoice-movement.entity.js';
 import { ProviderNotFoundError } from '../../../src/domain/errors/provider-not-found.error.js';
 import { ok, fail, type Result } from '../../../src/shared/result.js';
-
-const fixedNow = new Date('2026-02-16T10:00:00.000Z');
+import { ProviderRepositoryStub } from '../../shared/stubs/provider-repository.stub.js';
+import { fixedNow } from '../../shared/fixed-now.js';
 
 class InvoiceRepositoryStub implements InvoiceRepository {
     private readonly pages: InvoiceListResult[];
@@ -42,34 +41,6 @@ class InvoiceRepositoryStub implements InvoiceRepository {
 
     async getDetail(invoiceId: string): Promise<Result<Invoice | null, PortError>> {
         return ok(this.invoicesById.get(invoiceId) ?? null);
-    }
-}
-
-class ProviderRepositoryStub implements ProviderRepository {
-    constructor(private readonly provider: Provider | null) {}
-
-    async create() {
-        return ok(undefined);
-    }
-
-    async update() {
-        return ok(undefined);
-    }
-
-    async findById() {
-        return ok(this.provider);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async findByCif() {
-        return ok(this.provider);
-    }
-
-    async findByRazonSocialNormalized() {
-        return ok(this.provider);
     }
 }
 
@@ -146,23 +117,39 @@ const createProvider = (): Provider =>
         updatedAt: fixedNow,
     });
 
+type SutOverrides = Partial<{
+    provider: Provider | null;
+    pages: InvoiceListResult[];
+    details: Invoice[];
+    shouldFail: boolean;
+    pageSize: number;
+}>;
+
+const makeSut = (overrides: SutOverrides = {}) => {
+    const provider = overrides.provider === undefined ? createProvider() : overrides.provider;
+    const pages = overrides.pages ?? [];
+    const details = overrides.details ?? [];
+    const indexUseCase = new IndexInvoicesForRagUseCaseStub(overrides.shouldFail ?? false);
+    const service = new RagReindexProviderInvoicesService({
+        invoiceRepository: new InvoiceRepositoryStub(pages, details),
+        providerRepository: new ProviderRepositoryStub(provider),
+        searchQueryRepository: new SearchQueryRepositoryStub(),
+        indexInvoicesForRagUseCase: indexUseCase,
+        pageSize: overrides.pageSize ?? 10,
+    });
+
+    return { service, indexUseCase };
+};
+
 describe('RagReindexProviderInvoicesService', () => {
     it('reindexes invoices in pages', async () => {
         const invoices = [createInvoice('1'), createInvoice('2')];
-        const invoiceRepository = new InvoiceRepositoryStub(
-            [
+        const { service, indexUseCase } = makeSut({
+            pages: [
                 { items: invoices.slice(0, 1), total: 2 },
                 { items: invoices.slice(1, 2), total: 2 },
             ],
-            invoices,
-        );
-        const providerRepository = new ProviderRepositoryStub(createProvider());
-        const indexUseCase = new IndexInvoicesForRagUseCaseStub();
-        const service = new RagReindexProviderInvoicesService({
-            invoiceRepository,
-            providerRepository,
-            searchQueryRepository: new SearchQueryRepositoryStub(),
-            indexInvoicesForRagUseCase: indexUseCase,
+            details: invoices,
             pageSize: 1,
         });
 
@@ -173,16 +160,7 @@ describe('RagReindexProviderInvoicesService', () => {
     });
 
     it('returns error when provider is missing', async () => {
-        const invoiceRepository = new InvoiceRepositoryStub([], []);
-        const providerRepository = new ProviderRepositoryStub(null);
-        const indexUseCase = new IndexInvoicesForRagUseCaseStub();
-        const service = new RagReindexProviderInvoicesService({
-            invoiceRepository,
-            providerRepository,
-            searchQueryRepository: new SearchQueryRepositoryStub(),
-            indexInvoicesForRagUseCase: indexUseCase,
-            pageSize: 10,
-        });
+        const { service } = makeSut({ provider: null, pages: [], details: [] });
 
         const result = await service.reindexByProviderId('provider-1');
 
@@ -194,15 +172,10 @@ describe('RagReindexProviderInvoicesService', () => {
 
     it('returns error when indexing fails', async () => {
         const invoices = [createInvoice('1')];
-        const invoiceRepository = new InvoiceRepositoryStub([{ items: invoices, total: 1 }], invoices);
-        const providerRepository = new ProviderRepositoryStub(createProvider());
-        const indexUseCase = new IndexInvoicesForRagUseCaseStub(true);
-        const service = new RagReindexProviderInvoicesService({
-            invoiceRepository,
-            providerRepository,
-            searchQueryRepository: new SearchQueryRepositoryStub(),
-            indexInvoicesForRagUseCase: indexUseCase,
-            pageSize: 10,
+        const { service } = makeSut({
+            pages: [{ items: invoices, total: 1 }],
+            details: invoices,
+            shouldFail: true,
         });
 
         const result = await service.reindexByProviderId('provider-1');

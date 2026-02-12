@@ -2,12 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { ProcessSearchQueryUseCase } from '../../../src/application/use-cases/process-search-query.use-case.js';
 import type { SearchQueryRepository, SearchQueryRecord } from '../../../src/application/ports/search-query.repository.js';
 import type { SearchQueryIdGenerator } from '../../../src/application/ports/search-query-id-generator.js';
-import type { DateProvider } from '../../../src/application/ports/date-provider.js';
 import { PortError } from '../../../src/application/errors/port.error.js';
 import { ok, type Result } from '../../../src/shared/result.js';
 import { QueryTooAmbiguousError } from '../../../src/application/errors/query-too-ambiguous.error.js';
-
-const fixedNow = new Date('2026-02-20T10:00:00.000Z');
+import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
+import { fixedNow } from '../../shared/fixed-now.js';
 
 class QueryInvoicesRagUseCaseStub {
     private readonly answer: string;
@@ -57,11 +56,40 @@ class SearchQueryIdGeneratorStub implements SearchQueryIdGenerator {
     }
 }
 
-class DateProviderStub implements DateProvider {
-    now(): Result<Date, PortError> {
-        return ok(fixedNow);
-    }
-}
+type SutOverrides = Partial<{
+    repository: SearchQueryRepository;
+    queryId: string;
+    answer: string;
+    now: Date;
+}>;
+
+const makeSut = (overrides: SutOverrides = {}) => {
+    const now = overrides.now ?? fixedNow;
+    const repository = overrides.repository ?? new SearchQueryRepositoryStub();
+    const useCase = new ProcessSearchQueryUseCase({
+        queryInvoicesRagUseCase: new QueryInvoicesRagUseCaseStub(overrides.answer ?? 'respuesta'),
+        searchQueryRepository: repository,
+        searchQueryIdGenerator: new SearchQueryIdGeneratorStub(overrides.queryId ?? 'query-9'),
+        dateProvider: new DateProviderStub(now),
+    });
+
+    return { useCase, repository };
+};
+
+const cachedQueryInput = {
+    userId: 'user-1',
+    query: '  TOTAL   FACTURA  ',
+};
+
+const defaultQueryInput = {
+    userId: 'user-1',
+    query: 'total factura',
+};
+
+const ambiguousQueryInput = {
+    userId: 'user-1',
+    query: 'facturas de marzo',
+};
 
 describe('ProcessSearchQueryUseCase', () => {
     it('returns cached result for repeated query', async () => {
@@ -78,17 +106,9 @@ describe('ProcessSearchQueryUseCase', () => {
         };
         await repository.save(cachedRecord);
 
-        const useCase = new ProcessSearchQueryUseCase({
-            queryInvoicesRagUseCase: new QueryInvoicesRagUseCaseStub('respuesta'),
-            searchQueryRepository: repository,
-            searchQueryIdGenerator: new SearchQueryIdGeneratorStub('query-2'),
-            dateProvider: new DateProviderStub(),
-        });
+        const { useCase } = makeSut({ repository, queryId: 'query-2' });
 
-        const result = await useCase.execute({
-            userId: 'user-1',
-            query: '  TOTAL   FACTURA  ',
-        });
+        const result = await useCase.execute(cachedQueryInput);
 
         expect(result.success).toBe(true);
         if (result.success) {
@@ -98,18 +118,9 @@ describe('ProcessSearchQueryUseCase', () => {
     });
 
     it('stores a new result when query is new', async () => {
-        const repository = new SearchQueryRepositoryStub();
-        const useCase = new ProcessSearchQueryUseCase({
-            queryInvoicesRagUseCase: new QueryInvoicesRagUseCaseStub('respuesta'),
-            searchQueryRepository: repository,
-            searchQueryIdGenerator: new SearchQueryIdGeneratorStub('query-9'),
-            dateProvider: new DateProviderStub(),
-        });
+        const { useCase } = makeSut();
 
-        const result = await useCase.execute({
-            userId: 'user-1',
-            query: 'total factura',
-        });
+        const result = await useCase.execute(defaultQueryInput);
 
         expect(result.success).toBe(true);
         if (result.success) {
@@ -119,18 +130,9 @@ describe('ProcessSearchQueryUseCase', () => {
     });
 
     it('returns error when query is ambiguous', async () => {
-        const repository = new SearchQueryRepositoryStub();
-        const useCase = new ProcessSearchQueryUseCase({
-            queryInvoicesRagUseCase: new QueryInvoicesRagUseCaseStub('respuesta'),
-            searchQueryRepository: repository,
-            searchQueryIdGenerator: new SearchQueryIdGeneratorStub('query-9'),
-            dateProvider: new DateProviderStub(),
-        });
+        const { useCase } = makeSut();
 
-        const result = await useCase.execute({
-            userId: 'user-1',
-            query: 'facturas de marzo',
-        });
+        const result = await useCase.execute(ambiguousQueryInput);
 
         expect(result.success).toBe(false);
         if (!result.success) {

@@ -1,66 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { SoftDeleteProviderUseCase } from '../../../src/application/use-cases/soft-delete-provider.use-case.js';
-import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
-import type { DateProvider } from '../../../src/application/ports/date-provider.js';
-import type { ProviderRepository } from '../../../src/application/ports/provider.repository.js';
-import type { PortError } from '../../../src/application/errors/port.error.js';
 import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
 import type { ProviderProps } from '../../../src/domain/entities/provider.entity.js';
 import { Cif } from '../../../src/domain/value-objects/cif.value-object.js';
 import { ProviderNotFoundError } from '../../../src/domain/errors/provider-not-found.error.js';
-import { ok, type Result } from '../../../src/shared/result.js';
 import { RagReindexProviderInvoicesServiceStub } from '../stubs/rag-reindex-provider-invoices.service.stub.js';
-
-const fixedNow = new Date('2026-02-07T10:00:00.000Z');
-
-class DateProviderStub implements DateProvider {
-    now(): Result<Date, PortError> {
-        return ok(fixedNow);
-    }
-}
-
-class AuditLoggerSpy implements AuditLogger {
-    events: AuditEvent[] = [];
-
-    async log(event: AuditEvent) {
-        this.events.push(event);
-        return ok(undefined);
-    }
-}
-
-class ProviderRepositorySpy implements ProviderRepository {
-    updatedProvider: Provider | null = null;
-    private readonly existingProvider: Provider | null;
-
-    constructor(existingProvider: Provider | null) {
-        this.existingProvider = existingProvider;
-    }
-
-    async findById(): Promise<Result<Provider | null, PortError>> {
-        return ok(this.existingProvider);
-    }
-
-    async create(): Promise<Result<void, PortError>> {
-        return ok(undefined);
-    }
-
-    async update(provider: Provider): Promise<Result<void, PortError>> {
-        this.updatedProvider = provider;
-        return ok(undefined);
-    }
-
-    async list(): Promise<Result<{ items: Provider[]; total: number }, PortError>> {
-        return ok({ items: [], total: 0 });
-    }
-
-    async findByCif(): Promise<Result<Provider | null, PortError>> {
-        return ok(null);
-    }
-
-    async findByRazonSocialNormalized(): Promise<Result<Provider | null, PortError>> {
-        return ok(null);
-    }
-}
+import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
+import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
+import { ProviderRepositorySpy } from '../../shared/spies/provider-repository.spy.js';
+import { fixedNow } from '../../shared/fixed-now.js';
 
 const createProvider = (overrides: Partial<ProviderProps> = {}): Provider =>
     Provider.create({
@@ -77,22 +25,37 @@ const createProvider = (overrides: Partial<ProviderProps> = {}): Provider =>
         ...overrides,
     });
 
+type SutOverrides = Partial<{
+    provider: Provider | null;
+    now: Date;
+}>;
+
+const makeSut = (overrides: SutOverrides = {}) => {
+    const now = overrides.now ?? fixedNow;
+    const provider = overrides.provider === undefined ? createProvider() : overrides.provider;
+    const providerRepository = new ProviderRepositorySpy({ existingProvider: provider });
+    const auditLogger = new AuditLoggerSpy();
+
+    const useCase = new SoftDeleteProviderUseCase({
+        providerRepository,
+        auditLogger,
+        dateProvider: new DateProviderStub(now),
+        ragReindexProviderInvoicesService: new RagReindexProviderInvoicesServiceStub(),
+    });
+
+    return { useCase, providerRepository, auditLogger };
+};
+
+const baseCommand = {
+    actorUserId: 'user-1',
+    providerId: 'provider-1',
+};
+
 describe('SoftDeleteProviderUseCase', () => {
     it('soft deletes provider and audits the action', async () => {
-        const providerRepository = new ProviderRepositorySpy(createProvider());
-        const auditLogger = new AuditLoggerSpy();
+        const { useCase, providerRepository, auditLogger } = makeSut();
 
-        const useCase = new SoftDeleteProviderUseCase({
-            providerRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            ragReindexProviderInvoicesService: new RagReindexProviderInvoicesServiceStub(),
-        });
-
-        const result = await useCase.execute({
-            actorUserId: 'user-1',
-            providerId: 'provider-1',
-        });
+        const result = await useCase.execute(baseCommand);
 
         expect(result.success).toBe(true);
         expect(providerRepository.updatedProvider?.status).toBe(ProviderStatus.Deleted);
@@ -101,15 +64,7 @@ describe('SoftDeleteProviderUseCase', () => {
     });
 
     it('rejects when provider does not exist', async () => {
-        const providerRepository = new ProviderRepositorySpy(null);
-        const auditLogger = new AuditLoggerSpy();
-
-        const useCase = new SoftDeleteProviderUseCase({
-            providerRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            ragReindexProviderInvoicesService: new RagReindexProviderInvoicesServiceStub(),
-        });
+        const { useCase, providerRepository } = makeSut({ provider: null });
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
@@ -124,22 +79,11 @@ describe('SoftDeleteProviderUseCase', () => {
     });
 
     it('rejects when provider is already deleted', async () => {
-        const providerRepository = new ProviderRepositorySpy(
-            createProvider({ deletedAt: new Date('2026-02-01T00:00:00.000Z') }),
-        );
-        const auditLogger = new AuditLoggerSpy();
-
-        const useCase = new SoftDeleteProviderUseCase({
-            providerRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            ragReindexProviderInvoicesService: new RagReindexProviderInvoicesServiceStub(),
+        const { useCase, providerRepository } = makeSut({
+            provider: createProvider({ deletedAt: new Date('2026-02-01T00:00:00.000Z') }),
         });
 
-        const result = await useCase.execute({
-            actorUserId: 'user-1',
-            providerId: 'provider-1',
-        });
+        const result = await useCase.execute(baseCommand);
 
         expect(result.success).toBe(false);
         if (!result.success) {

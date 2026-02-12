@@ -1,135 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { UploadInvoiceDocumentUseCase } from '../../../src/application/use-cases/upload-invoice-document.use-case.js';
-import type { InvoiceRepository } from '../../../src/application/ports/invoice.repository.js';
 import type { FileStorage } from '../../../src/application/ports/file-storage.js';
 import type { InvoiceExtractionAgent, InvoiceExtractionResult } from '../../../src/application/ports/invoice-extraction-agent.js';
-import type { InvoiceIdGenerator } from '../../../src/application/ports/invoice-id-generator.js';
-import type { InvoiceMovementIdGenerator } from '../../../src/application/ports/invoice-movement-id-generator.js';
-import type { ProviderRepository } from '../../../src/application/ports/provider.repository.js';
 import type { ProviderIdGenerator } from '../../../src/application/ports/provider-id-generator.js';
-import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
-import type { DateProvider } from '../../../src/application/ports/date-provider.js';
 import type { PortError } from '../../../src/application/errors/port.error.js';
 import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
 import { ok, type Result } from '../../../src/shared/result.js';
 import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
-
-const fixedNow = new Date('2026-02-24T10:00:00.000Z');
-
-class DateProviderStub implements DateProvider {
-    now(): Result<Date, PortError> {
-        return ok(fixedNow);
-    }
-}
-
-class AuditLoggerSpy implements AuditLogger {
-    events: AuditEvent[] = [];
-
-    async log(event: AuditEvent) {
-        this.events.push(event);
-        return ok(undefined);
-    }
-}
-
-class InvoiceIdGeneratorStub implements InvoiceIdGenerator {
-    constructor(private readonly id: string) {}
-
-    generate(): string {
-        return this.id;
-    }
-}
-
-class InvoiceMovementIdGeneratorStub implements InvoiceMovementIdGenerator {
-    private readonly ids: string[];
-
-    constructor(ids: string[]) {
-        this.ids = [...ids];
-    }
-
-    generate(): string {
-        const id = this.ids.shift();
-        return id ?? 'movement-fallback';
-    }
-}
-
-class ProviderRepositoryStub implements ProviderRepository {
-    constructor(private readonly provider: Provider | null) {}
-
-    async findById() {
-        return ok(this.provider);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async create() {
-        return ok(undefined);
-    }
-
-    async update() {
-        return ok(undefined);
-    }
-
-    async findByCif() {
-        return ok(this.provider);
-    }
-
-    async findByRazonSocialNormalized() {
-        return ok(null);
-    }
-}
-
-class InvoiceRepositorySpy implements InvoiceRepository {
-    createdInvoice = null as unknown;
-
-    async create(invoice: unknown) {
-        this.createdInvoice = invoice;
-        return ok(undefined);
-    }
-
-    async findById() {
-        return ok(null);
-    }
-
-    async update() {
-        return ok(undefined);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async getDetail() {
-        return ok(null);
-    }
-}
-
-class FileStorageStub implements FileStorage {
-    async store() {
-        return ok({
-            storageKey: 'invoices/2026/02/invoice-1.pdf',
-            filename: 'invoice-1.pdf',
-            mimeType: 'application/pdf',
-            sizeBytes: 1234,
-            checksum: 'checksum-1',
-        });
-    }
-
-    async delete() {
-        return ok(undefined);
-    }
-
-    async get() {
-        return ok({
-            storageKey: 'invoices/2026/02/invoice-1.pdf',
-            filename: 'invoice-1.pdf',
-            mimeType: 'application/pdf',
-            sizeBytes: 1234,
-            content: Buffer.from('pdf-content'),
-        });
-    }
-}
+import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
+import { InvoiceIdGeneratorStub } from '../../shared/stubs/invoice-id-generator.stub.js';
+import { InvoiceMovementIdGeneratorStub } from '../../shared/stubs/invoice-movement-id-generator.stub.js';
+import { ProviderRepositoryStub } from '../../shared/stubs/provider-repository.stub.js';
+import { FileStorageStub } from '../../shared/stubs/file-storage.stub.js';
+import { InvoiceRepositorySpy } from '../../shared/spies/invoice-repository.spy.js';
+import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
+import { fixedNow } from '../../shared/fixed-now.js';
 
 class ExtractionAgentStub implements InvoiceExtractionAgent {
     async extract(): Promise<Result<InvoiceExtractionResult, PortError>> {
@@ -238,116 +123,82 @@ const createProvider = (): Provider =>
         updatedAt: fixedNow,
     });
 
+const fileInput = {
+    filename: 'invoice-1.pdf',
+    mimeType: 'application/pdf',
+    sizeBytes: 1234,
+    checksum: 'checksum-1',
+    content: Buffer.from('pdf-content'),
+};
+
+type SutOverrides = Partial<{
+    provider: Provider | null;
+    extractionAgent: InvoiceExtractionAgent;
+    invoiceId: string;
+    movementIds: string[];
+    providerId: string;
+    now: Date;
+    fileStorage: FileStorage;
+}>;
+
+const makeSut = (overrides: SutOverrides = {}) => {
+    const now = overrides.now ?? fixedNow;
+    const provider = overrides.provider === undefined ? createProvider() : overrides.provider;
+    const providerRepository = new ProviderRepositoryStub(provider);
+    const invoiceRepository = new InvoiceRepositorySpy();
+    const fileStorage = overrides.fileStorage ?? new FileStorageStub();
+    const extractionAgent = overrides.extractionAgent ?? new ExtractionAgentStub();
+    const auditLogger = new AuditLoggerSpy();
+
+    const useCase = new UploadInvoiceDocumentUseCase({
+        providerRepository,
+        invoiceRepository,
+        fileStorage,
+        extractionAgent,
+        auditLogger,
+        dateProvider: new DateProviderStub(now),
+        invoiceIdGenerator: new InvoiceIdGeneratorStub(overrides.invoiceId ?? 'invoice-fixed'),
+        invoiceMovementIdGenerator: new InvoiceMovementIdGeneratorStub(overrides.movementIds ?? ['movement-1']),
+        providerIdGenerator: new ProviderIdGeneratorStub(overrides.providerId ?? 'provider-fixed'),
+        ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
+    });
+
+    return { useCase, providerRepository, invoiceRepository, fileStorage, auditLogger };
+};
+
+const baseCommand = {
+    actorUserId: 'user-1',
+    file: fileInput,
+};
+
 describe('UploadInvoiceDocumentUseCase', () => {
     it('creates invoice when provider is found', async () => {
-        const providerRepository = new ProviderRepositoryStub(createProvider());
-        const invoiceRepository = new InvoiceRepositorySpy();
-        const fileStorage = new FileStorageStub();
-        const extractionAgent = new ExtractionAgentStub();
-        const auditLogger = new AuditLoggerSpy();
-        const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
-        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
-        const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+        const { useCase, invoiceRepository } = makeSut();
 
-        const useCase = new UploadInvoiceDocumentUseCase({
-            providerRepository,
-            invoiceRepository,
-            fileStorage,
-            extractionAgent,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            invoiceIdGenerator,
-            invoiceMovementIdGenerator,
-            providerIdGenerator,
-            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
-        });
-
-        const result = await useCase.execute({
-            actorUserId: 'user-1',
-            file: {
-                filename: 'invoice-1.pdf',
-                mimeType: 'application/pdf',
-                sizeBytes: 1234,
-                checksum: 'checksum-1',
-                content: Buffer.from('pdf-content'),
-            },
-        });
+        const result = await useCase.execute(baseCommand);
 
         expect(result.success).toBe(true);
         expect(invoiceRepository.createdInvoice).not.toBeNull();
     });
 
     it('creates invoice when provider is not found', async () => {
-        const providerRepository = new ProviderRepositoryStub(null);
-        const invoiceRepository = new InvoiceRepositorySpy();
-        const fileStorage = new FileStorageStub();
-        const extractionAgent = new ExtractionAgentErrorStub();
-        const auditLogger = new AuditLoggerSpy();
-        const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
-        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
-        const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
-
-        const useCase = new UploadInvoiceDocumentUseCase({
-            providerRepository,
-            invoiceRepository,
-            fileStorage,
-            extractionAgent,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            invoiceIdGenerator,
-            invoiceMovementIdGenerator,
-            providerIdGenerator,
-            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
+        const { useCase, invoiceRepository } = makeSut({
+            provider: null,
+            extractionAgent: new ExtractionAgentErrorStub(),
         });
 
-        const result = await useCase.execute({
-            actorUserId: 'user-1',
-            file: {
-                filename: 'invoice-1.pdf',
-                mimeType: 'application/pdf',
-                sizeBytes: 1234,
-                checksum: 'checksum-1',
-                content: Buffer.from('pdf-content'),
-            },
-        });
+        const result = await useCase.execute(baseCommand);
 
         expect(result.success).toBe(true);
         expect(invoiceRepository.createdInvoice).not.toBeNull();
     });
 
     it('creates invoice with inconsistent status when totals mismatch', async () => {
-        const providerRepository = new ProviderRepositoryStub(createProvider());
-        const invoiceRepository = new InvoiceRepositorySpy();
-        const fileStorage = new FileStorageStub();
-        const extractionAgent = new ExtractionAgentTotalsMismatchStub();
-        const auditLogger = new AuditLoggerSpy();
-        const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
-        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
-        const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
-
-        const useCase = new UploadInvoiceDocumentUseCase({
-            providerRepository,
-            invoiceRepository,
-            fileStorage,
-            extractionAgent,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            invoiceIdGenerator,
-            invoiceMovementIdGenerator,
-            providerIdGenerator,
-            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
+        const { useCase, invoiceRepository } = makeSut({
+            extractionAgent: new ExtractionAgentTotalsMismatchStub(),
         });
 
-        const result = await useCase.execute({
-            actorUserId: 'user-1',
-            file: {
-                filename: 'invoice-1.pdf',
-                mimeType: 'application/pdf',
-                sizeBytes: 1234,
-                checksum: 'checksum-1',
-                content: Buffer.from('pdf-content'),
-            },
-        });
+        const result = await useCase.execute(baseCommand);
 
         expect(result.success).toBe(true);
         expect(invoiceRepository.createdInvoice).not.toBeNull();

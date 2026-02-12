@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { RagReindexInvoiceService } from '../../../src/application/services/rag-reindex-invoice.service.js';
-import type { InvoiceRepository } from '../../../src/application/ports/invoice.repository.js';
-import type { ProviderRepository } from '../../../src/application/ports/provider.repository.js';
 import type { SearchQueryRepository, SearchQueryRecord } from '../../../src/application/ports/search-query.repository.js';
 import { PortError } from '../../../src/application/errors/port.error.js';
 import { Invoice, InvoiceStatus } from '../../../src/domain/entities/invoice.entity.js';
@@ -11,60 +9,9 @@ import { Money } from '../../../src/domain/value-objects/money.value-object.js';
 import { InvoiceMovement } from '../../../src/domain/entities/invoice-movement.entity.js';
 import { InvoiceNotFoundError } from '../../../src/domain/errors/invoice-not-found.error.js';
 import { ok, fail, type Result } from '../../../src/shared/result.js';
-
-const fixedNow = new Date('2026-02-15T10:00:00.000Z');
-
-class InvoiceRepositoryStub implements InvoiceRepository {
-    constructor(private readonly invoice: Invoice | null) {}
-
-    async create() {
-        return ok(undefined);
-    }
-
-    async findById() {
-        return ok(this.invoice);
-    }
-
-    async update() {
-        return ok(undefined);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async getDetail() {
-        return ok(this.invoice);
-    }
-}
-
-class ProviderRepositoryStub implements ProviderRepository {
-    constructor(private readonly provider: Provider | null) {}
-
-    async create() {
-        return ok(undefined);
-    }
-
-    async update() {
-        return ok(undefined);
-    }
-
-    async findById() {
-        return ok(this.provider);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async findByCif() {
-        return ok(this.provider);
-    }
-
-    async findByRazonSocialNormalized() {
-        return ok(this.provider);
-    }
-}
+import { InvoiceRepositoryStub } from '../../shared/stubs/invoice-repository.stub.js';
+import { ProviderRepositoryStub } from '../../shared/stubs/provider-repository.stub.js';
+import { fixedNow } from '../../shared/fixed-now.js';
 
 class IndexInvoicesForRagUseCaseStub {
     private readonly shouldFail: boolean;
@@ -139,29 +86,38 @@ const createProvider = (): Provider =>
         updatedAt: fixedNow,
     });
 
+type SutOverrides = Partial<{
+    invoice: Invoice | null;
+    provider: Provider | null;
+    shouldFail: boolean;
+}>;
+
+const makeSut = (overrides: SutOverrides = {}) => {
+    const invoice = overrides.invoice === undefined ? createInvoice() : overrides.invoice;
+    const provider = overrides.provider === undefined ? createProvider() : overrides.provider;
+    const indexUseCase = new IndexInvoicesForRagUseCaseStub(overrides.shouldFail ?? false);
+    const service = new RagReindexInvoiceService({
+        invoiceRepository: new InvoiceRepositoryStub(invoice),
+        providerRepository: new ProviderRepositoryStub(provider),
+        searchQueryRepository: new SearchQueryRepositoryStub(),
+        indexInvoicesForRagUseCase: indexUseCase,
+    });
+
+    return { service, indexUseCase, invoice };
+};
+
 describe('RagReindexInvoiceService', () => {
     it('reindexes invoice with provider', async () => {
-        const invoice = createInvoice();
-        const provider = createProvider();
-        const service = new RagReindexInvoiceService({
-            invoiceRepository: new InvoiceRepositoryStub(invoice),
-            providerRepository: new ProviderRepositoryStub(provider),
-            searchQueryRepository: new SearchQueryRepositoryStub(),
-            indexInvoicesForRagUseCase: new IndexInvoicesForRagUseCaseStub(),
-        });
+        const { service, invoice } = makeSut();
+        const invoiceId = invoice?.id ?? 'invoice-1';
 
-        const result = await service.reindex(invoice.id);
+        const result = await service.reindex(invoiceId);
 
         expect(result.success).toBe(true);
     });
 
     it('returns error when invoice is missing', async () => {
-        const service = new RagReindexInvoiceService({
-            invoiceRepository: new InvoiceRepositoryStub(null),
-            providerRepository: new ProviderRepositoryStub(null),
-            searchQueryRepository: new SearchQueryRepositoryStub(),
-            indexInvoicesForRagUseCase: new IndexInvoicesForRagUseCaseStub(),
-        });
+        const { service } = makeSut({ invoice: null, provider: null });
 
         const result = await service.reindex('invoice-1');
 
@@ -172,16 +128,10 @@ describe('RagReindexInvoiceService', () => {
     });
 
     it('returns error when indexing fails', async () => {
-        const invoice = createInvoice();
-        const provider = createProvider();
-        const service = new RagReindexInvoiceService({
-            invoiceRepository: new InvoiceRepositoryStub(invoice),
-            providerRepository: new ProviderRepositoryStub(provider),
-            searchQueryRepository: new SearchQueryRepositoryStub(),
-            indexInvoicesForRagUseCase: new IndexInvoicesForRagUseCaseStub(true),
-        });
+        const { service, invoice } = makeSut({ shouldFail: true });
+        const invoiceId = invoice?.id ?? 'invoice-1';
 
-        const result = await service.reindex(invoice.id);
+        const result = await service.reindex(invoiceId);
 
         expect(result.success).toBe(false);
     });
