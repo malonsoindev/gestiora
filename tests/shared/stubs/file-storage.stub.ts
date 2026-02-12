@@ -1,5 +1,5 @@
-import type { FileStorage, StoredFile, StoredFileContent } from '../../../src/application/ports/file-storage.js';
-import { ok } from '../../../src/shared/result.js';
+import type { FileStorage, StoredFile, StoredFileContent } from '@application/ports/file-storage.js';
+import { ok } from '@shared/result.js';
 
 export type FileStorageStubOptions = Partial<{
     storeResult: StoredFile;

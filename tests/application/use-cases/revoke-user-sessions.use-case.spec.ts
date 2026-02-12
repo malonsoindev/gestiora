@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { RevokeUserSessionsUseCase } from '../../../src/application/use-cases/revoke-user-sessions.use-case.js';
-import { UserNotFoundError } from '../../../src/domain/errors/user-not-found.error.js';
+import { RevokeUserSessionsUseCase } from '@application/use-cases/revoke-user-sessions.use-case.js';
+import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
 import { createTestUser } from '../../shared/fixtures/user.fixture.js';
 import { buildUserSessionUseCaseSut } from '../../shared/helpers/user-use-case-sut.js';
 

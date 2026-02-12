@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { SoftDeleteProviderUseCase } from '../../../src/application/use-cases/soft-delete-provider.use-case.js';
-import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
-import type { ProviderProps } from '../../../src/domain/entities/provider.entity.js';
-import { Cif } from '../../../src/domain/value-objects/cif.value-object.js';
-import { ProviderNotFoundError } from '../../../src/domain/errors/provider-not-found.error.js';
+import { SoftDeleteProviderUseCase } from '@application/use-cases/soft-delete-provider.use-case.js';
+import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import type { ProviderProps } from '@domain/entities/provider.entity.js';
+import { Cif } from '@domain/value-objects/cif.value-object.js';
+import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
 import { RagReindexProviderInvoicesServiceStub } from '../stubs/rag-reindex-provider-invoices.service.stub.js';
 import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';

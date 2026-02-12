@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { InMemoryProviderRepository } from '../../../../src/infrastructure/persistence/in-memory/in-memory-provider.repository.js';
-import { Provider, ProviderStatus } from '../../../../src/domain/entities/provider.entity.js';
-import type { ProviderProps } from '../../../../src/domain/entities/provider.entity.js';
-import { Cif } from '../../../../src/domain/value-objects/cif.value-object.js';
+import { InMemoryProviderRepository } from '@infrastructure/persistence/in-memory/in-memory-provider.repository.js';
+import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import type { ProviderProps } from '@domain/entities/provider.entity.js';
+import { Cif } from '@domain/value-objects/cif.value-object.js';
 
 const fixedNow = new Date('2026-02-07T12:00:00.000Z');
 

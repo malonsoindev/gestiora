@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { RagReindexProviderInvoicesService } from '../../../src/application/services/rag-reindex-provider-invoices.service.js';
-import type { InvoiceRepository, InvoiceListResult } from '../../../src/application/ports/invoice.repository.js';
-import type { SearchQueryRepository, SearchQueryRecord } from '../../../src/application/ports/search-query.repository.js';
-import { PortError } from '../../../src/application/errors/port.error.js';
-import { Invoice, InvoiceStatus } from '../../../src/domain/entities/invoice.entity.js';
-import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
-import { InvoiceDate } from '../../../src/domain/value-objects/invoice-date.value-object.js';
-import { Money } from '../../../src/domain/value-objects/money.value-object.js';
-import { InvoiceMovement } from '../../../src/domain/entities/invoice-movement.entity.js';
-import { ProviderNotFoundError } from '../../../src/domain/errors/provider-not-found.error.js';
-import { ok, fail, type Result } from '../../../src/shared/result.js';
+import { RagReindexProviderInvoicesService } from '@application/services/rag-reindex-provider-invoices.service.js';
+import type { InvoiceRepository, InvoiceListResult } from '@application/ports/invoice.repository.js';
+import type { SearchQueryRepository, SearchQueryRecord } from '@application/ports/search-query.repository.js';
+import { PortError } from '@application/errors/port.error.js';
+import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
+import { Money } from '@domain/value-objects/money.value-object.js';
+import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
+import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
+import { ok, fail, type Result } from '@shared/result.js';
 import { ProviderRepositoryStub } from '../../shared/stubs/provider-repository.stub.js';
 import { fixedNow } from '../../shared/fixed-now.js';
 

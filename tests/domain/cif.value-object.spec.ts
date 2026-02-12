@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Cif } from '../../src/domain/value-objects/cif.value-object.js';
-import { InvalidCifError } from '../../src/domain/errors/invalid-cif.error.js';
+import { Cif } from '@domain/value-objects/cif.value-object.js';
+import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
 
 describe('Cif', () => {
     it('normalizes by trimming, uppercasing, and removing spaces and hyphens', () => {

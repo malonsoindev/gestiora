@@ -1,6 +1,6 @@
-import type { SessionRepository } from '../../../src/application/ports/session.repository.js';
-import type { UserRepository } from '../../../src/application/ports/user.repository.js';
-import type { User } from '../../../src/domain/entities/user.entity.js';
+import type { SessionRepository } from '@application/ports/session.repository.js';
+import type { UserRepository } from '@application/ports/user.repository.js';
+import type { User } from '@domain/entities/user.entity.js';
 import { SessionRepositorySpy } from '../spies/session-repository.spy.js';
 import { UserRepositorySpy } from '../spies/user-repository.spy.js';
 

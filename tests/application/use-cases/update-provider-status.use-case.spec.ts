@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { UpdateProviderStatusUseCase } from '../../../src/application/use-cases/update-provider-status.use-case.js';
-import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
-import type { ProviderProps } from '../../../src/domain/entities/provider.entity.js';
-import { Cif } from '../../../src/domain/value-objects/cif.value-object.js';
-import { ProviderNotFoundError } from '../../../src/domain/errors/provider-not-found.error.js';
-import { InvalidProviderStatusError } from '../../../src/domain/errors/invalid-provider-status.error.js';
+import { UpdateProviderStatusUseCase } from '@application/use-cases/update-provider-status.use-case.js';
+import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import type { ProviderProps } from '@domain/entities/provider.entity.js';
+import { Cif } from '@domain/value-objects/cif.value-object.js';
+import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
+import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
 import { RagReindexProviderInvoicesServiceStub } from '../stubs/rag-reindex-provider-invoices.service.stub.js';
 import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';

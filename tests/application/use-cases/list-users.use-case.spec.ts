@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ListUsersUseCase } from '../../../src/application/use-cases/list-users.use-case.js';
-import type { UserRepository } from '../../../src/application/ports/user.repository.js';
-import { User, UserStatus } from '../../../src/domain/entities/user.entity.js';
-import type { UserProps } from '../../../src/domain/entities/user.entity.js';
-import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
-import { Email } from '../../../src/domain/value-objects/email.value-object.js';
-import { ok } from '../../../src/shared/result.js';
+import { ListUsersUseCase } from '@application/use-cases/list-users.use-case.js';
+import type { UserRepository } from '@application/ports/user.repository.js';
+import { User, UserStatus } from '@domain/entities/user.entity.js';
+import type { UserProps } from '@domain/entities/user.entity.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import { Email } from '@domain/value-objects/email.value-object.js';
+import { ok } from '@shared/result.js';
 
 const fixedNow = new Date('2026-02-03T10:00:00.000Z');
 

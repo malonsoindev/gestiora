@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { GetSearchResultUseCase } from '../../../src/application/use-cases/get-search-result.use-case.js';
-import type { SearchQueryRepository, SearchQueryRecord } from '../../../src/application/ports/search-query.repository.js';
-import type { PortError } from '../../../src/application/errors/port.error.js';
-import { SearchQueryNotFoundError } from '../../../src/domain/errors/search-query-not-found.error.js';
-import { ok, type Result } from '../../../src/shared/result.js';
+import { GetSearchResultUseCase } from '@application/use-cases/get-search-result.use-case.js';
+import type { SearchQueryRepository, SearchQueryRecord } from '@application/ports/search-query.repository.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { SearchQueryNotFoundError } from '@domain/errors/search-query-not-found.error.js';
+import { ok, type Result } from '@shared/result.js';
 
 const fixedNow = new Date('2026-02-21T10:00:00.000Z');
 

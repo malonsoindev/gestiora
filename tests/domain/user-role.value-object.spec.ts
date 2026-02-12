@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { UserRole } from '../../src/domain/value-objects/user-role.value-object.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 
 describe('UserRole', () => {
     it('creates a user role value object', () => {

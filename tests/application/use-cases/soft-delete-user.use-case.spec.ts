@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { SoftDeleteUserUseCase } from '../../../src/application/use-cases/soft-delete-user.use-case.js';
-import { UserStatus } from '../../../src/domain/entities/user.entity.js';
-import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
-import { UserNotFoundError } from '../../../src/domain/errors/user-not-found.error.js';
-import { SelfDeletionNotAllowedError } from '../../../src/domain/errors/self-deletion-not-allowed.error.js';
+import { SoftDeleteUserUseCase } from '@application/use-cases/soft-delete-user.use-case.js';
+import { UserStatus } from '@domain/entities/user.entity.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
+import { SelfDeletionNotAllowedError } from '@domain/errors/self-deletion-not-allowed.error.js';
 import { createTestUser } from '../../shared/fixtures/user.fixture.js';
 import { buildUserSessionUseCaseSut } from '../../shared/helpers/user-use-case-sut.js';
 

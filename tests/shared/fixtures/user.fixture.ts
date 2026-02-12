@@ -1,7 +1,7 @@
-import { User, UserStatus } from '../../../src/domain/entities/user.entity.js';
-import type { UserProps } from '../../../src/domain/entities/user.entity.js';
-import { UserRole } from '../../../src/domain/value-objects/user-role.value-object.js';
-import { Email } from '../../../src/domain/value-objects/email.value-object.js';
+import { User, UserStatus } from '@domain/entities/user.entity.js';
+import type { UserProps } from '@domain/entities/user.entity.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import { Email } from '@domain/value-objects/email.value-object.js';
 
 type CreateUserParams = {
     now: Date;

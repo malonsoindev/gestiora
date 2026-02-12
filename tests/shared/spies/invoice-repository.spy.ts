@@ -1,6 +1,6 @@
-import type { InvoiceRepository } from '../../../src/application/ports/invoice.repository.js';
-import type { Invoice, InvoiceStatus } from '../../../src/domain/entities/invoice.entity.js';
-import { ok } from '../../../src/shared/result.js';
+import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
+import type { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import { ok } from '@shared/result.js';
 
 export class InvoiceRepositorySpy implements InvoiceRepository {
     createdInvoice: Invoice | null = null;

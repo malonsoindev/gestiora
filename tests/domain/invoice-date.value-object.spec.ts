@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { InvoiceDate } from '../../src/domain/value-objects/invoice-date.value-object.js';
-import { InvalidInvoiceDateError } from '../../src/domain/errors/invalid-invoice-date.error.js';
+import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
+import { InvalidInvoiceDateError } from '@domain/errors/invalid-invoice-date.error.js';
 
 describe('InvoiceDate', () => {
     it('accepts a valid YYYY-MM-DD date', () => {

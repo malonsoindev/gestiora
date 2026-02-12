@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { Provider, ProviderStatus } from '../../src/domain/entities/provider.entity.js';
-import type { ProviderProps } from '../../src/domain/entities/provider.entity.js';
-import { Cif } from '../../src/domain/value-objects/cif.value-object.js';
+import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import type { ProviderProps } from '@domain/entities/provider.entity.js';
+import { Cif } from '@domain/value-objects/cif.value-object.js';
 
 const baseDate = new Date('2026-02-01T00:00:00.000Z');
 

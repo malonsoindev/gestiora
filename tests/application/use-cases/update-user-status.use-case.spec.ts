@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { UpdateUserStatusUseCase } from '../../../src/application/use-cases/update-user-status.use-case.js';
-import { UserStatus } from '../../../src/domain/entities/user.entity.js';
-import { UserNotFoundError } from '../../../src/domain/errors/user-not-found.error.js';
-import { InvalidUserStatusError } from '../../../src/domain/errors/invalid-user-status.error.js';
+import { UpdateUserStatusUseCase } from '@application/use-cases/update-user-status.use-case.js';
+import { UserStatus } from '@domain/entities/user.entity.js';
+import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
+import { InvalidUserStatusError } from '@domain/errors/invalid-user-status.error.js';
 import { createTestUser } from '../../shared/fixtures/user.fixture.js';
 import { buildUserUseCaseSut } from '../../shared/helpers/user-use-case-sut.js';
 

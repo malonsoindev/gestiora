@@ -1,5 +1,5 @@
-import { PortError } from '../../../src/application/errors/port.error.js';
-import { ok, fail, type Result } from '../../../src/shared/result.js';
+import { PortError } from '@application/errors/port.error.js';
+import { ok, fail, type Result } from '@shared/result.js';
 
 export class RagReindexProviderInvoicesServiceStub {
     calledIds: string[] = [];

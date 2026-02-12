@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { UpdateOwnProfileUseCase } from '../../../src/application/use-cases/update-own-profile.use-case.js';
-import { UserNotFoundError } from '../../../src/domain/errors/user-not-found.error.js';
+import { UpdateOwnProfileUseCase } from '@application/use-cases/update-own-profile.use-case.js';
+import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
 import { createTestUser } from '../../shared/fixtures/user.fixture.js';
 import { buildUserUseCaseSut } from '../../shared/helpers/user-use-case-sut.js';
 

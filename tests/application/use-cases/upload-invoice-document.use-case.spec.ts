@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { UploadInvoiceDocumentUseCase } from '../../../src/application/use-cases/upload-invoice-document.use-case.js';
-import type { FileStorage } from '../../../src/application/ports/file-storage.js';
-import type { InvoiceExtractionAgent, InvoiceExtractionResult } from '../../../src/application/ports/invoice-extraction-agent.js';
-import type { ProviderIdGenerator } from '../../../src/application/ports/provider-id-generator.js';
-import type { PortError } from '../../../src/application/errors/port.error.js';
-import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
-import { ok, type Result } from '../../../src/shared/result.js';
+import { UploadInvoiceDocumentUseCase } from '@application/use-cases/upload-invoice-document.use-case.js';
+import type { FileStorage } from '@application/ports/file-storage.js';
+import type { InvoiceExtractionAgent, InvoiceExtractionResult } from '@application/ports/invoice-extraction-agent.js';
+import type { ProviderIdGenerator } from '@application/ports/provider-id-generator.js';
+import type { PortError } from '@application/errors/port.error.js';
+import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import { ok, type Result } from '@shared/result.js';
 import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
 import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
 import { InvoiceIdGeneratorStub } from '../../shared/stubs/invoice-id-generator.stub.js';
