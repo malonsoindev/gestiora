@@ -4,7 +4,6 @@ import type { AuditEvent, AuditLogger } from '../../../src/application/ports/aud
 import type { DateProvider } from '../../../src/application/ports/date-provider.js';
 import type { PasswordHasher } from '../../../src/application/ports/password-hasher.js';
 import type { UserIdGenerator } from '../../../src/application/ports/user-id-generator.js';
-import type { UserRepository } from '../../../src/application/ports/user.repository.js';
 import { InvalidPasswordError } from '../../../src/domain/errors/invalid-password.error.js';
 import { InvalidUserRolesError } from '../../../src/domain/errors/invalid-user-roles.error.js';
 import { InvalidUserStatusError } from '../../../src/domain/errors/invalid-user-status.error.js';
@@ -16,6 +15,7 @@ import { Email } from '../../../src/domain/value-objects/email.value-object.js';
 import { ok, type Result } from '../../../src/shared/result.js';
 import type { PortError } from '../../../src/application/errors/port.error.js';
 import { createTestUser } from '../../shared/fixtures/user.fixture.js';
+import { UserRepositorySpy } from '../../shared/spies/user-repository.spy.js';
 
 const fixedNow = new Date('2026-02-02T10:00:00.000Z');
 
@@ -65,39 +65,10 @@ class PasswordHasherStub implements PasswordHasher {
     }
 }
 
-class UserRepositorySpy implements UserRepository {
-    createdUser: User | null = null;
-    private readonly existingUser: User | null;
-
-    constructor(existingUser: User | null = null) {
-        this.existingUser = existingUser;
-    }
-
-    async findByEmail() {
-        return ok(this.existingUser);
-    }
-
-    async findById() {
-        return ok(this.existingUser);
-    }
-
-    async create(user: User) {
-        this.createdUser = user;
-        return ok(undefined);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async update() {
-        return ok(undefined);
-    }
-}
 
 describe('CreateUserUseCase', () => {
     it('creates a user and audits the action', async () => {
-        const userRepository = new UserRepositorySpy();
+        const userRepository = new UserRepositorySpy(null);
         const auditLogger = new AuditLoggerSpy();
         const userIdGenerator = new UserIdGeneratorStub('user-fixed');
 
@@ -159,7 +130,7 @@ describe('CreateUserUseCase', () => {
     });
 
     it('rejects invalid passwords', async () => {
-        const userRepository = new UserRepositorySpy();
+        const userRepository = new UserRepositorySpy(null);
         const auditLogger = new AuditLoggerSpy();
         const userIdGenerator = new UserIdGeneratorStub('user-fixed');
 
@@ -187,7 +158,7 @@ describe('CreateUserUseCase', () => {
     });
 
     it('rejects invalid emails', async () => {
-        const userRepository = new UserRepositorySpy();
+        const userRepository = new UserRepositorySpy(null);
         const auditLogger = new AuditLoggerSpy();
         const userIdGenerator = new UserIdGeneratorStub('user-fixed');
 
@@ -215,7 +186,7 @@ describe('CreateUserUseCase', () => {
     });
 
     it('rejects when roles are empty', async () => {
-        const userRepository = new UserRepositorySpy();
+        const userRepository = new UserRepositorySpy(null);
         const auditLogger = new AuditLoggerSpy();
         const userIdGenerator = new UserIdGeneratorStub('user-fixed');
 
@@ -243,7 +214,7 @@ describe('CreateUserUseCase', () => {
     });
 
     it('rejects deleted status on creation', async () => {
-        const userRepository = new UserRepositorySpy();
+        const userRepository = new UserRepositorySpy(null);
         const auditLogger = new AuditLoggerSpy();
         const userIdGenerator = new UserIdGeneratorStub('user-fixed');
 
