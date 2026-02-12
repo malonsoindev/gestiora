@@ -10,11 +10,13 @@ import { ok } from '../../../src/shared/result.js';
 
 const fixedNow = new Date('2026-02-03T16:00:00.000Z');
 
+const testCredentialHashValue = 'hash';
+
 const createUser = (overrides: Partial<UserProps> = {}): User =>
     User.create({
         id: 'user-1',
         email: Email.create('user@example.com'),
-        passwordHash: 'hash',
+        passwordHash: testCredentialHashValue,
         name: 'Test User',
         avatar: 'avatar.png',
         status: UserStatus.Active,

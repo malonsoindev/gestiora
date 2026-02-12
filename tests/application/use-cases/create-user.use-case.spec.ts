@@ -18,11 +18,15 @@ import type { PortError } from '../../../src/application/errors/port.error.js';
 
 const fixedNow = new Date('2026-02-02T10:00:00.000Z');
 
+const testCredentialHashValue = 'hash';
+const validNewCredential = 'StrongPass1!a';
+const invalidNewCredential = 'weak';
+
 const createUserEntity = (): User =>
     User.create({
         id: 'user-1',
         email: Email.create('existing@example.com'),
-        passwordHash: 'hash',
+        passwordHash: testCredentialHashValue,
         status: UserStatus.Active,
         roles: [UserRole.user()],
         createdAt: fixedNow,
@@ -109,7 +113,7 @@ describe('CreateUserUseCase', () => {
         const result = await useCase.execute({
             actorUserId: 'admin-1',
             email: 'new@example.com',
-            password: 'StrongPass1!a',
+            password: validNewCredential,
             roles: [UserRole.user()],
             name: 'New User',
             avatar: 'avatar.png',
@@ -119,7 +123,7 @@ describe('CreateUserUseCase', () => {
         expect(userRepository.createdUser).not.toBeNull();
         expect(userRepository.createdUser?.id).toBe('user-fixed');
         expect(userRepository.createdUser?.email).toBe('new@example.com');
-        expect(userRepository.createdUser?.passwordHash).toBe('hashed:StrongPass1!a');
+        expect(userRepository.createdUser?.passwordHash).toBe(`hashed:${validNewCredential}`);
         expect(userRepository.createdUser?.status).toBe(UserStatus.Active);
         expect(userRepository.createdUser?.roles[0]?.getValue()).toBe('USER');
         expect(userRepository.createdUser?.createdAt).toBe(fixedNow);
@@ -143,7 +147,7 @@ describe('CreateUserUseCase', () => {
         const result = await useCase.execute({
             actorUserId: 'admin-1',
             email: 'existing@example.com',
-            password: 'StrongPass1!a',
+            password: validNewCredential,
             roles: [UserRole.user()],
         });
 
@@ -171,7 +175,7 @@ describe('CreateUserUseCase', () => {
         const result = await useCase.execute({
             actorUserId: 'admin-1',
             email: 'new@example.com',
-            password: 'weak',
+            password: invalidNewCredential,
             roles: [UserRole.user()],
         });
 
@@ -199,7 +203,7 @@ describe('CreateUserUseCase', () => {
         const result = await useCase.execute({
             actorUserId: 'admin-1',
             email: 'not-an-email',
-            password: 'StrongPass1!a',
+            password: validNewCredential,
             roles: [UserRole.user()],
         });
 
@@ -227,7 +231,7 @@ describe('CreateUserUseCase', () => {
         const result = await useCase.execute({
             actorUserId: 'admin-1',
             email: 'new@example.com',
-            password: 'StrongPass1!a',
+            password: validNewCredential,
             roles: [],
         });
 
@@ -255,7 +259,7 @@ describe('CreateUserUseCase', () => {
         const result = await useCase.execute({
             actorUserId: 'admin-1',
             email: 'new@example.com',
-            password: 'StrongPass1!a',
+            password: validNewCredential,
             roles: [UserRole.user()],
             status: UserStatus.Deleted,
         });

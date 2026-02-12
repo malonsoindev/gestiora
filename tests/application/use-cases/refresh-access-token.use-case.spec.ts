@@ -134,11 +134,15 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
     };
 };
 
+const testCredentialHashValue = 'hash';
+const validRefreshTokenValue = 'refresh-token';
+const invalidRefreshTokenValue = 'invalid';
+
 const createSession = (overrides: Partial<SessionProps> = {}): Session =>
     Session.create({
         id: 'session-1',
         userId: 'user-1',
-        refreshTokenHash: 'hashed:refresh-token',
+        refreshTokenHash: `hashed:${validRefreshTokenValue}`,
         status: SessionStatus.Active,
         createdAt: fixedNow,
         lastUsedAt: fixedNow,
@@ -150,7 +154,7 @@ const createUser = (overrides: Partial<UserProps> = {}): User =>
     User.create({
         id: 'user-1',
         email: Email.create('user@example.com'),
-        passwordHash: 'hash',
+        passwordHash: testCredentialHashValue,
         status: UserStatus.Active,
         lockedUntil: undefined,
         roles: [UserRole.user()],
@@ -165,7 +169,7 @@ describe('RefreshAccessTokenUseCase', () => {
         const { useCase, auditLogger, tokenService, sessionRepository } = createUseCase();
         sessionRepository.session = session;
 
-        const result = await useCase.execute({ refreshToken: 'refresh-token' });
+        const result = await useCase.execute({ refreshToken: validRefreshTokenValue });
 
         expect(result.success).toBe(true);
         if (result.success) {
@@ -183,7 +187,7 @@ describe('RefreshAccessTokenUseCase', () => {
         const { useCase, auditLogger, sessionRepository } = createUseCase();
         sessionRepository.session = null;
 
-        const result = await useCase.execute({ refreshToken: 'invalid' });
+        const result = await useCase.execute({ refreshToken: invalidRefreshTokenValue });
 
         expect(result.success).toBe(false);
         if (!result.success) {
@@ -200,7 +204,7 @@ describe('RefreshAccessTokenUseCase', () => {
         const { useCase, auditLogger, sessionRepository } = createUseCase();
         sessionRepository.session = session;
 
-        const result = await useCase.execute({ refreshToken: 'refresh-token' });
+        const result = await useCase.execute({ refreshToken: validRefreshTokenValue });
 
         expect(result.success).toBe(false);
         if (!result.success) {
@@ -215,7 +219,7 @@ describe('RefreshAccessTokenUseCase', () => {
         const { useCase, auditLogger, sessionRepository } = createUseCase();
         sessionRepository.session = session;
 
-        const result = await useCase.execute({ refreshToken: 'refresh-token' });
+        const result = await useCase.execute({ refreshToken: validRefreshTokenValue });
 
         expect(result.success).toBe(false);
         if (!result.success) {
@@ -232,7 +236,7 @@ describe('RefreshAccessTokenUseCase', () => {
         });
         sessionRepository.session = session;
 
-        const result = await useCase.execute({ refreshToken: 'refresh-token' });
+        const result = await useCase.execute({ refreshToken: validRefreshTokenValue });
 
         expect(result.success).toBe(true);
         if (result.success) {
