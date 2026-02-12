@@ -1,113 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { CreateManualInvoiceUseCase } from '../../../src/application/use-cases/create-manual-invoice.use-case.js';
-import type { AuditEvent, AuditLogger } from '../../../src/application/ports/audit-logger.js';
-import type { DateProvider } from '../../../src/application/ports/date-provider.js';
-import type { InvoiceIdGenerator } from '../../../src/application/ports/invoice-id-generator.js';
-import type { InvoiceMovementIdGenerator } from '../../../src/application/ports/invoice-movement-id-generator.js';
-import type { InvoiceRepository } from '../../../src/application/ports/invoice.repository.js';
-import type { ProviderRepository } from '../../../src/application/ports/provider.repository.js';
-import type { PortError } from '../../../src/application/errors/port.error.js';
 import { Provider, ProviderStatus } from '../../../src/domain/entities/provider.entity.js';
 import { InvalidCifError } from '../../../src/domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '../../../src/domain/errors/invalid-provider-status.error.js';
 import { InvalidInvoiceTotalsError } from '../../../src/domain/errors/invalid-invoice-totals.error.js';
 import { ProviderNotFoundError } from '../../../src/domain/errors/provider-not-found.error.js';
-import { ok, type Result } from '../../../src/shared/result.js';
 import { RagReindexInvoiceServiceStub } from '../stubs/rag-reindex-invoice.service.stub.js';
+import { DateProviderStub } from '../../shared/stubs/date-provider.stub.js';
+import { InvoiceIdGeneratorStub } from '../../shared/stubs/invoice-id-generator.stub.js';
+import { InvoiceMovementIdGeneratorStub } from '../../shared/stubs/invoice-movement-id-generator.stub.js';
+import { ProviderRepositoryStub } from '../../shared/stubs/provider-repository.stub.js';
+import { AuditLoggerSpy } from '../../shared/spies/audit-logger.spy.js';
+import { InvoiceRepositorySpy } from '../../shared/spies/invoice-repository.spy.js';
 
 const fixedNow = new Date('2026-02-10T10:00:00.000Z');
-
-class DateProviderStub implements DateProvider {
-    now(): Result<Date, PortError> {
-        return ok(fixedNow);
-    }
-}
-
-class InvoiceIdGeneratorStub implements InvoiceIdGenerator {
-    constructor(private readonly id: string) {}
-
-    generate(): string {
-        return this.id;
-    }
-}
-
-class InvoiceMovementIdGeneratorStub implements InvoiceMovementIdGenerator {
-    private readonly ids: string[];
-
-    constructor(ids: string[]) {
-        this.ids = [...ids];
-    }
-
-    generate(): string {
-        const id = this.ids.shift();
-        return id ?? 'movement-fallback';
-    }
-}
-
-class AuditLoggerSpy implements AuditLogger {
-    events: AuditEvent[] = [];
-
-    async log(event: AuditEvent) {
-        this.events.push(event);
-        return ok(undefined);
-    }
-}
-
-class ProviderRepositoryStub implements ProviderRepository {
-    lastCif: string | null = null;
-
-    constructor(private readonly provider: Provider | null) {}
-
-    async findById() {
-        return ok(this.provider);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async create() {
-        return ok(undefined);
-    }
-
-    async update() {
-        return ok(undefined);
-    }
-
-    async findByCif(cif: string) {
-        this.lastCif = cif;
-        return ok(this.provider);
-    }
-
-    async findByRazonSocialNormalized() {
-        return ok(null);
-    }
-}
-
-class InvoiceRepositorySpy implements InvoiceRepository {
-    createdInvoice = null as unknown;
-
-    async create(invoice: unknown) {
-        this.createdInvoice = invoice;
-        return ok(undefined);
-    }
-
-    async findById() {
-        return ok(null);
-    }
-
-    async update() {
-        return ok(undefined);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async getDetail() {
-        return ok(null);
-    }
-}
 
 const createProvider = (status: ProviderStatus = ProviderStatus.Active): Provider =>
     Provider.create({
@@ -118,23 +24,35 @@ const createProvider = (status: ProviderStatus = ProviderStatus.Active): Provide
         updatedAt: fixedNow,
     });
 
+const makeSut = (options?: { provider?: Provider | null }) => {
+    const provider = options?.provider ?? createProvider();
+    const providerRepository = new ProviderRepositoryStub(provider);
+    const invoiceRepository = new InvoiceRepositorySpy();
+    const auditLogger = new AuditLoggerSpy();
+    const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
+    const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
+
+    const useCase = new CreateManualInvoiceUseCase({
+        providerRepository,
+        invoiceRepository,
+        auditLogger,
+        dateProvider: new DateProviderStub(fixedNow),
+        invoiceIdGenerator,
+        invoiceMovementIdGenerator,
+        ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
+    });
+
+    return {
+        useCase,
+        providerRepository,
+        invoiceRepository,
+        auditLogger,
+    };
+};
+
 describe('CreateManualInvoiceUseCase', () => {
     it('creates a draft invoice and audits the action', async () => {
-        const providerRepository = new ProviderRepositoryStub(createProvider());
-        const invoiceRepository = new InvoiceRepositorySpy();
-        const auditLogger = new AuditLoggerSpy();
-        const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
-        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
-
-        const useCase = new CreateManualInvoiceUseCase({
-            providerRepository,
-            invoiceRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            invoiceIdGenerator,
-            invoiceMovementIdGenerator,
-            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
-        });
+        const { useCase, invoiceRepository, auditLogger } = makeSut();
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
@@ -168,21 +86,7 @@ describe('CreateManualInvoiceUseCase', () => {
     });
 
     it('finds provider by normalized cif when providerId is missing', async () => {
-        const providerRepository = new ProviderRepositoryStub(createProvider());
-        const invoiceRepository = new InvoiceRepositorySpy();
-        const auditLogger = new AuditLoggerSpy();
-        const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
-        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
-
-        const useCase = new CreateManualInvoiceUseCase({
-            providerRepository,
-            invoiceRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            invoiceIdGenerator,
-            invoiceMovementIdGenerator,
-            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
-        });
+        const { useCase, providerRepository } = makeSut();
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
@@ -207,21 +111,7 @@ describe('CreateManualInvoiceUseCase', () => {
     });
 
     it('rejects when provider does not exist', async () => {
-        const providerRepository = new ProviderRepositoryStub(null);
-        const invoiceRepository = new InvoiceRepositorySpy();
-        const auditLogger = new AuditLoggerSpy();
-        const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
-        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
-
-        const useCase = new CreateManualInvoiceUseCase({
-            providerRepository,
-            invoiceRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            invoiceIdGenerator,
-            invoiceMovementIdGenerator,
-            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
-        });
+        const { useCase, invoiceRepository, auditLogger } = makeSut({ provider: null });
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
@@ -248,20 +138,8 @@ describe('CreateManualInvoiceUseCase', () => {
     });
 
     it('rejects when provider is inactive', async () => {
-        const providerRepository = new ProviderRepositoryStub(createProvider(ProviderStatus.Inactive));
-        const invoiceRepository = new InvoiceRepositorySpy();
-        const auditLogger = new AuditLoggerSpy();
-        const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
-        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
-
-        const useCase = new CreateManualInvoiceUseCase({
-            providerRepository,
-            invoiceRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            invoiceIdGenerator,
-            invoiceMovementIdGenerator,
-            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
+        const { useCase, invoiceRepository, auditLogger } = makeSut({
+            provider: createProvider(ProviderStatus.Inactive),
         });
 
         const result = await useCase.execute({
@@ -289,21 +167,7 @@ describe('CreateManualInvoiceUseCase', () => {
     });
 
     it('rejects invalid provider cif', async () => {
-        const providerRepository = new ProviderRepositoryStub(createProvider());
-        const invoiceRepository = new InvoiceRepositorySpy();
-        const auditLogger = new AuditLoggerSpy();
-        const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
-        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
-
-        const useCase = new CreateManualInvoiceUseCase({
-            providerRepository,
-            invoiceRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            invoiceIdGenerator,
-            invoiceMovementIdGenerator,
-            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
-        });
+        const { useCase, invoiceRepository, auditLogger } = makeSut();
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
@@ -330,21 +194,7 @@ describe('CreateManualInvoiceUseCase', () => {
     });
 
     it('rejects when invoice totals do not match movements', async () => {
-        const providerRepository = new ProviderRepositoryStub(createProvider());
-        const invoiceRepository = new InvoiceRepositorySpy();
-        const auditLogger = new AuditLoggerSpy();
-        const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
-        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
-
-        const useCase = new CreateManualInvoiceUseCase({
-            providerRepository,
-            invoiceRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            invoiceIdGenerator,
-            invoiceMovementIdGenerator,
-            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
-        });
+        const { useCase, invoiceRepository, auditLogger } = makeSut();
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
@@ -375,21 +225,7 @@ describe('CreateManualInvoiceUseCase', () => {
     });
 
     it('rejects when a movement base does not match cantidad * precio', async () => {
-        const providerRepository = new ProviderRepositoryStub(createProvider());
-        const invoiceRepository = new InvoiceRepositorySpy();
-        const auditLogger = new AuditLoggerSpy();
-        const invoiceIdGenerator = new InvoiceIdGeneratorStub('invoice-fixed');
-        const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(['movement-1']);
-
-        const useCase = new CreateManualInvoiceUseCase({
-            providerRepository,
-            invoiceRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(),
-            invoiceIdGenerator,
-            invoiceMovementIdGenerator,
-            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
-        });
+        const { useCase, invoiceRepository, auditLogger } = makeSut();
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
