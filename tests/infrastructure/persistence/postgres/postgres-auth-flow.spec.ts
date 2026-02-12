@@ -40,6 +40,8 @@ const baseLoginRequest = {
     userAgent: 'vitest',
 };
 
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 describeIf('Postgres auth flow', () => {
     const sql = postgres(process.env.DATABASE_URL as string, { max: 1 });
     const userRepository = new PostgresUserRepository(sql);
@@ -176,6 +178,8 @@ describeIf('Postgres auth flow', () => {
             select count(*)::int as count from login_attempts where email = 'user@example.com'
         `;
         expect(attempts[0]?.count).toBe(1);
+
+        await delay(1100);
 
         const refreshResult = await refreshUseCase.execute({
             refreshToken: loginResult.value.refreshToken,
