@@ -25,7 +25,7 @@ const createProvider = (status: ProviderStatus = ProviderStatus.Active): Provide
     });
 
 const makeSut = (options?: { provider?: Provider | null }) => {
-    const provider = options?.provider ?? createProvider();
+    const provider = options?.provider === undefined ? createProvider() : options.provider;
     const providerRepository = new ProviderRepositoryStub(provider);
     const invoiceRepository = new InvoiceRepositorySpy();
     const auditLogger = new AuditLoggerSpy();
