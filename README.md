@@ -2,11 +2,18 @@
 
 **Gestiora** es una plataforma de backend profesional diseñada para centralizar y automatizar la **gestión de facturas de compra**. Actúa como un motor de integración inteligente que transforma documentos estáticos en datos accionables, permitiendo a las empresas optimizar sus procesos administrativos y financieros mediante el uso de Inteligencia Artificial avanzada.
 
+## 🔗 Enlaces
+*   **Repositorio:** [GitHub](<URL_PENDIENTE>)
+*   **Producción:** [Demo](<URL_PENDIENTE>)
+*   **Slides:** [Presentación](<URL_PENDIENTE>)
+
 ## 💡 Idea General
-El proyecto nace para resolver la lentitud de los procesos manuales y la dispersión de información en documentos no estructurados. Gestiora permite gestionar el ciclo de vida de una factura (desde su recepción hasta su archivo histórico), asegurando que los datos sean siempre accesibles y veraces, ya sean procesados por una IA o introducidos manualmente.
+El proyecto nace para resolver la lentitud de los procesos manuales y la dispersión de información en documentos no estructurados. Gestiora permite gestionar el ciclo de vida de una factura (desde su recepción hasta su archivo histórico), asegurando que los datos sean siempre accesibles y veraces, ya sean procesados por una IA o introducidos manualmente. La idea surge al observar cuellos de botella recurrentes en administracion financiera: demasiado tiempo perdido en tareas repetitivas, baja trazabilidad y errores en la captura de datos.
+
+El valor diferenciador es la combinacion de IA asistida con control humano estricto y una arquitectura limpia que garantiza escalabilidad y mantenibilidad.
 
 ## ✨ Funcionalidades y Metodología
-Gestiora destaca por su flexibilidad, permitiendo que la operativa del negocio nunca se detenga bajo el principio de que **el humano siempre tiene el control**.
+Gestiora destaca por su flexibilidad, permitiendo que la operativa del negocio nunca se detenga bajo el principio de que **el humano siempre tiene el control**. La IA propone, el usuario valida y corrige: la supervisión humana es obligatoria antes de consolidar datos.
 
 ### 1. Procesamiento Dual (Manual y Automático)
 *   **Vía Automática (Asistida por IA):** Al recibir un PDF, el sistema utiliza modelos de extracción semántica para identificar automáticamente al proveedor, fechas, importes e impuestos. La IA actúa como un asistente: propone los datos para que el usuario los valide o corrija.
@@ -35,17 +42,29 @@ El backend está construido siguiendo un patrón de **Monolito Modular** bajo lo
 *   **Application:** Implementa los casos de uso y orquesta el flujo de la información.
 *   **Infrastructure:** Adaptadores técnicos para la comunicación (Fastify), la persistencia y los servicios de IA (Genkit).
 
+## 🧩 Estructura del Proyecto
+La organizacion del codigo refleja Clean Architecture, separando responsabilidades y evitando acoplamientos:
+
+*   `src/domain`: Entidades, value objects y reglas de negocio puras.
+*   `src/application`: Casos de uso y puertos (interfaces) que orquestan la logica.
+*   `src/infrastructure`: Adaptadores tecnicos (HTTP, DB, storage, IA).
+*   `src/composition`: Composicion y wiring de dependencias.
+
 ## 🛠️ Stack Tecnológico
 *   **Entorno:** Node.js.
 *   **Framework Web:** Fastify.
 *   **Persistencia de datos:**
     *   **Desarrollo:** Repositorios **in-memory** para un prototipado y testeo ágil de la lógica de negocio.
-    *   **Producción:** Base de datos **PostgreSQL** (en nuestro caso, desplegada en **Supabase**).
+    *   **Producción:** Base de datos **PostgreSQL** en **Supabase** (nuestro despliegue actual).
 *   **IA:** **Genkit** para la extracción estructurada de datos y motor RAG.
 *   **Seguridad:** JSON Web Tokens (JWT) y Bcrypt.
 
 ## ⚙️ Instalación y Ejecución
 1.  Clonar el repositorio.
 2.  Instalar dependencias: `npm install`.
-3.  Configurar el archivo `.env` con las variables de entorno necesarias (DB, API Keys de IA). Ver `.env.example` para el mínimo requerido.
-4.  Iniciar el servidor en desarrollo: `npm run dev`.
+3.  Copiar `.env.example` a `.env` y configurar las variables necesarias.
+4.  Variables minimas recomendadas:
+    *   `JWT_ACCESS_SECRET` y `JWT_REFRESH_SECRET`.
+    *   `DATABASE_TYPE` (in-memory o postgres) y `DATABASE_URL` si usas Postgres.
+    *   `AI_AGENT_TYPE=genkit` y las credenciales del proveedor (`OPENAI_API_KEY`/`PROVIDER_NAME`) si activas IA.
+5.  Iniciar el servidor en desarrollo: `npm run dev`.
