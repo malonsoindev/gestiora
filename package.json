@@ -26,7 +26,6 @@
     "api:smoke": "tsx scripts/api-smoke.ts"
   },
   "devDependencies": {
-    "@types/bcrypt": "^6.0.0",
     "@types/node": "^25.1.0",
     "@types/pdf-parse": "^1.1.4",
     "@vitest/coverage-v8": "^4.0.18",
@@ -38,6 +37,7 @@
     "zod": "^4.3.6"
   },
   "dependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@fastify/cors": "^11.2.0",
     "@fastify/multipart": "^9.4.0",
     "@fastify/static": "^9.0.0",
