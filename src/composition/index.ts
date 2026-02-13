@@ -77,6 +77,7 @@ import { IndexInvoicesForRagUseCase } from '@application/use-cases/index-invoice
 import { QueryInvoicesRagUseCase } from '@application/use-cases/query-invoices-rag.use-case.js';
 import { RagReindexInvoiceService } from '@application/services/rag-reindex-invoice.service.js';
 import { RagReindexProviderInvoicesService } from '@application/services/rag-reindex-provider-invoices.service.js';
+import { RagReindexAllInvoicesService } from '@application/services/rag-reindex-all-invoices.service.js';
 import { InMemorySearchQueryRepository } from '@infrastructure/adapters/in-memory/in-memory-search-query.repository.js';
 import { SearchQueryIdGeneratorCrypto } from '@infrastructure/adapters/crypto/search-query-id-generator.js';
 import { ProcessSearchQueryUseCase } from '@application/use-cases/process-search-query.use-case.js';
@@ -189,6 +190,13 @@ const ragReindexInvoiceService = new RagReindexInvoiceService({
     indexInvoicesForRagUseCase,
 });
 const ragReindexProviderInvoicesService = new RagReindexProviderInvoicesService({
+    invoiceRepository,
+    providerRepository,
+    searchQueryRepository,
+    indexInvoicesForRagUseCase,
+    pageSize: 200,
+});
+const ragReindexAllInvoicesService = new RagReindexAllInvoicesService({
     invoiceRepository,
     providerRepository,
     searchQueryRepository,
@@ -540,6 +548,7 @@ export const compositionRoot = {
     queryInvoicesRagUseCase,
     processSearchQueryUseCase,
     getSearchResultUseCase,
+    ragReindexAllInvoicesService,
 };
 
 export const seedUsers = async (): Promise<void> => {
