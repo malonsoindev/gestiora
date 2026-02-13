@@ -25,7 +25,7 @@ Gestiora destaca por su flexibilidad, permitiendo que la operativa del negocio n
 La plataforma aplica el enfoque de **Security by Design** para garantizar la integridad de la información:
 
 *   **Seguridad de Credenciales:** Las contraseñas se protegen mediante el algoritmo de hasheo **bcrypt (con salt)**, asegurando que nunca se almacenen en texto plano.
-*   **Mitigación de Fuerza Bruta:** Implementación de un sistema de *rate-limiting* que permite un máximo de **5 intentos fallidos en una ventana de 15 minutos**. El bloqueo resultante es temporal por ventana, evitando el bloqueo permanente de la cuenta para no penalizar la experiencia de usuario.
+*   **Mitigación de Fuerza Bruta:** Implementación de un sistema de *rate-limiting* que permite un máximo de **5 intentos fallidos en una ventana de 15 minutos**. Se aplica una limitación temporal por ventana (sin bloqueo permanente de cuenta) para no penalizar la experiencia de usuario.
 *   **Trazabilidad Completa:** Cada intento de inicio de sesión (exitoso o fallido) se registra en la tabla de persistencia `login_attempts`, permitiendo una auditoría detallada de la seguridad del sistema.
 
 ## 🏗️ Arquitectura del Software
@@ -40,12 +40,12 @@ El backend está construido siguiendo un patrón de **Monolito Modular** bajo lo
 *   **Framework Web:** Fastify.
 *   **Persistencia de datos:**
     *   **Desarrollo:** Repositorios **in-memory** para un prototipado y testeo ágil de la lógica de negocio.
-    *   **Producción:** Base de datos **PostgreSQL** alojada en **Supabase**.
+    *   **Producción:** Base de datos **PostgreSQL** (en nuestro caso, desplegada en **Supabase**).
 *   **IA:** **Genkit** para la extracción estructurada de datos y motor RAG.
 *   **Seguridad:** JSON Web Tokens (JWT) y Bcrypt.
 
 ## ⚙️ Instalación y Ejecución
 1.  Clonar el repositorio.
 2.  Instalar dependencias: `npm install`.
-3.  Configurar el archivo `.env` con las variables de entorno necesarias (DB, API Keys de IA).
+3.  Configurar el archivo `.env` con las variables de entorno necesarias (DB, API Keys de IA). Ver `.env.example` para el mínimo requerido.
 4.  Iniciar el servidor en desarrollo: `npm run dev`.
