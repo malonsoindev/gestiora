@@ -3,8 +3,8 @@
 **Gestiora** es una plataforma de backend profesional diseñada para centralizar y automatizar la **gestión de facturas de compra**. Actúa como un motor de integración inteligente que transforma documentos estáticos en datos accionables, permitiendo a las empresas optimizar sus procesos administrativos y financieros mediante el uso de Inteligencia Artificial avanzada.
 
 ## 🔗 Enlaces
-*   **Repositorio:** [GitHub](<URL_PENDIENTE>)
-*   **Producción:** [Demo](<URL_PENDIENTE>)
+*   **Repositorio:** [GitHub](https://github.com/malonsoindev/gestiora.git)
+*   **Producción:** [Demo](https://gestiora.onrender.com/)
 *   **Slides:** [Presentación](<URL_PENDIENTE>)
 
 ## 💡 Idea General
@@ -41,6 +41,7 @@ El backend está construido siguiendo un patrón de **Monolito Modular** bajo lo
 *   **Domain:** Contiene las reglas de negocio, entidades y objetos de valor, totalmente aislados de la tecnología.
 *   **Application:** Implementa los casos de uso y orquesta el flujo de la información.
 *   **Infrastructure:** Adaptadores técnicos para la comunicación (Fastify), la persistencia y los servicios de IA (Genkit).
+*   **Principios y calidad:** Diseño guiado por SOLID, desarrollo con TDD (tests marcan el avance), buenas prácticas continuas, enfoque **Security by Design** desde el arranque y documentación tratada como código desde el inicio del repositorio.
 
 ## 🧩 Estructura del Proyecto
 La organizacion del codigo refleja Clean Architecture, separando responsabilidades y evitando acoplamientos:
