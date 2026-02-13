@@ -1,6 +1,6 @@
 {
   "name": "gestiora",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Backend for Gestiora platform",
   "homepage": "https://github.com/malonsoindev/gestiora#readme",
   "bugs": {
@@ -26,7 +26,6 @@
     "api:smoke": "tsx scripts/api-smoke.ts"
   },
   "dependencies": {
-    "@types/bcrypt": "^6.0.0",
     "@fastify/cors": "^11.2.0",
     "@fastify/multipart": "^9.4.0",
     "@fastify/static": "^9.0.0",
@@ -35,7 +34,6 @@
     "@genkit-ai/compat-oai": "^1.28.0",
     "@genkit-ai/dev-local-vectorstore": "^1.28.0",
     "@types/jsonwebtoken": "^9.0.10",
-    "tsc-alias": "^1.8.16",
     "bcrypt": "^6.0.0",
     "chalk": "^5.6.2",
     "dotenv": "^17.2.3",
@@ -44,16 +42,18 @@
     "jsonwebtoken": "^9.0.3",
     "ora": "^9.3.0",
     "pdf-parse": "^2.4.5",
-    "postgres": "^3.4.8"
+    "postgres": "^3.4.8",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^25.1.0",
     "@types/pdf-parse": "^1.1.4",
     "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9.39.2",
+    "tsc-alias": "^1.8.16",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.18",
-    "zod": "^4.3.6"
+    "vitest": "^4.0.18"
   }
 }
