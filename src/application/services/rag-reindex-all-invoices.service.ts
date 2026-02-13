@@ -7,6 +7,7 @@ import type { IndexInvoicesForRagRequest } from '@application/dto/index-invoices
 import type { IndexInvoicesForRagResponse } from '@application/dto/index-invoices-for-rag.response.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { ok, fail, type Result } from '@shared/result.js';
+import { clearSearchQueries, indexRagRows } from '@application/services/rag-reindex-helpers.js';
 
 export type RagReindexAllInvoicesDependencies = {
     invoiceRepository: InvoiceRepository;
@@ -58,7 +59,7 @@ export class RagReindexAllInvoicesService implements RagReindexAllInvoicesHandle
                 return fail(rowsResult.error);
             }
 
-            const indexResult = await this.indexRows(rowsResult.value);
+            const indexResult = await indexRagRows(this.dependencies.indexInvoicesForRagUseCase, rowsResult.value);
             if (!indexResult.success) {
                 return fail(indexResult.error);
             }
@@ -70,7 +71,7 @@ export class RagReindexAllInvoicesService implements RagReindexAllInvoicesHandle
             page += 1;
         }
 
-        const clearResult = await this.dependencies.searchQueryRepository.clearAll();
+        const clearResult = await clearSearchQueries(this.dependencies.searchQueryRepository);
         if (!clearResult.success) {
             return fail(clearResult.error);
         }
@@ -101,16 +102,4 @@ export class RagReindexAllInvoicesService implements RagReindexAllInvoicesHandle
         return ok(rows);
     }
 
-    private async indexRows(rows: IndexInvoicesForRagRequest['rows']): Promise<Result<void, RagReindexAllInvoicesError>> {
-        if (rows.length === 0) {
-            return ok(undefined);
-        }
-
-        const indexResult = await this.dependencies.indexInvoicesForRagUseCase.execute({ rows });
-        if (!indexResult.success) {
-            return fail(indexResult.error);
-        }
-
-        return ok(undefined);
-    }
 }

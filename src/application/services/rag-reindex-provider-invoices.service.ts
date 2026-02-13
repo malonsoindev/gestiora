@@ -10,6 +10,7 @@ import type { Provider } from '@domain/entities/provider.entity.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
 import { ok, fail, type Result } from '@shared/result.js';
+import { clearSearchQueries, indexRagRows } from '@application/services/rag-reindex-helpers.js';
 
 export type RagReindexProviderInvoicesDependencies = {
     invoiceRepository: InvoiceRepository;
@@ -64,7 +65,7 @@ export class RagReindexProviderInvoicesService implements RagReindexProviderInvo
                 return fail(rowsResult.error);
             }
 
-            const indexResult = await this.indexRows(rowsResult.value);
+            const indexResult = await indexRagRows(this.dependencies.indexInvoicesForRagUseCase, rowsResult.value);
             if (!indexResult.success) {
                 return fail(indexResult.error);
             }
@@ -76,7 +77,7 @@ export class RagReindexProviderInvoicesService implements RagReindexProviderInvo
             page += 1;
         }
 
-        const clearResult = await this.dependencies.searchQueryRepository.clearAll();
+        const clearResult = await clearSearchQueries(this.dependencies.searchQueryRepository);
         if (!clearResult.success) {
             return fail(clearResult.error);
         }
@@ -130,14 +131,4 @@ export class RagReindexProviderInvoicesService implements RagReindexProviderInvo
         return ok(rows);
     }
 
-    private async indexRows(rows: IndexInvoicesForRagRequest['rows']): Promise<Result<void, RagReindexProviderInvoicesError>> {
-        if (rows.length === 0) {
-            return ok(undefined);
-        }
-        const indexResult = await this.dependencies.indexInvoicesForRagUseCase.execute({ rows });
-        if (!indexResult.success) {
-            return fail(indexResult.error);
-        }
-        return ok(undefined);
-    }
 }
