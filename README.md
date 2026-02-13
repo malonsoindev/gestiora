@@ -13,7 +13,7 @@ El proyecto nace para resolver la lentitud de los procesos manuales y la dispers
 El valor diferenciador es la combinacion de IA asistida con control humano estricto y una arquitectura limpia que garantiza escalabilidad y mantenibilidad.
 
 ## ✨ Funcionalidades y Metodología
-Gestiora destaca por su flexibilidad, permitiendo que la operativa del negocio nunca se detenga bajo el principio de que **el humano siempre tiene el control**. La IA propone, el usuario valida y corrige: la supervisión humana es obligatoria antes de consolidar datos.
+Gestiora destaca por su flexibilidad, permitiendo que la operativa del negocio nunca se detenga bajo el principio de que **el humano siempre tiene el control**. La IA propone, el usuario valida y corrige: la supervisión humana es obligatoria antes de consolidar datos. En la practica, los datos extraidos por IA quedan en estado propuesto hasta su confirmacion; cualquier correccion humana marca el origen como manual y fija el estado como confirmado.
 
 ### 1. Procesamiento Dual (Manual y Automático)
 *   **Vía Automática (Asistida por IA):** Al recibir un PDF, el sistema utiliza modelos de extracción semántica para identificar automáticamente al proveedor, fechas, importes e impuestos. La IA actúa como un asistente: propone los datos para que el usuario los valide o corrija.
