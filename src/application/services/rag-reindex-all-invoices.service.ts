@@ -7,7 +7,7 @@ import type { IndexInvoicesForRagRequest } from '@application/dto/index-invoices
 import type { IndexInvoicesForRagResponse } from '@application/dto/index-invoices-for-rag.response.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { ok, fail, type Result } from '@shared/result.js';
-import { clearSearchQueries, indexRagRows } from '@application/services/rag-reindex-helpers.js';
+import { reindexRagPages } from '@application/services/rag-reindex-helpers.js';
 
 export type RagReindexAllInvoicesDependencies = {
     invoiceRepository: InvoiceRepository;
@@ -33,50 +33,15 @@ export class RagReindexAllInvoicesService implements RagReindexAllInvoicesHandle
      * @returns Resultado de la operacion de reindexado.
      */
     async reindexAll(): Promise<Result<void, RagReindexAllInvoicesError>> {
-        let page = 1;
-        let processed = 0;
-        let total = 0;
-
-        while (true) {
-            const listResult = await this.dependencies.invoiceRepository.list({
+        return reindexRagPages({
+            listPage: (page) => this.dependencies.invoiceRepository.list({
                 page,
                 pageSize: this.dependencies.pageSize,
-            });
-            if (!listResult.success) {
-                return fail(listResult.error);
-            }
-
-            if (page === 1) {
-                total = listResult.value.total;
-            }
-
-            if (listResult.value.items.length === 0) {
-                break;
-            }
-
-            const rowsResult = await this.buildRows(listResult.value.items.map((invoice) => invoice.id));
-            if (!rowsResult.success) {
-                return fail(rowsResult.error);
-            }
-
-            const indexResult = await indexRagRows(this.dependencies.indexInvoicesForRagUseCase, rowsResult.value);
-            if (!indexResult.success) {
-                return fail(indexResult.error);
-            }
-
-            processed += listResult.value.items.length;
-            if (processed >= total) {
-                break;
-            }
-            page += 1;
-        }
-
-        const clearResult = await clearSearchQueries(this.dependencies.searchQueryRepository);
-        if (!clearResult.success) {
-            return fail(clearResult.error);
-        }
-
-        return ok(undefined);
+            }),
+            buildRows: (items) => this.buildRows(items.map((invoice) => invoice.id)),
+            indexer: this.dependencies.indexInvoicesForRagUseCase,
+            searchQueryRepository: this.dependencies.searchQueryRepository,
+        });
     }
 
     private async buildRows(invoiceIds: string[]): Promise<Result<IndexInvoicesForRagRequest['rows'], RagReindexAllInvoicesError>> {
