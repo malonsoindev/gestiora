@@ -24,6 +24,10 @@
     padding: 0;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background-color: var(--bg-light);
@@ -87,6 +91,19 @@ header {
 
 .nav-links a:hover {
     color: var(--primary);
+}
+
+.nav-icon {
+    display: flex;
+    align-items: center;
+}
+
+.nav-icon svg {
+    transition: transform 0.2s;
+}
+
+.nav-icon:hover svg {
+    transform: scale(1.1);
 }
 
 /* Hero Section */
