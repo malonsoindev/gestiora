@@ -566,3 +566,18 @@ footer {
     outline: 3px solid var(--primary);
     outline-offset: 2px;
 }
+
+@media (max-width: 480px) {
+    .scroll-top-btn {
+        right: 50%;
+        transform: translateX(50%) translateY(10px);
+    }
+
+    .scroll-top-btn.visible {
+        transform: translateX(50%) translateY(0);
+    }
+
+    .scroll-top-btn:hover {
+        transform: translateX(50%) translateY(-2px);
+    }
+}
