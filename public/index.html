@@ -256,5 +256,39 @@
             <p class="footer-copy">&copy; 2026 Gestiora. Todos los derechos reservados.</p>
         </div>
     </footer>
+
+    <!-- Scroll to top button -->
+    <button 
+        id="scroll-top" 
+        class="scroll-top-btn" 
+        aria-label="Volver arriba"
+        type="button">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <polyline points="18 15 12 9 6 15"/>
+        </svg>
+    </button>
+
+    <script>
+        (function() {
+            const scrollBtn = document.getElementById('scroll-top');
+            const scrollThreshold = 300;
+
+            function toggleScrollButton() {
+                if (window.scrollY > scrollThreshold) {
+                    scrollBtn.classList.add('visible');
+                } else {
+                    scrollBtn.classList.remove('visible');
+                }
+            }
+
+            window.addEventListener('scroll', toggleScrollButton, { passive: true });
+
+            scrollBtn.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            toggleScrollButton();
+        })();
+    </script>
 </body>
 </html>
