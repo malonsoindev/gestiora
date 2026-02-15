@@ -3,9 +3,11 @@
 **Gestiora** es una plataforma de backend profesional diseñada para centralizar y automatizar la **gestión de facturas de compra**. Actúa como un motor de integración inteligente que transforma documentos estáticos en datos accionables, permitiendo a las empresas optimizar sus procesos administrativos y financieros mediante el uso de Inteligencia Artificial avanzada.
 
 ## 🔗 Enlaces
-*   **Repositorio:** [GitHub](https://github.com/malonsoindev/gestiora.git)
-*   **Producción:** [Demo](https://gestiora.onrender.com/)
-*   **Slides:** [Presentación](<URL_PENDIENTE>)
+*   **🌐 Web de presentación:** [https://gestiora.onrender.com/](https://gestiora.onrender.com/)
+*   **💻 Repositorio:** [https://github.com/malonsoindev/gestiora.git](https://github.com/malonsoindev/gestiora.git)
+*   **🚀 Producción:** [https://gestiora.onrender.com/](https://gestiora.onrender.com/)
+*   **📄 Documentación de la API (Swagger):** [(https://gestiora.onrender.com/docs](https://gestiora.onrender.com/docs)
+*   **📊 Slides:** [https://docs.google.com/presentation/d/1TUj86iuQ77tMXcwZqaT1rPWroCIgmve71ZtBmObPsJw/edit?usp=sharing](https://docs.google.com/presentation/d/1TUj86iuQ77tMXcwZqaT1rPWroCIgmve71ZtBmObPsJw/edit?usp=sharing)
 
 ## 💡 Idea General
 El proyecto nace para resolver la lentitud de los procesos manuales y la dispersión de información en documentos no estructurados. Gestiora permite gestionar el ciclo de vida de una factura (desde su recepción hasta su archivo histórico), asegurando que los datos sean siempre accesibles y veraces, ya sean procesados por una IA o introducidos manualmente. La idea surge al observar cuellos de botella recurrentes en administracion financiera: demasiado tiempo perdido en tareas repetitivas, baja trazabilidad y errores en la captura de datos.
