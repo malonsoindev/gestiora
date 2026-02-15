@@ -405,9 +405,29 @@ section:nth-child(even) .feature-card {
     font-weight: 500;
 }
 
+/* Video Section */
+#video {
+    background: var(--bg-light);
+}
+
+.video-container {
+    max-width: 900px;
+    margin: 0 auto;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(17, 82, 212, 0.15);
+    aspect-ratio: 16 / 9;
+}
+
+.video-container iframe {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
 /* CTA Section */
 .cta {
-    background: var(--primary);
+    background: var(--primary) !important;
     color: var(--white);
     border-radius: 2rem 2rem 0 0;
     text-align: center;
