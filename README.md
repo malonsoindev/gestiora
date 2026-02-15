@@ -1,165 +1,73 @@
-# Gestiora Backend
+# Gestiora: Gestión inteligente que avanza contigo
 
-Backend para la gestion inteligente de facturas de proveedores con IA. Centraliza proveedores, facturas y auditoria, permite consultas en lenguaje natural (RAG) y mantiene trazabilidad con una arquitectura limpia y escalable.
+**Gestiora** es una plataforma de backend profesional diseñada para centralizar y automatizar la **gestión de facturas de compra**. Actúa como un motor de integración inteligente que transforma documentos estáticos en datos accionables, permitiendo a las empresas optimizar sus procesos administrativos y financieros mediante el uso de Inteligencia Artificial avanzada.
 
-## Descripcion
-API en Node.js + TypeScript orientada a procesos financieros. Implementa autenticacion, gestion documental y consultas con contexto, con enfasis en trazabilidad y consistencia del dominio.
+## 🔗 Enlaces
+*   **🌐 Web de presentación:** [https://gestiora.onrender.com/](https://gestiora.onrender.com/)
+*   **💻 Repositorio:** [https://github.com/malonsoindev/gestiora.git](https://github.com/malonsoindev/gestiora.git)
+*   **🚀 Producción:** [https://gestiora.onrender.com/](https://gestiora.onrender.com/)
+*   **📄 Documentación de la API (Swagger):** [(https://gestiora.onrender.com/docs](https://gestiora.onrender.com/docs)
+*   **📊 Slides:** [https://docs.google.com/presentation/d/1TUj86iuQ77tMXcwZqaT1rPWroCIgmve71ZtBmObPsJw/edit?usp=sharing](https://docs.google.com/presentation/d/1TUj86iuQ77tMXcwZqaT1rPWroCIgmve71ZtBmObPsJw/edit?usp=sharing)
 
-## Propuesta de valor
-- Unifica facturas y proveedores con trazabilidad completa.
-- Reduce tareas manuales con extraccion asistida y RAG.
-- Mantiene reglas de negocio estables gracias a Clean Architecture + DDD.
+## 💡 Idea General
+El proyecto nace para resolver la lentitud de los procesos manuales y la dispersión de información en documentos no estructurados. Gestiora permite gestionar el ciclo de vida de una factura (desde su recepción hasta su archivo histórico), asegurando que los datos sean siempre accesibles y veraces, ya sean procesados por una IA o introducidos manualmente. La idea surge al observar cuellos de botella recurrentes en administracion financiera: demasiado tiempo perdido en tareas repetitivas, baja trazabilidad y errores en la captura de datos.
 
-## Estado del proyecto
-En desarrollo activo.
+El valor diferenciador es la combinacion de IA asistida con control humano estricto y una arquitectura limpia que garantiza escalabilidad y mantenibilidad.
 
-## Caracteristicas
-- IAM Core: login, refresh, logout, RBAC, anti brute force.
-- Gestion de proveedores y facturas mediante casos de uso.
-- Extraccion de datos desde PDF.
-- RAG: indexacion y consultas en lenguaje natural.
-- Auditoria de acciones.
+## ✨ Funcionalidades y Metodología
+Gestiora destaca por su flexibilidad, permitiendo que la operativa del negocio nunca se detenga bajo el principio de que **el humano siempre tiene el control**. La IA propone, el usuario valida y corrige: la supervisión humana es obligatoria antes de consolidar datos. En la practica, los datos extraidos por IA quedan en estado propuesto hasta su confirmacion; cualquier correccion humana marca el origen como manual y fija el estado como confirmado.
 
-## Arquitectura
-Se utiliza Clean Architecture + DDD para aislar el dominio de detalles de infraestructura. Esto permite evolucionar reglas de negocio sin acoplarlas a frameworks, y facilita pruebas unitarias y cambios de persistencia o delivery.
+### 1. Procesamiento Dual (Manual y Automático)
+*   **Vía Automática (Asistida por IA):** Al recibir un PDF, el sistema utiliza modelos de extracción semántica para identificar automáticamente al proveedor, fechas, importes e impuestos. La IA actúa como un asistente: propone los datos para que el usuario los valide o corrija.
+*   **Vía Manual (Estado DRAFT):** El usuario puede dar de alta la cabecera y los movimientos de una factura de forma manual sin necesidad de disponer del archivo PDF en ese momento. 
+*   **Vinculación de Fuente de Verdad:** Cualquier factura creada manualmente puede vincularse posteriormente con su archivo PDF original. Una vez vinculado, el documento pasa a estado **ACTIVO** y el archivo se convierte en la fuente de verdad inmutable para consultas y auditorías.
 
-Las capas se organizan para que:
-- `domain` sea el nucleo estable con entidades, value objects y errores.
-- `application` orqueste casos de uso y puertos.
-- `infrastructure` implemente adaptadores (HTTP, DB, servicios externos).
-- `composition` ensamble dependencias.
+### 2. Gestión de Proveedores
+*   Registro centralizado de proveedores con prevención de duplicados.
+*   **Borradores Inteligentes:** Si la IA detecta una factura de un proveedor no registrado, crea automáticamente un borrador de proveedor para facilitar su alta definitiva.
 
-Decisiones de diseno:
-- Result<T, E> para manejar errores de forma explicita.
-- Separacion estricta de puertos e implementaciones.
-- Fastify por rendimiento y tipado consistente.
+### 3. Consulta Inteligente (RAG)
+*   Implementación de **Retrieval-Augmented Generation (RAG)** para realizar búsquedas en lenguaje natural sobre el histórico documental.
+*   Respuestas precisas basadas exclusivamente en los documentos autorizados, con referencias directas para visualizar o descargar el archivo original.
 
-Principios de desarrollo:
-- TDD obligatorio y SOLID en todas las capas.
-- `strict: true` en TypeScript y `any` prohibido.
-- No logica de negocio en controllers.
+## 🛡️ Seguridad y Protección Activa
+La plataforma aplica el enfoque de **Security by Design** para garantizar la integridad de la información:
 
-## Estructura de carpetas
-```
-src/
-  domain/
-  application/
-  infrastructure/
-  composition/
-  shared/
-  config/
-tests/
-  domain/
-  application/
-  infrastructure/
-  shared/
-docs/
-prompts/
-```
+*   **Seguridad de Credenciales:** Las contraseñas se protegen mediante el algoritmo de hasheo **bcrypt (con salt)**, asegurando que nunca se almacenen en texto plano.
+*   **Mitigación de Fuerza Bruta:** Implementación de un sistema de *rate-limiting* que permite un máximo de **5 intentos fallidos en una ventana de 15 minutos**. Se aplica una limitación temporal por ventana (sin bloqueo permanente de cuenta) para no penalizar la experiencia de usuario.
+*   **Trazabilidad Completa:** Cada intento de inicio de sesión (exitoso o fallido) se registra en la tabla de persistencia `login_attempts`, permitiendo una auditoría detallada de la seguridad del sistema.
 
-## Requisitos
-- Node.js 20+
+## 🏗️ Arquitectura del Software
+El backend está construido siguiendo un patrón de **Monolito Modular** bajo los estándares de **Clean Architecture** y principios de **Domain-Driven Design (DDD)**:
 
-## Instalacion
-```bash
-npm install
-```
+*   **Domain:** Contiene las reglas de negocio, entidades y objetos de valor, totalmente aislados de la tecnología.
+*   **Application:** Implementa los casos de uso y orquesta el flujo de la información.
+*   **Infrastructure:** Adaptadores técnicos para la comunicación (Fastify), la persistencia y los servicios de IA (Genkit).
+*   **Principios y calidad:** Diseño guiado por SOLID, desarrollo con TDD (tests marcan el avance), buenas prácticas continuas, enfoque **Security by Design** desde el arranque y documentación tratada como código desde el inicio del repositorio.
 
-## Configuracion
-Variables de entorno:
+## 🧩 Estructura del Proyecto
+La organizacion del codigo refleja Clean Architecture, separando responsabilidades y evitando acoplamientos:
 
-| Variable | Requerida | Descripcion | Default |
-| --- | --- | --- | --- |
-| JWT_ACCESS_SECRET | Si | Secreto para JWT de acceso | - |
-| JWT_REFRESH_SECRET | Si | Secreto para JWT de refresh | - |
-| PORT | No | Puerto del servidor | 3000 |
-| NODE_ENV | No | Entorno de ejecucion | development |
-| CORS | No | CORS (true, false, lista JSON o string) | - |
-| SWAGGER | No | Expone Swagger UI en /docs | false |
-| DATABASE_TYPE | No | in-memory o postgres | in-memory |
-| DATABASE_URL | Condicional | Requerida si DATABASE_TYPE=postgres | - |
-| STORAGE_TYPE | No | in-memory o local | in-memory |
-| STORAGE_PATH | No | Ruta local de almacenamiento | storage |
-| AI_AGENT_TYPE | No | stub, stub-error o genkit | stub |
-| OAI_MODEL_NAME | No | Modelo para Genkit | - |
-| RAG_INDEX_NAME | No | Nombre del indice RAG | gestiora-rag |
-| RAG_PROMPT_DIR | No | Ruta base de prompts | prompts |
-| RAG_EMBEDDER_MODEL | No | Modelo de embeddings | text-embedding-3-small |
+*   `src/domain`: Entidades, value objects y reglas de negocio puras.
+*   `src/application`: Casos de uso y puertos (interfaces) que orquestan la logica.
+*   `src/infrastructure`: Adaptadores tecnicos (HTTP, DB, storage, IA).
+*   `src/composition`: Composicion y wiring de dependencias.
 
-## Ejecucion
-Desarrollo:
-```bash
-npm run dev
-```
+## 🛠️ Stack Tecnológico
+*   **Entorno:** Node.js.
+*   **Framework Web:** Fastify.
+*   **Persistencia de datos:**
+    *   **Desarrollo:** Repositorios **in-memory** para un prototipado y testeo ágil de la lógica de negocio.
+    *   **Producción:** Base de datos **PostgreSQL** en **Supabase** (nuestro despliegue actual).
+*   **IA:** **Genkit** para la extracción estructurada de datos y motor RAG.
+*   **Seguridad:** JSON Web Tokens (JWT) y Bcrypt.
 
-Build:
-```bash
-npm run build
-```
-
-## Tests
-```bash
-npm test
-```
-
-Coverage:
-```bash
-npx vitest run --coverage
-```
-
-## Ejemplos de uso (curl)
-Login:
-```bash
-curl -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"admin@example.com\",\"password\":\"AdminPass1!a\"}"
-```
-
-Refresh:
-```bash
-curl -X POST http://localhost:3000/auth/refresh \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <ACCESS_TOKEN>" \
-  -d "{\"refreshToken\":\"<REFRESH_TOKEN>\"}"
-```
-
-Subir factura PDF:
-```bash
-curl -X POST http://localhost:3000/documents \
-  -H "Authorization: Bearer <ACCESS_TOKEN>" \
-  -F "file=@/ruta/a/factura.pdf"
-```
-
-Flujo tipico (login -> subir documento -> consulta RAG):
-```bash
-curl -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"admin@example.com\",\"password\":\"AdminPass1!a\"}"
-
-curl -X POST http://localhost:3000/documents \
-  -H "Authorization: Bearer <ACCESS_TOKEN>" \
-  -F "file=@/ruta/a/factura.pdf"
-```
-
-## OpenAPI / Swagger
-- Swagger UI: `/docs` (solo si `SWAGGER=true`)
-- OpenAPI: `docs/openapi.yaml`
-
-## Documentacion adicional
-- Guia del equipo: `AGENTS.md`
-- Reglas de calidad: `RULES.md`
-- Diseno y decisiones: `docs/`
-
-## Reglas de contribucion
-- Respetar Clean Architecture + DDD.
-- Mantener separacion de capas y puertos.
-- No modificar tests para pasar implementaciones.
-- Evitar `any` y duplicidad de imports.
-
-## Seguridad
-- Passwords con bcrypt.
-- JWT con bearer auth.
-- No filtrar errores internos al cliente.
-
-## Licencia
-ISC
+## ⚙️ Instalación y Ejecución
+1.  Clonar el repositorio.
+2.  Instalar dependencias: `npm install`.
+3.  Copiar `.env.example` a `.env` y configurar las variables necesarias.
+4.  Variables minimas recomendadas:
+    *   `JWT_ACCESS_SECRET` y `JWT_REFRESH_SECRET`.
+    *   `DATABASE_TYPE` (in-memory o postgres) y `DATABASE_URL` si usas Postgres.
+    *   `AI_AGENT_TYPE=genkit` y las credenciales del proveedor (`OPENAI_API_KEY`/`PROVIDER_NAME`) si activas IA.
+5.  Iniciar el servidor en desarrollo: `npm run dev`.
