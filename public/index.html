@@ -1,46 +1,662 @@
 <!DOCTYPE html>
 <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Gestiora - Gestión inteligente</title>
-        <style>
-            * {
-                box-sizing: border-box;
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestiora - Gestión inteligente que avanza contigo</title>
+    <meta name="description" content="Plataforma backend para centralizar y automatizar la gestión de facturas de compra con Inteligencia Artificial.">
+    <link rel="icon" href="assets/logo_02.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1152d4;
+            --primary-light: rgba(17, 82, 212, 0.1);
+            --primary-dark: #0d3fa8;
+            --bg-light: #f6f6f8;
+            --bg-dark: #101622;
+            --text-dark: #1a1a2e;
+            --text-muted: #64748b;
+            --white: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Header */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 4rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: var(--text-dark);
+        }
+
+        .logo img {
+            height: 2rem;
+            width: auto;
+        }
+
+        .logo span {
+            font-size: 1.25rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 5rem 0 4rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: var(--primary-light);
+            filter: blur(120px);
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        .hero-logo {
+            width: clamp(200px, 25vw, 320px);
+            height: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 1rem;
+        }
+
+        .hero .tagline {
+            font-size: clamp(1.1rem, 2vw, 1.5rem);
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+
+        .hero-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(17, 82, 212, 0.3);
+        }
+
+        .btn-outline {
+            background: var(--white);
+            color: var(--text-dark);
+            border: 1px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Sections */
+        section {
+            padding: 5rem 0;
+        }
+
+        section:nth-child(even) {
+            background: var(--white);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-label {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .section-title {
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .section-desc {
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Idea Section */
+        .idea-content {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .idea-content p {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .idea-content .highlight {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-style: italic;
+            border-left: 4px solid var(--primary);
+            padding-left: 1.5rem;
+            text-align: left;
+            margin: 2rem 0;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+
+        section:nth-child(even) .feature-card {
+            background: var(--bg-light);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(17, 82, 212, 0.1);
+        }
+
+        .feature-icon {
+            width: 3rem;
+            height: 3rem;
+            background: var(--primary-light);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.25rem;
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.9375rem;
+        }
+
+        .feature-card ul {
+            color: var(--text-muted);
+            font-size: 0.9375rem;
+            padding-left: 1.25rem;
+            margin-top: 0.5rem;
+        }
+
+        .feature-card li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Architecture Section */
+        .arch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .arch-layer {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .arch-layer h4 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .arch-layer p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* Stack Section */
+        .stack-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .stack-item {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 2rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.9375rem;
+            font-weight: 500;
+        }
+
+        /* CTA Section */
+        .cta {
+            background: var(--primary);
+            color: var(--white);
+            border-radius: 2rem 2rem 0 0;
+            text-align: center;
+            padding: 5rem 1.5rem;
+        }
+
+        .cta h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .cta p {
+            font-size: 1.125rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .cta .btn {
+            background: var(--white);
+            color: var(--primary);
+        }
+
+        .cta .btn:hover {
+            background: var(--bg-light);
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--bg-dark);
+            color: #94a3b8;
+            padding: 3rem 1.5rem 2rem;
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1.5rem;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--white);
+            font-weight: 700;
+            font-size: 1.125rem;
+        }
+
+        .footer-logo img {
+            height: 1.5rem;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .footer-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--white);
+        }
+
+        .footer-copy {
+            font-size: 0.8125rem;
+            border-top: 1px solid #1e293b;
+            padding-top: 1.5rem;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .nav-links {
+                display: none;
             }
 
-            body {
-                margin: 0;
-                min-height: 100vh;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 1.25rem;
-                padding: 2rem 1.5rem;
-                text-align: center;
-                font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-                background-color: #ffffff;
-                color: #1a1a1a;
+            .hero {
+                padding: 3rem 0;
             }
 
-            img {
-                width: clamp(240px, 30vw, 480px);
-                height: auto;
-                display: block;
+            section {
+                padding: 3rem 0;
             }
 
-            h2 {
-                margin: 0;
-                font-size: clamp(1.1rem, 2.5vw, 1.75rem);
-                line-height: 1.4;
-                max-width: 40rem;
+            .features-grid {
+                grid-template-columns: 1fr;
             }
-        </style>
-        <link rel="icon" href="assets/logo_02.svg" type="image/svg+xml">
-    </head>
-    <body>
-        <img src="assets/logo_01.webp" alt="Gestiora Logo" title="Gestiora">
-        <h2>Gestión inteligente que avanza contigo</h2>
-    </body>
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <a href="/" class="logo">
+                <img src="assets/logo_02.svg" alt="Gestiora">
+                <span>Gestiora</span>
+            </a>
+            <nav class="nav-links">
+                <a href="#idea">Idea</a>
+                <a href="#funcionalidades">Funcionalidades</a>
+                <a href="#seguridad">Seguridad</a>
+                <a href="#arquitectura">Arquitectura</a>
+                <a href="https://gestiora.onrender.com/docs" target="_blank">API Docs</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero -->
+        <section class="hero">
+            <div class="container">
+                <img src="assets/logo_01.webp" alt="Gestiora Logo" class="hero-logo">
+                <h1>Gestiora</h1>
+                <p class="tagline">Plataforma backend profesional para centralizar y automatizar la gestión de facturas de compra con Inteligencia Artificial.</p>
+                <div class="hero-links">
+                    <a href="https://gestiora.onrender.com/docs" class="btn btn-primary" target="_blank">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        API Docs
+                    </a>
+                    <a href="https://github.com/malonsoindev/gestiora" class="btn btn-outline" target="_blank">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                        GitHub
+                    </a>
+                    <a href="https://docs.google.com/presentation/d/1TUj86iuQ77tMXcwZqaT1rPWroCIgmve71ZtBmObPsJw/edit?usp=sharing" class="btn btn-outline" target="_blank">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        Slides
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Idea General -->
+        <section id="idea">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-label">La idea</span>
+                    <h2 class="section-title">Transformamos documentos en datos accionables</h2>
+                </div>
+                <div class="idea-content">
+                    <p>El proyecto nace para resolver la lentitud de los procesos manuales y la dispersion de informacion en documentos no estructurados. Gestiora gestiona el ciclo de vida completo de una factura, desde su recepcion hasta su archivo historico.</p>
+                    <div class="highlight">
+                        El valor diferenciador es la combinacion de IA asistida con control humano estricto y una arquitectura limpia que garantiza escalabilidad y mantenibilidad.
+                    </div>
+                    <p>El humano siempre tiene el control. La IA propone, el usuario valida y corrige: la supervision humana es obligatoria antes de consolidar datos.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Funcionalidades -->
+        <section id="funcionalidades">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-label">Funcionalidades</span>
+                    <h2 class="section-title">Potencia operativa con flexibilidad total</h2>
+                    <p class="section-desc">Procesamiento dual, gestion centralizada y consultas inteligentes.</p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        </div>
+                        <h3>Procesamiento Dual</h3>
+                        <p>Carga automatica con IA o entrada manual. Vinculacion posterior del PDF como fuente de verdad inmutable.</p>
+                        <ul>
+                            <li><strong>Automatico:</strong> Extraccion semantica de proveedor, fechas, importes e impuestos.</li>
+                            <li><strong>Manual:</strong> Alta de facturas en estado DRAFT sin PDF.</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <h3>Gestion de Proveedores</h3>
+                        <p>Registro centralizado con prevencion de duplicados y borradores inteligentes.</p>
+                        <ul>
+                            <li>Si la IA detecta un proveedor nuevo, crea automaticamente un borrador.</li>
+                            <li>Control total sobre el alta definitiva.</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        </div>
+                        <h3>Consulta Inteligente (RAG)</h3>
+                        <p>Busquedas en lenguaje natural sobre el historico documental con Retrieval-Augmented Generation.</p>
+                        <ul>
+                            <li>Respuestas basadas exclusivamente en documentos autorizados.</li>
+                            <li>Referencias directas para visualizar o descargar archivos.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seguridad -->
+        <section id="seguridad">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-label">Seguridad</span>
+                    <h2 class="section-title">Security by Design</h2>
+                    <p class="section-desc">Proteccion activa desde el nucleo de la arquitectura.</p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                        <h3>Credenciales Seguras</h3>
+                        <p>Contrasenas protegidas con bcrypt (salt). Nunca se almacenan en texto plano.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <h3>Mitigacion de Fuerza Bruta</h3>
+                        <p>Rate-limiting: maximo 5 intentos fallidos en 15 minutos. Limitacion temporal sin bloqueo permanente.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+                        </div>
+                        <h3>Trazabilidad Completa</h3>
+                        <p>Cada intento de login se registra para auditoria detallada del sistema.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Arquitectura -->
+        <section id="arquitectura">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-label">Arquitectura</span>
+                    <h2 class="section-title">Clean Architecture + DDD</h2>
+                    <p class="section-desc">Monolito modular con capas estrictas y principios SOLID.</p>
+                </div>
+                <div class="arch-grid">
+                    <div class="arch-layer">
+                        <h4>Domain</h4>
+                        <p>Entidades, value objects y reglas de negocio aisladas de la tecnologia.</p>
+                    </div>
+                    <div class="arch-layer">
+                        <h4>Application</h4>
+                        <p>Casos de uso y puertos que orquestan el flujo de informacion.</p>
+                    </div>
+                    <div class="arch-layer">
+                        <h4>Infrastructure</h4>
+                        <p>Adaptadores tecnicos: HTTP (Fastify), persistencia y servicios de IA.</p>
+                    </div>
+                    <div class="arch-layer">
+                        <h4>Principios</h4>
+                        <p>TDD, SOLID, Security by Design, documentacion como codigo.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stack -->
+        <section>
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-label">Tecnologias</span>
+                    <h2 class="section-title">Stack Tecnologico</h2>
+                </div>
+                <div class="stack-list">
+                    <span class="stack-item">Node.js</span>
+                    <span class="stack-item">TypeScript</span>
+                    <span class="stack-item">Fastify</span>
+                    <span class="stack-item">PostgreSQL</span>
+                    <span class="stack-item">Supabase</span>
+                    <span class="stack-item">Genkit (IA)</span>
+                    <span class="stack-item">JWT</span>
+                    <span class="stack-item">Bcrypt</span>
+                    <span class="stack-item">Vitest</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="cta">
+            <div class="container">
+                <h2>API Backend lista para integracion</h2>
+                <p>Explora la documentacion interactiva y comienza a integrar Gestiora en tus flujos de trabajo.</p>
+                <a href="https://gestiora.onrender.com/docs" class="btn" target="_blank">Explorar API Docs</a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-logo">
+                <img src="assets/logo_02.svg" alt="Gestiora">
+                <span>Gestiora</span>
+            </div>
+            <p>Gestion inteligente para el mundo moderno. Transformamos datos en decisiones y procesos en progreso.</p>
+            <div class="footer-links">
+                <a href="https://gestiora.onrender.com/docs" target="_blank">API Docs</a>
+                <a href="https://github.com/malonsoindev/gestiora" target="_blank">GitHub</a>
+                <a href="https://docs.google.com/presentation/d/1TUj86iuQ77tMXcwZqaT1rPWroCIgmve71ZtBmObPsJw/edit?usp=sharing" target="_blank">Slides</a>
+            </div>
+            <p class="footer-copy">&copy; 2024 Gestiora. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+</body>
 </html>
