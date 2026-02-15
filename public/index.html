@@ -1,46 +1,238 @@
 <!DOCTYPE html>
 <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Gestiora - Gestión inteligente</title>
-        <style>
-            * {
-                box-sizing: border-box;
-            }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestiora - Gestión inteligente que avanza contigo</title>
+    <meta name="description" content="Plataforma backend para centralizar y automatizar la gestión de facturas de compra con Inteligencia Artificial.">
+    
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://gestiora.onrender.com/">
+    <meta property="og:title" content="Gestiora - Gestión inteligente que avanza contigo">
+    <meta property="og:description" content="Plataforma backend para centralizar y automatizar la gestión de facturas de compra con Inteligencia Artificial.">
+    <meta property="og:image" content="https://gestiora.onrender.com/assets/images/logo_01.webp">
+    <meta property="og:locale" content="es_ES">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Gestiora - Gestión inteligente que avanza contigo">
+    <meta name="twitter:description" content="Plataforma backend para centralizar y automatizar la gestión de facturas de compra con Inteligencia Artificial.">
+    <meta name="twitter:image" content="https://gestiora.onrender.com/assets/images/logo_01.webp">
+    
+    <link rel="icon" href="assets/images/logo_02.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+    <header>
+        <div class="container header-content">
+            <a href="/" class="logo">
+                <img src="assets/images/logo_01.webp" alt="Gestiora">
+            </a>
+            <nav class="nav-links" aria-label="Navegacion principal">
+                <a href="#idea">Idea</a>
+                <a href="#funcionalidades">Funcionalidades</a>
+                <a href="#seguridad">Seguridad</a>
+                <a href="#arquitectura">Arquitectura</a>
+                <a href="https://gestiora.onrender.com/docs" target="_blank" rel="noopener noreferrer">API Docs</a>
+                <a href="https://github.com/malonsoindev/gestiora" target="_blank" rel="noopener noreferrer" class="nav-icon" aria-label="Repositorio en GitHub">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                </a>
+            </nav>
+        </div>
+    </header>
 
-            body {
-                margin: 0;
-                min-height: 100vh;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 1.25rem;
-                padding: 2rem 1.5rem;
-                text-align: center;
-                font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-                background-color: #ffffff;
-                color: #1a1a1a;
-            }
+    <main id="main-content">
+        <!-- Hero -->
+        <section class="hero">
+            <div class="container">
+                <h1>Gestiora</h1>
+                <p class="tagline">Plataforma backend profesional para centralizar y automatizar la gestión de facturas de compra con Inteligencia Artificial.</p>
+                <div class="hero-links">
+                    <a href="https://gestiora.onrender.com/docs" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        API Docs
+                    </a>
+                    <a href="https://github.com/malonsoindev/gestiora" class="btn btn-outline" target="_blank" rel="noopener noreferrer">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                        GitHub
+                    </a>
+                    <a href="https://docs.google.com/presentation/d/1TUj86iuQ77tMXcwZqaT1rPWroCIgmve71ZtBmObPsJw/edit?usp=sharing" class="btn btn-outline" target="_blank" rel="noopener noreferrer">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        Slides
+                    </a>
+                </div>
+            </div>
+        </section>
 
-            img {
-                width: clamp(240px, 30vw, 480px);
-                height: auto;
-                display: block;
-            }
+        <!-- Idea General -->
+        <section id="idea">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-label">La idea</span>
+                    <h2 class="section-title">Transformamos documentos en datos accionables</h2>
+                </div>
+                <div class="idea-content">
+                    <p>El proyecto nace para resolver la lentitud de los procesos manuales y la dispersion de informacion en documentos no estructurados. Gestiora gestiona el ciclo de vida completo de una factura, desde su recepcion hasta su archivo historico.</p>
+                    <div class="highlight">
+                        El valor diferenciador es la combinacion de IA asistida con control humano estricto y una arquitectura limpia que garantiza escalabilidad y mantenibilidad.
+                    </div>
+                    <p>El humano siempre tiene el control. La IA propone, el usuario valida y corrige: la supervision humana es obligatoria antes de consolidar datos.</p>
+                </div>
+            </div>
+        </section>
 
-            h2 {
-                margin: 0;
-                font-size: clamp(1.1rem, 2.5vw, 1.75rem);
-                line-height: 1.4;
-                max-width: 40rem;
-            }
-        </style>
-        <link rel="icon" href="assets/logo_02.svg" type="image/svg+xml">
-    </head>
-    <body>
-        <img src="assets/logo_01.webp" alt="Gestiora Logo" title="Gestiora">
-        <h2>Gestión inteligente que avanza contigo</h2>
-    </body>
+        <!-- Funcionalidades -->
+        <section id="funcionalidades">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-label">Funcionalidades</span>
+                    <h2 class="section-title">Potencia operativa con flexibilidad total</h2>
+                    <p class="section-desc">Procesamiento dual, gestion centralizada y consultas inteligentes.</p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        </div>
+                        <h3>Procesamiento Dual</h3>
+                        <p>Carga automatica con IA o entrada manual. Vinculacion posterior del PDF como fuente de verdad inmutable.</p>
+                        <ul>
+                            <li><strong>Automatico:</strong> Extraccion semantica de proveedor, fechas, importes e impuestos.</li>
+                            <li><strong>Manual:</strong> Alta de facturas en estado DRAFT sin PDF.</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <h3>Gestion de Proveedores</h3>
+                        <p>Registro centralizado con prevencion de duplicados y borradores inteligentes.</p>
+                        <ul>
+                            <li>Si la IA detecta un proveedor nuevo, crea automaticamente un borrador.</li>
+                            <li>Control total sobre el alta definitiva.</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        </div>
+                        <h3>Consulta Inteligente (RAG)</h3>
+                        <p>Busquedas en lenguaje natural sobre el historico documental con Retrieval-Augmented Generation.</p>
+                        <ul>
+                            <li>Respuestas basadas exclusivamente en documentos autorizados.</li>
+                            <li>Referencias directas para visualizar o descargar archivos.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seguridad -->
+        <section id="seguridad">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-label">Seguridad</span>
+                    <h2 class="section-title">Security by Design</h2>
+                    <p class="section-desc">Proteccion activa desde el nucleo de la arquitectura.</p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                        <h3>Credenciales Seguras</h3>
+                        <p>Contrasenas protegidas con bcrypt (salt). Nunca se almacenan en texto plano.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <h3>Mitigacion de Fuerza Bruta</h3>
+                        <p>Rate-limiting: maximo 5 intentos fallidos en 15 minutos. Limitacion temporal sin bloqueo permanente.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+                        </div>
+                        <h3>Trazabilidad Completa</h3>
+                        <p>Cada intento de login se registra para auditoria detallada del sistema.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Arquitectura -->
+        <section id="arquitectura">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-label">Arquitectura</span>
+                    <h2 class="section-title">Clean Architecture + DDD</h2>
+                    <p class="section-desc">Monolito modular con capas estrictas y principios SOLID.</p>
+                </div>
+                <div class="arch-grid">
+                    <div class="arch-layer">
+                        <h4>Domain</h4>
+                        <p>Entidades, value objects y reglas de negocio aisladas de la tecnologia.</p>
+                    </div>
+                    <div class="arch-layer">
+                        <h4>Application</h4>
+                        <p>Casos de uso y puertos que orquestan el flujo de informacion.</p>
+                    </div>
+                    <div class="arch-layer">
+                        <h4>Infrastructure</h4>
+                        <p>Adaptadores tecnicos: HTTP (Fastify), persistencia y servicios de IA.</p>
+                    </div>
+                    <div class="arch-layer">
+                        <h4>Principios</h4>
+                        <p>TDD, SOLID, Security by Design, documentacion como codigo.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stack -->
+        <section>
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-label">Tecnologias</span>
+                    <h2 class="section-title">Stack Tecnologico</h2>
+                </div>
+                <div class="stack-list">
+                    <span class="stack-item">Node.js</span>
+                    <span class="stack-item">TypeScript</span>
+                    <span class="stack-item">Fastify</span>
+                    <span class="stack-item">PostgreSQL</span>
+                    <span class="stack-item">Supabase</span>
+                    <span class="stack-item">Genkit (IA)</span>
+                    <span class="stack-item">JWT</span>
+                    <span class="stack-item">Bcrypt</span>
+                    <span class="stack-item">Vitest</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="cta">
+            <div class="container">
+                <h2>API Backend lista para integracion</h2>
+                <p>Explora la documentacion interactiva y comienza a integrar Gestiora en tus flujos de trabajo.</p>
+                <a href="https://gestiora.onrender.com/docs" class="btn" target="_blank" rel="noopener noreferrer">Explorar API Docs</a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-content">
+            <p>Gestion inteligente para el mundo moderno. Transformamos datos en decisiones y procesos en progreso.</p>
+            <div class="footer-links">
+                <a href="https://gestiora.onrender.com/docs" target="_blank" rel="noopener noreferrer">API Docs</a>
+                <a href="https://github.com/malonsoindev/gestiora" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <a href="https://docs.google.com/presentation/d/1TUj86iuQ77tMXcwZqaT1rPWroCIgmve71ZtBmObPsJw/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Slides</a>
+            </div>
+            <p class="footer-copy">&copy; 2026 Gestiora. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+</body>
 </html>
