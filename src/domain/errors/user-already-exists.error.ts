@@ -1,6 +1,7 @@
-export class UserAlreadyExistsError extends Error {
+import { DomainError } from '@domain/errors/domain.error.js';
+
+export class UserAlreadyExistsError extends DomainError {
     constructor(message: string = 'User already exists') {
-        super(message);
-        this.name = 'UserAlreadyExistsError';
+        super(message, 'UserAlreadyExistsError');
     }
 }

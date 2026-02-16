@@ -1,6 +1,7 @@
-export class ProviderAlreadyExistsError extends Error {
+import { DomainError } from '@domain/errors/domain.error.js';
+
+export class ProviderAlreadyExistsError extends DomainError {
     constructor(message: string = 'Provider already exists') {
-        super(message);
-        this.name = 'ProviderAlreadyExistsError';
+        super(message, 'ProviderAlreadyExistsError');
     }
 }

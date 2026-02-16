@@ -1,6 +1,7 @@
-export class InvalidPasswordError extends Error {
+import { DomainError } from '@domain/errors/domain.error.js';
+
+export class InvalidPasswordError extends DomainError {
     constructor(message: string = 'Password does not meet security requirements') {
-        super(message);
-        this.name = 'InvalidPasswordError';
+        super(message, 'InvalidPasswordError');
     }
 }

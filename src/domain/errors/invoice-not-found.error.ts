@@ -1,6 +1,7 @@
-export class InvoiceNotFoundError extends Error {
+import { DomainError } from '@domain/errors/domain.error.js';
+
+export class InvoiceNotFoundError extends DomainError {
     constructor(message: string = 'Invoice not found') {
-        super(message);
-        this.name = 'InvoiceNotFoundError';
+        super(message, 'InvoiceNotFoundError');
     }
 }
