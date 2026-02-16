@@ -5,7 +5,8 @@ import type { PortError } from '@application/errors/port.error.js';
 import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
 import type { ConfirmInvoiceMovementsRequest } from '@application/dto/confirm-invoice-movements.request.js';
 import type { ConfirmInvoiceMovementsResponse } from '@application/dto/confirm-invoice-movements.response.js';
-import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceMovement, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
 import { ok, fail, type Result } from '@shared/result.js';
@@ -113,7 +114,7 @@ export class ConfirmInvoiceMovementsUseCase {
             ...this.resolveOptionalField('baseImponible', movement.baseImponible, isCorrection ? update.baseImponible : undefined),
             ...this.resolveOptionalField('iva', movement.iva, isCorrection ? update.iva : undefined),
             total: isCorrection ? (update.total ?? movement.total) : movement.total,
-            source: isCorrection ? InvoiceMovementSource.Manual : movement.source,
+            source: isCorrection ? DataSource.Manual : movement.source,
             status: statusMap[update.action],
         });
     }

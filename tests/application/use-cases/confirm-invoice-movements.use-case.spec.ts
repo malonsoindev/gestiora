@@ -4,10 +4,10 @@ import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
 import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
 import {
     InvoiceMovement,
-    InvoiceMovementSource,
     InvoiceMovementStatus,
     type InvoiceMovementProps,
 } from '@domain/entities/invoice-movement.entity.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
 import { RagReindexInvoiceServiceStub } from '@tests/shared/stubs/rag-reindex-invoice.service.stub.js';
@@ -27,7 +27,7 @@ const createMovement = (overrides: Partial<InvoiceMovementProps> = {}): InvoiceM
         baseImponible: 100,
         iva: 21,
         total: 121,
-        source: InvoiceMovementSource.Ai,
+        source: DataSource.Ai,
         status: InvoiceMovementStatus.Proposed,
         ...overrides,
     });
@@ -82,7 +82,7 @@ describe('ConfirmInvoiceMovementsUseCase', () => {
             return;
         }
         expect(movement.status).toBe(InvoiceMovementStatus.Confirmed);
-        expect(movement.source).toBe(InvoiceMovementSource.Ai);
+        expect(movement.source).toBe(DataSource.Ai);
         expect(auditLogger.events.some((event) => event.action === 'INVOICE_MOVEMENTS_CONFIRMED')).toBe(true);
     });
 
@@ -127,7 +127,7 @@ describe('ConfirmInvoiceMovementsUseCase', () => {
         }
         expect(movement.concepto).toBe('Servicio corregido');
         expect(movement.cantidad).toBe(2);
-        expect(movement.source).toBe(InvoiceMovementSource.Manual);
+        expect(movement.source).toBe(DataSource.Manual);
         expect(movement.status).toBe(InvoiceMovementStatus.Confirmed);
     });
 
@@ -135,7 +135,7 @@ describe('ConfirmInvoiceMovementsUseCase', () => {
         const manualMovement = createMovement({
             id: 'movement-manual',
             concepto: 'Manual',
-            source: InvoiceMovementSource.Manual,
+            source: DataSource.Manual,
             status: InvoiceMovementStatus.Confirmed,
         });
         const invoiceRepository = new InvoiceRepositoryStub(
@@ -167,6 +167,6 @@ describe('ConfirmInvoiceMovementsUseCase', () => {
         const updated = invoiceRepository.updatedInvoice;
         const kept = updated?.movements.find((movement) => movement.id === 'movement-manual');
         expect(kept?.concepto).toBe('Manual');
-        expect(kept?.source).toBe(InvoiceMovementSource.Manual);
+        expect(kept?.source).toBe(DataSource.Manual);
     });
 });

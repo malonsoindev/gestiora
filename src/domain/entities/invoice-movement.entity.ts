@@ -1,7 +1,4 @@
-export enum InvoiceMovementSource {
-    Manual = 'MANUAL',
-    Ai = 'AI',
-}
+import { DataSource } from '@domain/enums/data-source.enum.js';
 
 export enum InvoiceMovementStatus {
     Proposed = 'PROPOSED',
@@ -17,7 +14,7 @@ export type InvoiceMovementProps = {
     baseImponible?: number;
     iva?: number;
     total: number;
-    source?: InvoiceMovementSource;
+    source?: DataSource;
     status?: InvoiceMovementStatus;
 };
 
@@ -27,7 +24,7 @@ export class InvoiceMovement {
     static create(props: InvoiceMovementProps): InvoiceMovement {
         return new InvoiceMovement({
             ...props,
-            source: props.source ?? InvoiceMovementSource.Manual,
+            source: props.source ?? DataSource.Manual,
             status: props.status ?? InvoiceMovementStatus.Confirmed,
         });
     }
@@ -60,8 +57,8 @@ export class InvoiceMovement {
         return this.props.total;
     }
 
-    get source(): InvoiceMovementSource {
-        return this.props.source ?? InvoiceMovementSource.Manual;
+    get source(): DataSource {
+        return this.props.source ?? DataSource.Manual;
     }
 
     get status(): InvoiceMovementStatus {

@@ -7,8 +7,9 @@ import type { PortError } from '@application/errors/port.error.js';
 import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
 import type { Invoice } from '@domain/entities/invoice.entity.js';
-import { InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import { InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
 import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
 import { InvalidInvoiceTotalsError } from '@domain/errors/invalid-invoice-totals.error.js';
@@ -75,7 +76,7 @@ export class UpdateManualInvoiceUseCase {
                 : { baseImponible: Money.create(request.invoice.baseImponible) }),
             ...(request.invoice.iva === undefined ? {} : { iva: Money.create(request.invoice.iva) }),
             ...(request.invoice.total === undefined ? {} : { total: Money.create(request.invoice.total) }),
-            headerSource: InvoiceHeaderSource.Manual,
+            headerSource: DataSource.Manual,
             headerStatus: InvoiceHeaderStatus.Confirmed,
             movements,
             updatedAt: now,

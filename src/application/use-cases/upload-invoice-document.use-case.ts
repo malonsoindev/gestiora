@@ -10,8 +10,9 @@ import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex
 import type { UploadInvoiceDocumentRequest } from '@application/dto/upload-invoice-document.request.js';
 import type { UploadInvoiceDocumentResponse } from '@application/dto/upload-invoice-document.response.js';
 import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
-import { Invoice, InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
-import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { Invoice, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import { InvoiceMovement, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
@@ -187,7 +188,7 @@ export class UploadInvoiceDocumentUseCase {
                 ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
                 ...(movement.iva === undefined ? {} : { iva: movement.iva }),
                 total: movement.total,
-                source: InvoiceMovementSource.Ai,
+                source: DataSource.Ai,
                 status: InvoiceMovementStatus.Proposed,
             }),
         );
@@ -196,7 +197,7 @@ export class UploadInvoiceDocumentUseCase {
             id: this.dependencies.invoiceIdGenerator.generate(),
             providerId,
             status,
-            headerSource: InvoiceHeaderSource.Ai,
+            headerSource: DataSource.Ai,
             headerStatus: InvoiceHeaderStatus.Proposed,
             ...(extracted.invoice.numeroFactura ? { numeroFactura: extracted.invoice.numeroFactura } : {}),
             ...(extracted.invoice.fechaOperacion ? { fechaOperacion: InvoiceDate.create(extracted.invoice.fechaOperacion) } : {}),

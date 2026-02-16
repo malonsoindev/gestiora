@@ -9,15 +9,14 @@ import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex
 import type { ReprocessInvoiceExtractionRequest } from '@application/dto/reprocess-invoice-extraction.request.js';
 import type { ReprocessInvoiceExtractionResponse } from '@application/dto/reprocess-invoice-extraction.response.js';
 import {
-    InvoiceHeaderSource,
     InvoiceHeaderStatus,
     InvoiceStatus,
 } from '@domain/entities/invoice.entity.js';
 import {
     InvoiceMovement,
-    InvoiceMovementSource,
     InvoiceMovementStatus,
 } from '@domain/entities/invoice-movement.entity.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
@@ -86,7 +85,7 @@ export class ReprocessInvoiceExtractionUseCase {
 
         const headerUpdates = this.buildHeaderUpdates(invoice, extracted);
 
-        const manualMovements = invoice.movements.filter((movement) => movement.source === InvoiceMovementSource.Manual);
+        const manualMovements = invoice.movements.filter((movement) => movement.source === DataSource.Manual);
         const aiMovements = this.createAiMovements(extracted.invoice.movements);
 
         const updated = invoice.updateDetails({
@@ -123,7 +122,7 @@ export class ReprocessInvoiceExtractionUseCase {
     }
 
     private buildHeaderUpdates(
-        invoice: { headerSource: InvoiceHeaderSource; headerStatus: InvoiceHeaderStatus },
+        invoice: { headerSource: DataSource; headerStatus: InvoiceHeaderStatus },
         extracted: { invoice: {
             numeroFactura?: string;
             fechaOperacion?: string;
@@ -139,11 +138,11 @@ export class ReprocessInvoiceExtractionUseCase {
         baseImponible: Money;
         iva: Money;
         total: Money;
-        headerSource: InvoiceHeaderSource;
+        headerSource: DataSource;
         headerStatus: InvoiceHeaderStatus;
     }> {
         const isManuallyConfirmed =
-            invoice.headerSource === InvoiceHeaderSource.Manual &&
+            invoice.headerSource === DataSource.Manual &&
             invoice.headerStatus === InvoiceHeaderStatus.Confirmed;
 
         if (isManuallyConfirmed) {
@@ -158,7 +157,7 @@ export class ReprocessInvoiceExtractionUseCase {
             ...(ext.baseImponible !== undefined && { baseImponible: Money.create(ext.baseImponible) }),
             ...(ext.iva !== undefined && { iva: Money.create(ext.iva) }),
             ...(ext.total !== undefined && { total: Money.create(ext.total) }),
-            headerSource: InvoiceHeaderSource.Ai,
+            headerSource: DataSource.Ai,
             headerStatus: InvoiceHeaderStatus.Proposed,
         };
     }
@@ -182,7 +181,7 @@ export class ReprocessInvoiceExtractionUseCase {
                 ...(movement.baseImponible !== undefined && { baseImponible: movement.baseImponible }),
                 ...(movement.iva !== undefined && { iva: movement.iva }),
                 total: movement.total,
-                source: InvoiceMovementSource.Ai,
+                source: DataSource.Ai,
                 status: InvoiceMovementStatus.Proposed,
             }),
         );

@@ -2,17 +2,13 @@ import type { InvoiceMovement } from '@domain/entities/invoice-movement.entity.j
 import type { FileRef } from '@domain/value-objects/file-ref.value-object.js';
 import type { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import type { Money } from '@domain/value-objects/money.value-object.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
 
 export enum InvoiceStatus {
     Draft = 'DRAFT',
     Active = 'ACTIVE',
     Inconsistent = 'INCONSISTENT',
     Deleted = 'DELETED',
-}
-
-export enum InvoiceHeaderSource {
-    Manual = 'MANUAL',
-    Ai = 'AI',
 }
 
 export enum InvoiceHeaderStatus {
@@ -24,7 +20,7 @@ export type InvoiceProps = {
     id: string;
     providerId: string;
     status: InvoiceStatus;
-    headerSource?: InvoiceHeaderSource;
+        headerSource?: DataSource;
     headerStatus?: InvoiceHeaderStatus;
     numeroFactura?: string;
     fechaOperacion?: InvoiceDate;
@@ -58,8 +54,8 @@ export class Invoice {
         return this.props.status;
     }
 
-    get headerSource(): InvoiceHeaderSource {
-        return this.props.headerSource ?? InvoiceHeaderSource.Manual;
+    get headerSource(): DataSource {
+        return this.props.headerSource ?? DataSource.Manual;
     }
 
     get headerStatus(): InvoiceHeaderStatus {
@@ -126,7 +122,7 @@ export class Invoice {
         baseImponible?: Money;
         iva?: Money;
         total?: Money;
-        headerSource?: InvoiceHeaderSource;
+    headerSource?: DataSource;
         headerStatus?: InvoiceHeaderStatus;
         movements?: InvoiceMovement[];
         updatedAt: Date;

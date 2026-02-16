@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { IndexInvoicesForRagUseCase } from '@application/use-cases/index-invoices-for-rag.use-case.js';
 import type { RagDocument, RagIndexer } from '@application/ports/rag-indexer.js';
 import { PortError } from '@application/errors/port.error.js';
-import { Invoice, InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import { Invoice, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
 import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
@@ -48,7 +49,7 @@ const createInvoice = (movementsCount: number): Invoice =>
         now: fixedNow,
         overrides: {
             status: InvoiceStatus.Active,
-            headerSource: InvoiceHeaderSource.Manual,
+            headerSource: DataSource.Manual,
             headerStatus: InvoiceHeaderStatus.Confirmed,
             numeroFactura: 'FAC-001',
             fechaOperacion: InvoiceDate.create('2026-02-10'),

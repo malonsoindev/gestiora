@@ -5,7 +5,8 @@ import type { PortError } from '@application/errors/port.error.js';
 import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
 import type { ConfirmInvoiceHeaderRequest } from '@application/dto/confirm-invoice-header.request.js';
 import type { ConfirmInvoiceHeaderResponse } from '@application/dto/confirm-invoice-header.response.js';
-import { InvoiceHeaderSource, InvoiceHeaderStatus } from '@domain/entities/invoice.entity.js';
+import { InvoiceHeaderStatus } from '@domain/entities/invoice.entity.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
@@ -56,14 +57,14 @@ export class ConfirmInvoiceHeaderUseCase {
             baseImponible?: Money;
             iva?: Money;
             total?: Money;
-            headerSource?: InvoiceHeaderSource;
+            headerSource?: DataSource;
             headerStatus?: InvoiceHeaderStatus;
         } = {};
 
         const { fieldUpdates, hasCorrections } = this.processFieldCorrections(request.fields);
         Object.assign(updates, fieldUpdates);
 
-        updates.headerSource = hasCorrections ? InvoiceHeaderSource.Manual : invoice.headerSource;
+        updates.headerSource = hasCorrections ? DataSource.Manual : invoice.headerSource;
         updates.headerStatus = InvoiceHeaderStatus.Confirmed;
 
         const updated = invoice.updateDetails({

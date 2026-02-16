@@ -5,11 +5,11 @@ import { PortError } from '@application/errors/port.error.js';
 import type { InvoiceListFilters, InvoiceListResult, InvoiceRepository } from '@application/ports/invoice.repository.js';
 import {
     Invoice,
-    InvoiceHeaderSource,
     InvoiceHeaderStatus,
     InvoiceStatus,
 } from '@domain/entities/invoice.entity.js';
-import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceMovement, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
 import { FileRef } from '@domain/value-objects/file-ref.value-object.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
@@ -333,8 +333,8 @@ export class PostgresInvoiceRepository implements InvoiceRepository {
         }
     }
 
-    private mapHeaderSource(value: string): InvoiceHeaderSource {
-        return value === InvoiceHeaderSource.Ai ? InvoiceHeaderSource.Ai : InvoiceHeaderSource.Manual;
+    private mapHeaderSource(value: string): DataSource {
+        return value === DataSource.Ai ? DataSource.Ai : DataSource.Manual;
     }
 
     private mapHeaderStatus(value: string): InvoiceHeaderStatus {
@@ -343,8 +343,8 @@ export class PostgresInvoiceRepository implements InvoiceRepository {
             : InvoiceHeaderStatus.Confirmed;
     }
 
-    private mapMovementSource(value: string): InvoiceMovementSource {
-        return value === InvoiceMovementSource.Ai ? InvoiceMovementSource.Ai : InvoiceMovementSource.Manual;
+    private mapMovementSource(value: string): DataSource {
+        return value === DataSource.Ai ? DataSource.Ai : DataSource.Manual;
     }
 
     private mapMovementStatus(value: string): InvoiceMovementStatus {

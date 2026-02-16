@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { ConfirmInvoiceHeaderUseCase } from '@application/use-cases/confirm-invoice-header.use-case.js';
-import { Invoice, InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import { Invoice, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
 import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
 import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
 import { RagReindexInvoiceServiceStub } from '@tests/shared/stubs/rag-reindex-invoice.service.stub.js';
@@ -23,7 +24,7 @@ const createInvoice = (overrides: Partial<InvoiceProps> = {}): Invoice =>
             baseImponible: Money.create(100),
             iva: Money.create(21),
             total: Money.create(121),
-            headerSource: InvoiceHeaderSource.Ai,
+            headerSource: DataSource.Ai,
             headerStatus: InvoiceHeaderStatus.Proposed,
             movements: [
                 InvoiceMovement.create({
@@ -65,7 +66,7 @@ describe('ConfirmInvoiceHeaderUseCase', () => {
         const updated = invoiceRepository.updatedInvoice;
         expect(updated?.numeroFactura).toBe('FAC-2026-0102');
         expect(updated?.headerStatus).toBe(InvoiceHeaderStatus.Confirmed);
-        expect(updated?.headerSource).toBe(InvoiceHeaderSource.Ai);
+        expect(updated?.headerSource).toBe(DataSource.Ai);
         expect(auditLogger.events.some((event) => event.action === 'INVOICE_HEADER_CONFIRMED')).toBe(true);
     });
 
@@ -93,14 +94,14 @@ describe('ConfirmInvoiceHeaderUseCase', () => {
         const updated = invoiceRepository.updatedInvoice;
         expect(updated?.numeroFactura).toBe('FAC-2026-0103');
         expect(updated?.total).toBe(130);
-        expect(updated?.headerSource).toBe(InvoiceHeaderSource.Manual);
+        expect(updated?.headerSource).toBe(DataSource.Manual);
         expect(updated?.headerStatus).toBe(InvoiceHeaderStatus.Confirmed);
     });
 
     it('keeps manual header fields when not provided', async () => {
         const invoiceRepository = new InvoiceRepositoryStub(
             createInvoice({
-                headerSource: InvoiceHeaderSource.Manual,
+                headerSource: DataSource.Manual,
                 headerStatus: InvoiceHeaderStatus.Confirmed,
             }),
         );
@@ -123,7 +124,7 @@ describe('ConfirmInvoiceHeaderUseCase', () => {
 
         expect(result.success).toBe(true);
         const updated = invoiceRepository.updatedInvoice;
-        expect(updated?.headerSource).toBe(InvoiceHeaderSource.Manual);
+        expect(updated?.headerSource).toBe(DataSource.Manual);
         expect(updated?.headerStatus).toBe(InvoiceHeaderStatus.Confirmed);
     });
 });

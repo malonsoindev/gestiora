@@ -1,10 +1,11 @@
 import postgres from 'postgres';
 import { describe, expect, it, beforeAll, afterAll, beforeEach } from 'vitest';
 import { PostgresInvoiceRepository } from '@infrastructure/persistence/postgres/postgres-invoice.repository.js';
-import { Invoice, InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import { Invoice, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
 import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
-import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceMovement, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
 import type { InvoiceMovementProps } from '@domain/entities/invoice-movement.entity.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
 import { FileRef } from '@domain/value-objects/file-ref.value-object.js';
@@ -22,7 +23,7 @@ const createMovement = (overrides: Partial<InvoiceMovementProps> = {}): InvoiceM
         baseImponible: 100,
         iva: 21,
         total: 121,
-        source: InvoiceMovementSource.Ai,
+        source: DataSource.Ai,
         status: InvoiceMovementStatus.Proposed,
         ...overrides,
     });
@@ -32,7 +33,7 @@ const createInvoice = (overrides: Partial<InvoiceProps> = {}): Invoice =>
         now: fixedNow,
         overrides: {
             status: InvoiceStatus.Active,
-            headerSource: InvoiceHeaderSource.Ai,
+            headerSource: DataSource.Ai,
             headerStatus: InvoiceHeaderStatus.Proposed,
             numeroFactura: 'FAC-2026-0010',
             fechaOperacion: InvoiceDate.create('2026-03-01'),
@@ -152,7 +153,7 @@ describeIf('PostgresInvoiceRepository', () => {
         if (findResult.success) {
             expect(findResult.value?.id).toBe('invoice-1');
             expect(findResult.value?.movements).toHaveLength(1);
-            expect(findResult.value?.headerSource).toBe(InvoiceHeaderSource.Ai);
+            expect(findResult.value?.headerSource).toBe(DataSource.Ai);
         }
     });
 
