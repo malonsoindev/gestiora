@@ -95,13 +95,8 @@ const unitOfWork = usePostgres ? DatabaseFactory.createUnitOfWork() : undefined;
 
 if (usePostgres && sqlClient) {
 
-    const hayConexion = await DatabaseFactory.checkConnection();
-    if (hayConexion) {
-        console.log('Conexión a la base de datos Postgres establecida correctamente');
-    }
-    else {
-        console.log('No se pudo establecer conexión a la base de datos Postgres');
-    }
+    await DatabaseFactory.checkConnection();
+    
 }
 
 const userRepository = usePostgres && sqlClient
