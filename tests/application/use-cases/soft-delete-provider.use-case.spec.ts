@@ -4,7 +4,7 @@ import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import type { ProviderProps } from '@domain/entities/provider.entity.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
 import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
-import { RagReindexProviderInvoicesServiceStub } from '@tests/application/stubs/rag-reindex-provider-invoices.service.stub.js';
+import { RagReindexProviderInvoicesServiceStub } from '@tests/shared/stubs/rag-reindex-provider-invoices.service.stub.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { ProviderRepositorySpy } from '@tests/shared/spies/provider-repository.spy.js';

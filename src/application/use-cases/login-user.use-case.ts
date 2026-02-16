@@ -11,6 +11,7 @@ import type { UserRepository } from '@application/ports/user.repository.js';
 import type { LoginUserRequest } from '@application/dto/login-user.request.js';
 import type { LoginUserResponse } from '@application/dto/login-user.response.js';
 import { fail, ok, type Result } from '@shared/result.js';
+import { addSeconds } from '@shared/date-utils.js';
 import type { PortError } from '@application/errors/port.error.js';
 import { Session, SessionStatus } from '@domain/entities/session.entity.js';
 import type { User } from '@domain/entities/user.entity.js';
@@ -294,9 +295,6 @@ export class LoginUserUseCase {
         return this.dependencies.auditLogger.log(event);
     }
 }
-
-const addSeconds = (date: Date, seconds: number): Date =>
-    new Date(date.getTime() + seconds * 1000);
 
 const buildMetadata = (request: LoginUserRequest): Record<string, string> => {
     const metadata: Record<string, string> = {};

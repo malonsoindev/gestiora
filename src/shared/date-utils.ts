@@ -7,3 +7,6 @@ export const toDate = (value: unknown): Date => {
     }
     return new Date(String(value));
 };
+
+export const addSeconds = (date: Date, seconds: number): Date =>
+    new Date(date.getTime() + seconds * 1000);

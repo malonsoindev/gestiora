@@ -10,6 +10,7 @@ import { Session, SessionStatus } from '@domain/entities/session.entity.js';
 import type { User } from '@domain/entities/user.entity.js';
 import { AuthInvalidRefreshTokenError } from '@domain/errors/auth-invalid-refresh-token.error.js';
 import { fail, ok, type Result } from '@shared/result.js';
+import { addSeconds } from '@shared/date-utils.js';
 import type { PortError } from '@application/errors/port.error.js';
 
 export type RefreshAccessTokenDependencies = {
@@ -219,6 +220,3 @@ const updateSessionRefresh = (
         ...(session.userAgent ? { userAgent: session.userAgent } : {}),
     });
 };
-
-const addSeconds = (date: Date, seconds: number): Date =>
-    new Date(date.getTime() + seconds * 1000);
