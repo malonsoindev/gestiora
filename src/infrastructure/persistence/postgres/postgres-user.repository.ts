@@ -1,6 +1,7 @@
 import type { Sql } from 'postgres';
 import { fail, ok, type Result } from '@shared/result.js';
 import { toDate } from '@shared/date-utils.js';
+import { mapEnumValue } from '@shared/enum-utils.js';
 import { PortError } from '@application/errors/port.error.js';
 import type { UserRepository } from '@application/ports/user.repository.js';
 import { User, UserStatus } from '@domain/entities/user.entity.js';
@@ -56,7 +57,7 @@ export class PostgresUserRepository implements UserRepository {
 
     private mapRowToUser(row: Record<string, unknown>): User {
         const statusValue = String(row.status);
-        const status = this.mapStatus(statusValue);
+        const status = mapEnumValue(UserStatus, statusValue, UserStatus.Inactive);
         const roles = Array.isArray(row.roles)
             ? row.roles.map((role) => UserRole.create(String(role) as 'USER' | 'ADMIN'))
             : [];
@@ -160,17 +161,5 @@ export class PostgresUserRepository implements UserRepository {
             return fail(new PortError('UserRepository', 'Failed to update user', cause));
         }
     }
-
-    private mapStatus(value: string): UserStatus {
-        switch (value) {
-            case UserStatus.Active:
-                return UserStatus.Active;
-            case UserStatus.Inactive:
-                return UserStatus.Inactive;
-            case UserStatus.Deleted:
-                return UserStatus.Deleted;
-            default:
-                return UserStatus.Inactive;
-        }
-    }
 }
+

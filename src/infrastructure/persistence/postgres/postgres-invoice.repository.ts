@@ -1,6 +1,7 @@
 import type { Sql } from 'postgres';
 import { fail, ok, type Result } from '@shared/result.js';
 import { toDate } from '@shared/date-utils.js';
+import { mapEnumValue } from '@shared/enum-utils.js';
 import { PortError } from '@application/errors/port.error.js';
 import type { InvoiceListFilters, InvoiceListResult, InvoiceRepository } from '@application/ports/invoice.repository.js';
 import {
@@ -279,17 +280,17 @@ export class PostgresInvoiceRepository implements InvoiceRepository {
                     : { baseImponible: Number(movement.base_imponible) }),
                 ...(movement.iva === null ? {} : { iva: Number(movement.iva) }),
                 total: Number(movement.total),
-                source: this.mapMovementSource(movement.source),
-                status: this.mapMovementStatus(movement.status),
+                source: mapEnumValue(DataSource, movement.source, DataSource.Manual),
+                status: mapEnumValue(InvoiceMovementStatus, movement.status, InvoiceMovementStatus.Confirmed),
             }),
         );
 
         return Invoice.create({
             id: row.id,
             providerId: row.provider_id,
-            status: this.mapInvoiceStatus(row.status),
-            headerSource: this.mapHeaderSource(row.header_source),
-            headerStatus: this.mapHeaderStatus(row.header_status),
+            status: mapEnumValue(InvoiceStatus, row.status, InvoiceStatus.Draft),
+            headerSource: mapEnumValue(DataSource, row.header_source, DataSource.Manual),
+            headerStatus: mapEnumValue(InvoiceHeaderStatus, row.header_status, InvoiceHeaderStatus.Confirmed),
             ...(row.numero_factura ? { numeroFactura: row.numero_factura } : {}),
             ...(row.fecha_operacion
                 ? { fechaOperacion: InvoiceDate.create(this.normalizeInvoiceDate(row.fecha_operacion)) }
@@ -316,48 +317,6 @@ export class PostgresInvoiceRepository implements InvoiceRepository {
             updatedAt: toDate(row.updated_at),
             ...(row.deleted_at ? { deletedAt: toDate(row.deleted_at) } : {}),
         });
-    }
-
-    private mapInvoiceStatus(value: string): InvoiceStatus {
-        switch (value) {
-            case InvoiceStatus.Draft:
-                return InvoiceStatus.Draft;
-            case InvoiceStatus.Active:
-                return InvoiceStatus.Active;
-            case InvoiceStatus.Inconsistent:
-                return InvoiceStatus.Inconsistent;
-            case InvoiceStatus.Deleted:
-                return InvoiceStatus.Deleted;
-            default:
-                return InvoiceStatus.Draft;
-        }
-    }
-
-    private mapHeaderSource(value: string): DataSource {
-        return value === DataSource.Ai ? DataSource.Ai : DataSource.Manual;
-    }
-
-    private mapHeaderStatus(value: string): InvoiceHeaderStatus {
-        return value === InvoiceHeaderStatus.Proposed
-            ? InvoiceHeaderStatus.Proposed
-            : InvoiceHeaderStatus.Confirmed;
-    }
-
-    private mapMovementSource(value: string): DataSource {
-        return value === DataSource.Ai ? DataSource.Ai : DataSource.Manual;
-    }
-
-    private mapMovementStatus(value: string): InvoiceMovementStatus {
-        switch (value) {
-            case InvoiceMovementStatus.Proposed:
-                return InvoiceMovementStatus.Proposed;
-            case InvoiceMovementStatus.Rejected:
-                return InvoiceMovementStatus.Rejected;
-            case InvoiceMovementStatus.Confirmed:
-                return InvoiceMovementStatus.Confirmed;
-            default:
-                return InvoiceMovementStatus.Confirmed;
-        }
     }
 
     /**
