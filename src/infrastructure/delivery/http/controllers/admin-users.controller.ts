@@ -114,15 +114,7 @@ export class AdminUsersController {
 
         if (result.success) {
             return reply.code(200).send({
-                items: result.value.items.map((item) => ({
-                    userId: item.userId,
-                    email: item.email,
-                    ...(item.name ? { name: item.name } : {}),
-                    ...(item.avatar ? { avatar: item.avatar } : {}),
-                    status: this.mapStatusToApi(item.status),
-                    roles: item.roles.map((r) => this.mapRoleToApi(r)),
-                    createdAt: item.createdAt.toISOString(),
-                })),
+                items: result.value.items.map((item) => this.mapUserToListItem(item)),
                 page: result.value.page,
                 pageSize: result.value.pageSize,
                 total: result.value.total,
@@ -139,17 +131,7 @@ export class AdminUsersController {
         const result = await this.getUserDetailUseCase.execute({ userId: request.params.userId });
 
         if (result.success) {
-            return reply.code(200).send({
-                userId: result.value.userId,
-                email: result.value.email,
-                ...(result.value.name ? { name: result.value.name } : {}),
-                ...(result.value.avatar ? { avatar: result.value.avatar } : {}),
-                status: this.mapStatusToApi(result.value.status),
-                roles: result.value.roles.map((role) => this.mapRoleToApi(role)),
-                createdAt: result.value.createdAt.toISOString(),
-                updatedAt: result.value.updatedAt.toISOString(),
-                deletedAt: result.value.deletedAt ? result.value.deletedAt.toISOString() : null,
-            });
+            return reply.code(200).send(this.mapUserToDetail(result.value));
         }
 
         return respondError(reply, result.error);
@@ -286,17 +268,7 @@ export class AdminUsersController {
         const detail = await this.getUserDetailUseCase.execute({ userId });
 
         if (detail.success) {
-            return reply.code(200).send({
-                userId: detail.value.userId,
-                email: detail.value.email,
-                ...(detail.value.name ? { name: detail.value.name } : {}),
-                ...(detail.value.avatar ? { avatar: detail.value.avatar } : {}),
-                status: this.mapStatusToApi(detail.value.status),
-                roles: detail.value.roles.map((role) => this.mapRoleToApi(role)),
-                createdAt: detail.value.createdAt.toISOString(),
-                updatedAt: detail.value.updatedAt.toISOString(),
-                deletedAt: detail.value.deletedAt ? detail.value.deletedAt.toISOString() : null,
-            });
+            return reply.code(200).send(this.mapUserToDetail(detail.value));
         }
 
         return respondError(reply, detail.error);
@@ -341,5 +313,67 @@ export class AdminUsersController {
 
     private mapRoleToApi(role: UserRole): 'Usuario' | 'Administrador' {
         return role.getValue() === 'ADMIN' ? 'Administrador' : 'Usuario';
+    }
+
+    private mapUserToListItem(user: {
+        userId: string;
+        email: string;
+        name?: string;
+        avatar?: string;
+        status: UserStatus;
+        roles: UserRole[];
+        createdAt: Date;
+    }): {
+        userId: string;
+        email: string;
+        name?: string;
+        avatar?: string;
+        status: 'ACTIVE' | 'INACTIVE' | 'DELETED';
+        roles: Array<'Usuario' | 'Administrador'>;
+        createdAt: string;
+    } {
+        return {
+            userId: user.userId,
+            email: user.email,
+            ...(user.name ? { name: user.name } : {}),
+            ...(user.avatar ? { avatar: user.avatar } : {}),
+            status: this.mapStatusToApi(user.status),
+            roles: user.roles.map((r) => this.mapRoleToApi(r)),
+            createdAt: user.createdAt.toISOString(),
+        };
+    }
+
+    private mapUserToDetail(user: {
+        userId: string;
+        email: string;
+        name?: string;
+        avatar?: string;
+        status: UserStatus;
+        roles: UserRole[];
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt?: Date;
+    }): {
+        userId: string;
+        email: string;
+        name?: string;
+        avatar?: string;
+        status: 'ACTIVE' | 'INACTIVE' | 'DELETED';
+        roles: Array<'Usuario' | 'Administrador'>;
+        createdAt: string;
+        updatedAt: string;
+        deletedAt: string | null;
+    } {
+        return {
+            userId: user.userId,
+            email: user.email,
+            ...(user.name ? { name: user.name } : {}),
+            ...(user.avatar ? { avatar: user.avatar } : {}),
+            status: this.mapStatusToApi(user.status),
+            roles: user.roles.map((r) => this.mapRoleToApi(r)),
+            createdAt: user.createdAt.toISOString(),
+            updatedAt: user.updatedAt.toISOString(),
+            deletedAt: user.deletedAt ? user.deletedAt.toISOString() : null,
+        };
     }
 }
