@@ -10,10 +10,10 @@ import { InvalidEmailError } from '@domain/errors/invalid-email.error.js';
 import { User, UserStatus } from '@domain/entities/user.entity.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { Email } from '@domain/value-objects/email.value-object.js';
-import { ok } from '@shared/result.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 import { UserRepositorySpy } from '@tests/shared/spies/user-repository.spy.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { PasswordHasherStub } from '@tests/shared/stubs/password-hasher.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 
 const fixedNow = new Date('2026-02-02T10:00:00.000Z');
@@ -34,16 +34,6 @@ class UserIdGeneratorStub implements IdGenerator {
 
     generate(): string {
         return this.id;
-    }
-}
-
-class PasswordHasherStub implements PasswordHasher {
-    async verify() {
-        return ok(false);
-    }
-
-    async hash(value: string) {
-        return ok(`hashed:${value}`);
     }
 }
 

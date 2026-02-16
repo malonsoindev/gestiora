@@ -4,17 +4,17 @@ import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher.js';
 import type { SessionRepository } from '@application/ports/session.repository.js';
-import type { AccessTokenPayload, RefreshTokenPayload, TokenService } from '@application/ports/token.service.js';
+import type { TokenService } from '@application/ports/token.service.js';
 import type { UserRepository } from '@application/ports/user.repository.js';
 import { AuthInvalidRefreshTokenError } from '@domain/errors/auth-invalid-refresh-token.error.js';
 import { Session, SessionStatus } from '@domain/entities/session.entity.js';
 import type { SessionProps } from '@domain/entities/session.entity.js';
 import { User } from '@domain/entities/user.entity.js';
 import type { UserProps } from '@domain/entities/user.entity.js';
-import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { ok } from '@shared/result.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { TokenServiceStub } from '@tests/shared/stubs/token-service.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 
 const fixedNow = new Date('2026-01-29T12:00:00.000Z');
@@ -40,27 +40,6 @@ class SessionRepositorySpy implements SessionRepository {
 
     async revokeByUserId(_userId: string) {
         return ok(undefined);
-    }
-}
-
-class TokenServiceStub implements TokenService {
-    accessPayloads: AccessTokenPayload[] = [];
-    refreshPayloads: RefreshTokenPayload[] = [];
-    private refreshCount = 0;
-
-    createAccessToken(payload: AccessTokenPayload) {
-        this.accessPayloads.push(payload);
-        return ok('access-token');
-    }
-
-    createRefreshToken(payload: RefreshTokenPayload) {
-        this.refreshPayloads.push(payload);
-        this.refreshCount += 1;
-        return ok(`refresh-token-${this.refreshCount}`);
-    }
-
-    verifyAccessToken(_token: string) {
-        return ok({ userId: 'user-1', roles: [UserRole.user()] });
     }
 }
 
@@ -90,7 +69,7 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
 } => {
     const sessionRepository = new SessionRepositorySpy();
     const auditLogger = new AuditLoggerSpy();
-    const tokenService = new TokenServiceStub();
+    const tokenService = new TokenServiceStub({ incrementalRefreshTokens: true });
 
     const resolvedDependencies: UseCaseDependencies = {
         sessionRepository,

@@ -7,7 +7,7 @@ import type { PasswordHasher } from '@application/ports/password-hasher.js';
 import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher.js';
 import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { SessionRepository } from '@application/ports/session.repository.js';
-import type { AccessTokenPayload, RefreshTokenPayload, TokenService } from '@application/ports/token.service.js';
+import type { TokenService } from '@application/ports/token.service.js';
 import type { UserRepository } from '@application/ports/user.repository.js';
 import { AuthInvalidCredentialsError } from '@domain/errors/auth-invalid-credentials.error.js';
 import { AuthRateLimitedError } from '@domain/errors/auth-rate-limited.error.js';
@@ -19,6 +19,8 @@ import type { UserProps } from '@domain/entities/user.entity.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { fail, ok } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { PasswordHasherStub } from '@tests/shared/stubs/password-hasher.stub.js';
+import { TokenServiceStub } from '@tests/shared/stubs/token-service.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
@@ -69,36 +71,7 @@ class SessionRepositorySpy implements SessionRepository {
     }
 }
 
-class TokenServiceStub implements TokenService {
-    accessPayloads: AccessTokenPayload[] = [];
-    refreshPayloads: RefreshTokenPayload[] = [];
 
-    createAccessToken(payload: AccessTokenPayload) {
-        this.accessPayloads.push(payload);
-        return ok('access-token');
-    }
-
-    createRefreshToken(payload: RefreshTokenPayload) {
-        this.refreshPayloads.push(payload);
-        return ok('refresh-token');
-    }
-
-    verifyAccessToken() {
-        return ok({ userId: 'user-1', roles: [UserRole.user()] });
-    }
-}
-
-class PasswordHasherStub implements PasswordHasher {
-    constructor(private readonly valid: boolean) {}
-
-    async verify(_plainText: string, _hash: string) {
-        return ok(this.valid);
-    }
-
-    async hash(value: string) {
-        return ok(`hashed:${value}`);
-    }
-}
 
 class RefreshTokenHasherStub implements RefreshTokenHasher {
     hash(value: string) {

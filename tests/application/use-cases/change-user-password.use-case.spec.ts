@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ChangeUserPasswordUseCase } from '@application/use-cases/change-user-password.use-case.js';
-import type { PasswordHasher } from '@application/ports/password-hasher.js';
 import { User, UserStatus } from '@domain/entities/user.entity.js';
 import type { UserProps } from '@domain/entities/user.entity.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { InvalidPasswordError } from '@domain/errors/invalid-password.error.js';
 import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
-import { ok } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { PasswordHasherStub } from '@tests/shared/stubs/password-hasher.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { UserRepositorySpy } from '@tests/shared/spies/user-repository.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
@@ -29,16 +28,6 @@ const createUser = (overrides: Partial<UserProps> = {}): User =>
             ...overrides,
         },
     });
-
-class PasswordHasherStub implements PasswordHasher {
-    async hash(value: string) {
-        return ok(`hashed:${value}`);
-    }
-
-    async verify(_plainText: string, _hash: string) {
-        return ok(true);
-    }
-}
 
 type SutOverrides = Partial<{
     user: User | null;

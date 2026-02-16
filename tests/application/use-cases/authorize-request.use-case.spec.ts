@@ -1,39 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { AuthorizeRequestUseCase } from '@application/use-cases/authorize-request.use-case.js';
-import type { TokenService, AccessTokenPayload } from '@application/ports/token.service.js';
-import { PortError } from '@application/errors/port.error.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
-import { fail, ok } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { TokenServiceStub } from '@tests/shared/stubs/token-service.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
-
-class TokenServiceStub implements TokenService {
-    accessPayloads: AccessTokenPayload[] = [];
-
-    createAccessToken() {
-        return ok('token');
-    }
-
-    createRefreshToken() {
-        return ok('refresh');
-    }
-
-    verifyAccessToken(token: string) {
-        if (token === 'invalid') {
-            return fail(new PortError('TokenService', 'invalid'));
-        }
-
-        return ok({
-            userId: 'user-1',
-            roles: [UserRole.user()],
-        });
-    }
-}
 
 describe('AuthorizeRequestUseCase', () => {
     it('rejects requests without token', async () => {
         const useCase = new AuthorizeRequestUseCase({
-            tokenService: new TokenServiceStub(),
+            tokenService: new TokenServiceStub({ invalidTokens: ['invalid'] }),
             auditLogger: new AuditLoggerSpy(),
             dateProvider: new DateProviderStub(new Date('2026-01-29T16:00:00.000Z')),
         });
@@ -45,7 +20,7 @@ describe('AuthorizeRequestUseCase', () => {
 
     it('rejects invalid tokens', async () => {
         const useCase = new AuthorizeRequestUseCase({
-            tokenService: new TokenServiceStub(),
+            tokenService: new TokenServiceStub({ invalidTokens: ['invalid'] }),
             auditLogger: new AuditLoggerSpy(),
             dateProvider: new DateProviderStub(new Date('2026-01-29T16:00:00.000Z')),
         });
@@ -57,7 +32,7 @@ describe('AuthorizeRequestUseCase', () => {
 
     it('allows valid tokens', async () => {
         const useCase = new AuthorizeRequestUseCase({
-            tokenService: new TokenServiceStub(),
+            tokenService: new TokenServiceStub({ invalidTokens: ['invalid'] }),
             auditLogger: new AuditLoggerSpy(),
             dateProvider: new DateProviderStub(new Date('2026-01-29T16:00:00.000Z')),
         });
@@ -73,7 +48,7 @@ describe('AuthorizeRequestUseCase', () => {
 
     it('rejects non-admin role for admin endpoints', async () => {
         const useCase = new AuthorizeRequestUseCase({
-            tokenService: new TokenServiceStub(),
+            tokenService: new TokenServiceStub({ invalidTokens: ['invalid'] }),
             auditLogger: new AuditLoggerSpy(),
             dateProvider: new DateProviderStub(new Date('2026-01-29T16:00:00.000Z')),
         });
@@ -84,12 +59,12 @@ describe('AuthorizeRequestUseCase', () => {
     });
 
     it('allows admin role for admin endpoints', async () => {
-        const tokenService = new TokenServiceStub();
-        tokenService.verifyAccessToken = () =>
-            ok({
+        const tokenService = new TokenServiceStub({
+            verifyPayload: {
                 userId: 'admin-1',
                 roles: [UserRole.admin()],
-            });
+            },
+        });
 
         const useCase = new AuthorizeRequestUseCase({
             tokenService,
