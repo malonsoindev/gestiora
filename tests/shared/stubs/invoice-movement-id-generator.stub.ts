@@ -1,6 +1,6 @@
-import type { InvoiceMovementIdGenerator } from '@application/ports/invoice-movement-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 
-export class InvoiceMovementIdGeneratorStub implements InvoiceMovementIdGenerator {
+export class InvoiceMovementIdGeneratorStub implements IdGenerator {
     private readonly ids: string[];
 
     constructor(ids: string[]) {

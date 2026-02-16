@@ -1,7 +1,7 @@
 import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { PasswordHasher } from '@application/ports/password-hasher.js';
-import type { UserIdGenerator } from '@application/ports/user-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { UserRepository } from '@application/ports/user.repository.js';
 import type { CreateUserRequest } from '@application/dto/create-user.request.js';
 import type { CreateUserResponse } from '@application/dto/create-user.response.js';
@@ -20,7 +20,7 @@ import { fail, ok, type Result } from '@shared/result.js';
 export type CreateUserDependencies = {
     userRepository: UserRepository;
     passwordHasher: PasswordHasher;
-    userIdGenerator: UserIdGenerator;
+    userIdGenerator: IdGenerator;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
 };

@@ -5,7 +5,7 @@ import type { LoginRateLimiter } from '@application/ports/login-rate-limiter.js'
 import type { LoginAttemptRepository } from '@application/ports/login-attempt.repository.js';
 import type { PasswordHasher } from '@application/ports/password-hasher.js';
 import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher.js';
-import type { SessionIdGenerator } from '@application/ports/session-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { SessionRepository } from '@application/ports/session.repository.js';
 import type { AccessTokenPayload, RefreshTokenPayload, TokenService } from '@application/ports/token.service.js';
 import type { UserRepository } from '@application/ports/user.repository.js';
@@ -119,7 +119,7 @@ class BlockingRateLimiter implements LoginRateLimiter {
     }
 }
 
-class SessionIdGeneratorStub implements SessionIdGenerator {
+class SessionIdGeneratorStub implements IdGenerator {
     constructor(private readonly id: string) {}
 
     generate(): string {
@@ -159,7 +159,7 @@ type UseCaseDependencies = {
     loginRateLimiter: LoginRateLimiter;
     loginAttemptRepository: LoginAttemptRepository;
     dateProvider: DateProvider;
-    sessionIdGenerator: SessionIdGenerator;
+    sessionIdGenerator: IdGenerator;
     accessTokenTtlSeconds: number;
     refreshTokenTtlSeconds: number;
 };

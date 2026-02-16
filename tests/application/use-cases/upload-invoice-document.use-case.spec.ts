@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { UploadInvoiceDocumentUseCase } from '@application/use-cases/upload-invoice-document.use-case.js';
 import type { FileStorage } from '@application/ports/file-storage.js';
 import type { InvoiceExtractionAgent, InvoiceExtractionResult } from '@application/ports/invoice-extraction-agent.js';
-import type { ProviderIdGenerator } from '@application/ports/provider-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { PortError } from '@application/errors/port.error.js';
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import { ok, type Result } from '@shared/result.js';
@@ -77,7 +77,7 @@ class ExtractionAgentErrorStub implements InvoiceExtractionAgent {
     }
 }
 
-class ProviderIdGeneratorStub implements ProviderIdGenerator {
+class ProviderIdGeneratorStub implements IdGenerator {
     constructor(private readonly id: string) {}
 
     generate(): string {

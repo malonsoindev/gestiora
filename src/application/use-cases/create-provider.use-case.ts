@@ -1,7 +1,7 @@
 import type { CreateProviderRequest } from '@application/dto/create-provider.request.js';
 import type { CreateProviderResponse } from '@application/dto/create-provider.response.js';
 import type { ProviderRepository } from '@application/ports/provider.repository.js';
-import type { ProviderIdGenerator } from '@application/ports/provider-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { PortError } from '@application/errors/port.error.js';
@@ -16,7 +16,7 @@ import { tryCif } from '@shared/cif-utils.js';
 
 export type CreateProviderDependencies = {
     providerRepository: ProviderRepository;
-    providerIdGenerator: ProviderIdGenerator;
+    providerIdGenerator: IdGenerator;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
 };

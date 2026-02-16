@@ -4,7 +4,7 @@ import type { InvoiceRepository } from '@application/ports/invoice.repository.js
 import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { PortError } from '@application/errors/port.error.js';
-import type { InvoiceMovementIdGenerator } from '@application/ports/invoice-movement-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
 import type { Invoice } from '@domain/entities/invoice.entity.js';
 import { InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
@@ -18,7 +18,7 @@ import { ok, fail, type Result } from '@shared/result.js';
 
 export type UpdateManualInvoiceDependencies = {
     invoiceRepository: InvoiceRepository;
-    invoiceMovementIdGenerator: InvoiceMovementIdGenerator;
+    invoiceMovementIdGenerator: IdGenerator;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
     ragReindexInvoiceService: RagReindexInvoiceHandler;

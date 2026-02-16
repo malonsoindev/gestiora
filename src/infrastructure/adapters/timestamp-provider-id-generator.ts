@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { ProviderIdGenerator } from '@application/ports/provider-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 
-export class TimestampProviderIdGenerator implements ProviderIdGenerator {
+export class TimestampProviderIdGenerator implements IdGenerator {
     generate(): string {
         return `provider-${Date.now()}-${randomUUID()}`;
     }

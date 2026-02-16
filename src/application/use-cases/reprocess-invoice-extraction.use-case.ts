@@ -2,7 +2,7 @@ import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { FileStorage } from '@application/ports/file-storage.js';
 import type { InvoiceExtractionAgent } from '@application/ports/invoice-extraction-agent.js';
-import type { InvoiceMovementIdGenerator } from '@application/ports/invoice-movement-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
 import type { PortError } from '@application/errors/port.error.js';
 import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
@@ -31,7 +31,7 @@ export type ReprocessInvoiceExtractionDependencies = {
     extractionAgent: InvoiceExtractionAgent;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
-    invoiceMovementIdGenerator: InvoiceMovementIdGenerator;
+    invoiceMovementIdGenerator: IdGenerator;
     ragReindexInvoiceService: RagReindexInvoiceHandler;
 };
 

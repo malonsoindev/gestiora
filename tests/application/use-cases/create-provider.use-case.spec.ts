@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CreateProviderUseCase } from '@application/use-cases/create-provider.use-case.js';
 import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
-import type { ProviderIdGenerator } from '@application/ports/provider-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { ProviderRepository } from '@application/ports/provider.repository.js';
 import type { PortError } from '@application/errors/port.error.js';
 import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
@@ -19,7 +19,7 @@ class DateProviderStub implements DateProvider {
     }
 }
 
-class ProviderIdGeneratorStub implements ProviderIdGenerator {
+class ProviderIdGeneratorStub implements IdGenerator {
     constructor(private readonly id: string) {}
 
     generate(): string {

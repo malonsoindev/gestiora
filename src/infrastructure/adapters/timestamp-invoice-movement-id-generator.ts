@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { InvoiceMovementIdGenerator } from '@application/ports/invoice-movement-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 
-export class TimestampInvoiceMovementIdGenerator implements InvoiceMovementIdGenerator {
+export class TimestampInvoiceMovementIdGenerator implements IdGenerator {
     generate(): string {
         return `movement-${Date.now()}-${randomUUID()}`;
     }

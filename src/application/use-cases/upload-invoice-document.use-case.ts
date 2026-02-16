@@ -1,10 +1,8 @@
 import type { InvoiceExtractionAgent, InvoiceExtractionResult } from '@application/ports/invoice-extraction-agent.js';
 import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
 import type { FileStorage } from '@application/ports/file-storage.js';
-import type { InvoiceIdGenerator } from '@application/ports/invoice-id-generator.js';
-import type { InvoiceMovementIdGenerator } from '@application/ports/invoice-movement-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { ProviderRepository } from '@application/ports/provider.repository.js';
-import type { ProviderIdGenerator } from '@application/ports/provider-id-generator.js';
 import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { PortError } from '@application/errors/port.error.js';
@@ -38,9 +36,9 @@ export type UploadInvoiceDocumentDependencies = {
     extractionAgent: InvoiceExtractionAgent;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
-    invoiceIdGenerator: InvoiceIdGenerator;
-    invoiceMovementIdGenerator: InvoiceMovementIdGenerator;
-    providerIdGenerator: ProviderIdGenerator;
+    invoiceIdGenerator: IdGenerator;
+    invoiceMovementIdGenerator: IdGenerator;
+    providerIdGenerator: IdGenerator;
     ragReindexInvoiceService: RagReindexInvoiceHandler;
 };
 

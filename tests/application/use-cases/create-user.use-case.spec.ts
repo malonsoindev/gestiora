@@ -3,7 +3,7 @@ import { CreateUserUseCase } from '@application/use-cases/create-user.use-case.j
 import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { PasswordHasher } from '@application/ports/password-hasher.js';
-import type { UserIdGenerator } from '@application/ports/user-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import { InvalidPasswordError } from '@domain/errors/invalid-password.error.js';
 import { InvalidUserRolesError } from '@domain/errors/invalid-user-roles.error.js';
 import { InvalidUserStatusError } from '@domain/errors/invalid-user-status.error.js';
@@ -45,7 +45,7 @@ class AuditLoggerSpy implements AuditLogger {
     }
 }
 
-class UserIdGeneratorStub implements UserIdGenerator {
+class UserIdGeneratorStub implements IdGenerator {
     constructor(private readonly id: string) {}
 
     generate(): string {

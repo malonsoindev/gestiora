@@ -2,8 +2,7 @@ import type { CreateManualInvoiceRequest } from '@application/dto/create-manual-
 import type { CreateManualInvoiceResponse } from '@application/dto/create-manual-invoice.response.js';
 import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
-import type { InvoiceIdGenerator } from '@application/ports/invoice-id-generator.js';
-import type { InvoiceMovementIdGenerator } from '@application/ports/invoice-movement-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
 import type { ProviderRepository } from '@application/ports/provider.repository.js';
 import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
@@ -28,8 +27,8 @@ export type CreateManualInvoiceDependencies = {
     invoiceRepository: InvoiceRepository;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
-    invoiceIdGenerator: InvoiceIdGenerator;
-    invoiceMovementIdGenerator: InvoiceMovementIdGenerator;
+    invoiceIdGenerator: IdGenerator;
+    invoiceMovementIdGenerator: IdGenerator;
     ragReindexInvoiceService: RagReindexInvoiceHandler;
 };
 

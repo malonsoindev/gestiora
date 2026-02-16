@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { UserIdGenerator } from '@application/ports/user-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 
-export class TimestampUserIdGenerator implements UserIdGenerator {
+export class TimestampUserIdGenerator implements IdGenerator {
     generate(): string {
         return `user-${Date.now()}-${randomUUID()}`;
     }

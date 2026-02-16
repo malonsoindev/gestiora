@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { SessionIdGenerator } from '@application/ports/session-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 
-export class TimestampSessionIdGenerator implements SessionIdGenerator {
+export class TimestampSessionIdGenerator implements IdGenerator {
     generate(): string {
         return `session-${Date.now()}-${randomUUID()}`;
     }

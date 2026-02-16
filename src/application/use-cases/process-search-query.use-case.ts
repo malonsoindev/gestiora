@@ -1,7 +1,7 @@
 import type { QueryInvoicesRagRequest } from '@application/dto/query-invoices-rag.request.js';
 import type { QueryInvoicesRagResponse } from '@application/dto/query-invoices-rag.response.js';
 import type { SearchQueryRepository } from '@application/ports/search-query.repository.js';
-import type { SearchQueryIdGenerator } from '@application/ports/search-query-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { PortError } from '@application/errors/port.error.js';
 import { ok, fail, type Result } from '@shared/result.js';
@@ -17,7 +17,7 @@ export type ProcessSearchQueryDependencies = {
         execute(request: QueryInvoicesRagRequest): Promise<Result<QueryInvoicesRagResponse, PortError>>;
     };
     searchQueryRepository: SearchQueryRepository;
-    searchQueryIdGenerator: SearchQueryIdGenerator;
+    searchQueryIdGenerator: IdGenerator;
     dateProvider: DateProvider;
 };
 
