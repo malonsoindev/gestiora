@@ -9,35 +9,35 @@ import { RagReindexInvoiceServiceStub } from '@tests/application/stubs/rag-reind
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { InvoiceRepositoryStub } from '@tests/shared/stubs/invoice-repository.stub.js';
+import { createTestInvoice } from '@tests/shared/fixtures/invoice.fixture.js';
 
 const fixedNow = new Date('2026-03-02T10:00:00.000Z');
 
 const createInvoice = (overrides: Partial<InvoiceProps> = {}): Invoice =>
-    Invoice.create({
-        id: 'invoice-1',
-        providerId: 'provider-1',
-        status: InvoiceStatus.Active,
-        numeroFactura: 'FAC-2026-0102',
-        fechaOperacion: InvoiceDate.create('2026-02-28'),
-        baseImponible: Money.create(100),
-        iva: Money.create(21),
-        total: Money.create(121),
-        headerSource: InvoiceHeaderSource.Ai,
-        headerStatus: InvoiceHeaderStatus.Proposed,
-        movements: [
-            InvoiceMovement.create({
-                id: 'movement-1',
-                concepto: 'Servicio',
-                cantidad: 1,
-                precio: 100,
-                baseImponible: 100,
-                iva: 21,
-                total: 121,
-            }),
-        ],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        ...overrides,
+    createTestInvoice({
+        now: fixedNow,
+        overrides: {
+            status: InvoiceStatus.Active,
+            numeroFactura: 'FAC-2026-0102',
+            fechaOperacion: InvoiceDate.create('2026-02-28'),
+            baseImponible: Money.create(100),
+            iva: Money.create(21),
+            total: Money.create(121),
+            headerSource: InvoiceHeaderSource.Ai,
+            headerStatus: InvoiceHeaderStatus.Proposed,
+            movements: [
+                InvoiceMovement.create({
+                    id: 'movement-1',
+                    concepto: 'Servicio',
+                    cantidad: 1,
+                    precio: 100,
+                    baseImponible: 100,
+                    iva: 21,
+                    total: 121,
+                }),
+            ],
+            ...overrides,
+        },
     });
 
 describe('ConfirmInvoiceHeaderUseCase', () => {

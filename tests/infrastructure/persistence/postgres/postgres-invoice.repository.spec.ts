@@ -8,6 +8,7 @@ import type { InvoiceMovementProps } from '@domain/entities/invoice-movement.ent
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
 import { FileRef } from '@domain/value-objects/file-ref.value-object.js';
+import { createTestInvoice } from '@tests/shared/fixtures/invoice.fixture.js';
 
 const describeIf = process.env.DATABASE_URL ? describe : describe.skip;
 const fixedNow = new Date('2026-03-10T10:00:00.000Z');
@@ -27,29 +28,28 @@ const createMovement = (overrides: Partial<InvoiceMovementProps> = {}): InvoiceM
     });
 
 const createInvoice = (overrides: Partial<InvoiceProps> = {}): Invoice =>
-    Invoice.create({
-        id: 'invoice-1',
-        providerId: 'provider-1',
-        status: InvoiceStatus.Active,
-        headerSource: InvoiceHeaderSource.Ai,
-        headerStatus: InvoiceHeaderStatus.Proposed,
-        numeroFactura: 'FAC-2026-0010',
-        fechaOperacion: InvoiceDate.create('2026-03-01'),
-        fechaVencimiento: InvoiceDate.create('2026-03-31'),
-        baseImponible: Money.create(100),
-        iva: Money.create(21),
-        total: Money.create(121),
-        fileRef: FileRef.create({
-            storageKey: 'storage/invoice-1.pdf',
-            filename: 'invoice-1.pdf',
-            mimeType: 'application/pdf',
-            sizeBytes: 10,
-            checksum: 'checksum-1',
-        }),
-        movements: [createMovement()],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        ...overrides,
+    createTestInvoice({
+        now: fixedNow,
+        overrides: {
+            status: InvoiceStatus.Active,
+            headerSource: InvoiceHeaderSource.Ai,
+            headerStatus: InvoiceHeaderStatus.Proposed,
+            numeroFactura: 'FAC-2026-0010',
+            fechaOperacion: InvoiceDate.create('2026-03-01'),
+            fechaVencimiento: InvoiceDate.create('2026-03-31'),
+            baseImponible: Money.create(100),
+            iva: Money.create(21),
+            total: Money.create(121),
+            fileRef: FileRef.create({
+                storageKey: 'storage/invoice-1.pdf',
+                filename: 'invoice-1.pdf',
+                mimeType: 'application/pdf',
+                sizeBytes: 10,
+                checksum: 'checksum-1',
+            }),
+            movements: [createMovement()],
+            ...overrides,
+        },
     });
 
 describeIf('PostgresInvoiceRepository', () => {

@@ -9,6 +9,7 @@ import { Cif } from '@domain/value-objects/cif.value-object.js';
 import { ok } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
 
 const fixedNow = new Date('2026-02-03T10:00:00.000Z');
 
@@ -57,17 +58,12 @@ class ProviderRepositorySpy implements ProviderRepository {
 }
 
 const createProviderEntity = (): Provider =>
-    Provider.create({
-        id: 'provider-1',
-        razonSocial: 'Proveedor Uno',
-        cif: Cif.create('B12345678'),
-        direccion: 'Calle Falsa 123',
-        poblacion: 'Madrid',
-        provincia: 'Madrid',
-        pais: 'ES',
-        status: ProviderStatus.Active,
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
+    createTestProvider({
+        now: fixedNow,
+        overrides: {
+            cif: Cif.create('B12345678'),
+            status: ProviderStatus.Active,
+        },
     });
 
 describe('CreateProviderUseCase', () => {

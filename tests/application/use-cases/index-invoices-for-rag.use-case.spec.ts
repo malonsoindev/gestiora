@@ -8,6 +8,8 @@ import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
 import { ok, fail, type Result } from '@shared/result.js';
+import { createTestInvoice } from '@tests/shared/fixtures/invoice.fixture.js';
+import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
 
 const fixedNow = new Date('2026-02-11T10:00:00.000Z');
 
@@ -42,30 +44,29 @@ const createMovements = (count: number): InvoiceMovement[] =>
     );
 
 const createInvoice = (movementsCount: number): Invoice =>
-    Invoice.create({
-        id: 'invoice-1',
-        providerId: 'provider-1',
-        status: InvoiceStatus.Active,
-        headerSource: InvoiceHeaderSource.Manual,
-        headerStatus: InvoiceHeaderStatus.Confirmed,
-        numeroFactura: 'FAC-001',
-        fechaOperacion: InvoiceDate.create('2026-02-10'),
-        fechaVencimiento: InvoiceDate.create('2026-03-10'),
-        baseImponible: Money.create(100),
-        iva: Money.create(21),
-        total: Money.create(121),
-        movements: createMovements(movementsCount),
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
+    createTestInvoice({
+        now: fixedNow,
+        overrides: {
+            status: InvoiceStatus.Active,
+            headerSource: InvoiceHeaderSource.Manual,
+            headerStatus: InvoiceHeaderStatus.Confirmed,
+            numeroFactura: 'FAC-001',
+            fechaOperacion: InvoiceDate.create('2026-02-10'),
+            fechaVencimiento: InvoiceDate.create('2026-03-10'),
+            baseImponible: Money.create(100),
+            iva: Money.create(21),
+            total: Money.create(121),
+            movements: createMovements(movementsCount),
+        },
     });
 
 const createProvider = (): Provider =>
-    Provider.create({
-        id: 'provider-1',
-        razonSocial: 'Proveedor Demo SL',
-        status: ProviderStatus.Active,
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
+    createTestProvider({
+        now: fixedNow,
+        overrides: {
+            razonSocial: 'Proveedor Demo SL',
+            status: ProviderStatus.Active,
+        },
     });
 
 describe('IndexInvoicesForRagUseCase', () => {

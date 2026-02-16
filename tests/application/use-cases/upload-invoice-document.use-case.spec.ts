@@ -15,6 +15,7 @@ import { FileStorageStub } from '@tests/shared/stubs/file-storage.stub.js';
 import { InvoiceRepositorySpy } from '@tests/shared/spies/invoice-repository.spy.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
+import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
 
 class ExtractionAgentStub implements InvoiceExtractionAgent {
     async extract(): Promise<Result<InvoiceExtractionResult, PortError>> {
@@ -115,12 +116,12 @@ class ExtractionAgentTotalsMismatchStub implements InvoiceExtractionAgent {
 }
 
 const createProvider = (): Provider =>
-    Provider.create({
-        id: 'provider-1',
-        razonSocial: 'Proveedor Uno',
-        status: ProviderStatus.Active,
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
+    createTestProvider({
+        now: fixedNow,
+        overrides: {
+            razonSocial: 'Proveedor Uno',
+            status: ProviderStatus.Active,
+        },
     });
 
 const fileInput = {

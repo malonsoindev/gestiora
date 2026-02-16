@@ -3,14 +3,12 @@ import { GetInvoiceFileUseCase } from '@application/use-cases/get-invoice-file.u
 import type { FileStorage } from '@application/ports/file-storage.js';
 import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
 import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
-import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
-import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
-import { Money } from '@domain/value-objects/money.value-object.js';
 import { FileRef } from '@domain/value-objects/file-ref.value-object.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
 import { ok } from '@shared/result.js';
 import { InvoiceRepositoryStub } from '@tests/shared/stubs/invoice-repository.stub.js';
+import { createTestInvoice } from '@tests/shared/fixtures/invoice.fixture.js';
 
 const fixedNow = new Date('2026-02-23T10:00:00.000Z');
 
@@ -41,37 +39,19 @@ class FileStorageStub implements FileStorage {
 }
 
 const createInvoice = (overrides: Partial<InvoiceProps> = {}): Invoice =>
-    Invoice.create({
-        id: 'invoice-1',
-        providerId: 'provider-1',
-        status: InvoiceStatus.Active,
-        numeroFactura: 'FAC-2026-0001',
-        fechaOperacion: InvoiceDate.create('2026-02-10'),
-        fechaVencimiento: InvoiceDate.create('2026-03-10'),
-        baseImponible: Money.create(100),
-        iva: Money.create(21),
-        total: Money.create(121),
-        fileRef: FileRef.create({
-            storageKey: 'invoices/2026/02/invoice-1.pdf',
-            filename: 'invoice-1.pdf',
-            mimeType: 'application/pdf',
-            sizeBytes: 1234,
-            checksum: 'checksum-1',
-        }),
-        movements: [
-            InvoiceMovement.create({
-                id: 'movement-1',
-                concepto: 'Servicio',
-                cantidad: 1,
-                precio: 100,
-                baseImponible: 100,
-                iva: 21,
-                total: 121,
+    createTestInvoice({
+        now: fixedNow,
+        overrides: {
+            status: InvoiceStatus.Active,
+            fileRef: FileRef.create({
+                storageKey: 'invoices/2026/02/invoice-1.pdf',
+                filename: 'invoice-1.pdf',
+                mimeType: 'application/pdf',
+                sizeBytes: 1234,
+                checksum: 'checksum-1',
             }),
-        ],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        ...overrides,
+            ...overrides,
+        },
     });
 
 describe('GetInvoiceFileUseCase', () => {

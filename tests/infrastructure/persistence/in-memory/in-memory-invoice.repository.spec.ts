@@ -6,6 +6,7 @@ import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
 import type { InvoiceMovementProps } from '@domain/entities/invoice-movement.entity.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
+import { createTestInvoice } from '@tests/shared/fixtures/invoice.fixture.js';
 
 const fixedNow = new Date('2026-02-12T10:00:00.000Z');
 
@@ -22,20 +23,19 @@ const createMovement = (overrides: Partial<InvoiceMovementProps> = {}): InvoiceM
     });
 
 const createInvoice = (overrides: Partial<InvoiceProps> = {}): Invoice =>
-    Invoice.create({
-        id: 'invoice-1',
-        providerId: 'provider-1',
-        status: InvoiceStatus.Draft,
-        numeroFactura: 'FAC-2026-0001',
-        fechaOperacion: InvoiceDate.create('2026-02-10'),
-        fechaVencimiento: InvoiceDate.create('2026-03-10'),
-        baseImponible: Money.create(100),
-        iva: Money.create(21),
-        total: Money.create(121),
-        movements: [createMovement()],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        ...overrides,
+    createTestInvoice({
+        now: fixedNow,
+        overrides: {
+            status: InvoiceStatus.Draft,
+            numeroFactura: 'FAC-2026-0001',
+            fechaOperacion: InvoiceDate.create('2026-02-10'),
+            fechaVencimiento: InvoiceDate.create('2026-03-10'),
+            baseImponible: Money.create(100),
+            iva: Money.create(21),
+            total: Money.create(121),
+            movements: [createMovement()],
+            ...overrides,
+        },
     });
 
 describe('InMemoryInvoiceRepository', () => {

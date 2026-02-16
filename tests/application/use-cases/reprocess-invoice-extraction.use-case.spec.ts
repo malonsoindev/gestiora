@@ -21,6 +21,7 @@ import { InvoiceRepositoryStub } from '@tests/shared/stubs/invoice-repository.st
 import { FileStorageStub } from '@tests/shared/stubs/file-storage.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
+import { createTestInvoice } from '@tests/shared/fixtures/invoice.fixture.js';
 
 class ExtractionAgentStub implements InvoiceExtractionAgent {
     async extract() {
@@ -49,51 +50,50 @@ class ExtractionAgentStub implements InvoiceExtractionAgent {
 }
 
 const createInvoice = (overrides: Partial<InvoiceProps> = {}): Invoice =>
-    Invoice.create({
-        id: 'invoice-1',
-        providerId: 'provider-1',
-        status: InvoiceStatus.Active,
-        headerSource: InvoiceHeaderSource.Ai,
-        headerStatus: InvoiceHeaderStatus.Proposed,
-        numeroFactura: 'FAC-2026-OLD',
-        fechaOperacion: InvoiceDate.create('2026-02-20'),
-        baseImponible: Money.create(100),
-        iva: Money.create(21),
-        total: Money.create(121),
-        fileRef: FileRef.create({
-            storageKey: 'invoices/2026/03/fac-1.pdf',
-            filename: 'invoice.pdf',
-            mimeType: 'application/pdf',
-            sizeBytes: 10,
-            checksum: 'checksum-1',
-        }),
-        movements: [
-            InvoiceMovement.create({
-                id: 'movement-manual',
-                concepto: 'Manual',
-                cantidad: 1,
-                precio: 100,
-                baseImponible: 100,
-                iva: 21,
-                total: 121,
-                source: InvoiceMovementSource.Manual,
-                status: InvoiceMovementStatus.Confirmed,
+    createTestInvoice({
+        now: fixedNow,
+        overrides: {
+            status: InvoiceStatus.Active,
+            headerSource: InvoiceHeaderSource.Ai,
+            headerStatus: InvoiceHeaderStatus.Proposed,
+            numeroFactura: 'FAC-2026-OLD',
+            fechaOperacion: InvoiceDate.create('2026-02-20'),
+            baseImponible: Money.create(100),
+            iva: Money.create(21),
+            total: Money.create(121),
+            fileRef: FileRef.create({
+                storageKey: 'invoices/2026/03/fac-1.pdf',
+                filename: 'invoice.pdf',
+                mimeType: 'application/pdf',
+                sizeBytes: 10,
+                checksum: 'checksum-1',
             }),
-            InvoiceMovement.create({
-                id: 'movement-ai',
-                concepto: 'AI viejo',
-                cantidad: 1,
-                precio: 100,
-                baseImponible: 100,
-                iva: 21,
-                total: 121,
-                source: InvoiceMovementSource.Ai,
-                status: InvoiceMovementStatus.Proposed,
-            }),
-        ],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        ...overrides,
+            movements: [
+                InvoiceMovement.create({
+                    id: 'movement-manual',
+                    concepto: 'Manual',
+                    cantidad: 1,
+                    precio: 100,
+                    baseImponible: 100,
+                    iva: 21,
+                    total: 121,
+                    source: InvoiceMovementSource.Manual,
+                    status: InvoiceMovementStatus.Confirmed,
+                }),
+                InvoiceMovement.create({
+                    id: 'movement-ai',
+                    concepto: 'AI viejo',
+                    cantidad: 1,
+                    precio: 100,
+                    baseImponible: 100,
+                    iva: 21,
+                    total: 121,
+                    source: InvoiceMovementSource.Ai,
+                    status: InvoiceMovementStatus.Proposed,
+                }),
+            ],
+            ...overrides,
+        },
     });
 
 const fileStorageOptions = {

@@ -13,14 +13,15 @@ import { ProviderRepositoryStub } from '@tests/shared/stubs/provider-repository.
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { InvoiceRepositorySpy } from '@tests/shared/spies/invoice-repository.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
+import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
 
 const createProvider = (status: ProviderStatus = ProviderStatus.Active): Provider =>
-    Provider.create({
-        id: 'provider-1',
-        razonSocial: 'Proveedor Uno',
-        status,
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
+    createTestProvider({
+        now: fixedNow,
+        overrides: {
+            razonSocial: 'Proveedor Uno',
+            status,
+        },
     });
 
 type SutOverrides = Partial<{

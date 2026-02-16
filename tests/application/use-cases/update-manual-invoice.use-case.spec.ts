@@ -14,6 +14,7 @@ import { InvoiceMovementIdGeneratorStub } from '@tests/shared/stubs/invoice-move
 import { InvoiceRepositoryStub } from '@tests/shared/stubs/invoice-repository.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
+import { createTestInvoice } from '@tests/shared/fixtures/invoice.fixture.js';
 
 const createMovement = (id: string, total: number): InvoiceMovement =>
     InvoiceMovement.create({
@@ -27,20 +28,19 @@ const createMovement = (id: string, total: number): InvoiceMovement =>
     });
 
 const createInvoice = (overrides: Partial<InvoiceProps> = {}): Invoice =>
-    Invoice.create({
-        id: 'invoice-1',
-        providerId: 'provider-1',
-        status: InvoiceStatus.Draft,
-        numeroFactura: 'FAC-2026-0001',
-        fechaOperacion: InvoiceDate.create('2026-02-10'),
-        fechaVencimiento: InvoiceDate.create('2026-03-10'),
-        baseImponible: Money.create(100),
-        iva: Money.create(21),
-        total: Money.create(121),
-        movements: [createMovement('movement-1', 100)],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        ...overrides,
+    createTestInvoice({
+        now: fixedNow,
+        overrides: {
+            status: InvoiceStatus.Draft,
+            numeroFactura: 'FAC-2026-0001',
+            fechaOperacion: InvoiceDate.create('2026-02-10'),
+            fechaVencimiento: InvoiceDate.create('2026-03-10'),
+            baseImponible: Money.create(100),
+            iva: Money.create(21),
+            total: Money.create(121),
+            movements: [createMovement('movement-1', 100)],
+            ...overrides,
+        },
     });
 
 const simpleMovementInput = {
