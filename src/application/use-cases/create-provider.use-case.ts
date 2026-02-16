@@ -11,6 +11,7 @@ import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
 import { ok, fail, type Result } from '@shared/result.js';
+import { normalizeText } from '@shared/text-utils.js';
 
 export type CreateProviderDependencies = {
     providerRepository: ProviderRepository;
@@ -120,7 +121,7 @@ export class CreateProviderUseCase {
             return ok(undefined);
         }
 
-        const normalized = this.normalizeRazonSocial(razonSocial);
+        const normalized = normalizeText(razonSocial);
         const existing = await this.dependencies.providerRepository.findByRazonSocialNormalized(normalized);
         if (!existing.success) {
             return fail(existing.error);
@@ -129,10 +130,6 @@ export class CreateProviderUseCase {
             return fail(new ProviderAlreadyExistsError());
         }
         return ok(undefined);
-    }
-
-    private normalizeRazonSocial(value: string): string {
-        return value.trim().toLowerCase().replaceAll(/\s+/g, ' ');
     }
 
     private validateStatus(status: ProviderStatus): Result<ProviderStatus, InvalidProviderStatusError> {

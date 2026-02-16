@@ -11,6 +11,7 @@ import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js'
 import type { Provider } from '@domain/entities/provider.entity.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
 import { ok, fail, type Result } from '@shared/result.js';
+import { normalizeText } from '@shared/text-utils.js';
 
 export type UpdateProviderDependencies = {
     providerRepository: ProviderRepository;
@@ -153,7 +154,7 @@ export class UpdateProviderUseCase {
         existingProvider: Provider,
         razonSocial: string,
     ): Promise<Result<void, ProviderAlreadyExistsError | PortError>> {
-        const normalized = razonSocial.trim().toLowerCase().replaceAll(/\s+/g, ' ');
+        const normalized = normalizeText(razonSocial);
         const duplicate = await this.dependencies.providerRepository.findByRazonSocialNormalized(normalized);
         if (!duplicate.success) {
             return fail(duplicate.error);

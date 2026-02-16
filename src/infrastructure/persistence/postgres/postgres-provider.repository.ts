@@ -1,6 +1,7 @@
 import type { Sql } from 'postgres';
 import { fail, ok, type Result } from '@shared/result.js';
 import { toDate } from '@shared/date-utils.js';
+import { normalizeText } from '@shared/text-utils.js';
 import { PortError } from '@application/errors/port.error.js';
 import type {
     ProviderListFilters,
@@ -265,4 +266,3 @@ export class PostgresProviderRepository implements ProviderRepository {
     }
 }
 
-const normalizeText = (value: string): string => value.trim().toLowerCase().replaceAll(/\s+/g, ' ');
