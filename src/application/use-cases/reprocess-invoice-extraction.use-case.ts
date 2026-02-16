@@ -12,11 +12,9 @@ import {
     InvoiceHeaderStatus,
     InvoiceStatus,
 } from '@domain/entities/invoice.entity.js';
-import {
-    InvoiceMovement,
-    InvoiceMovementStatus,
-} from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
 import { DataSource } from '@domain/enums/data-source.enum.js';
+import { createMovementsFromInput } from '@application/shared/movement-mappers.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
@@ -86,7 +84,11 @@ export class ReprocessInvoiceExtractionUseCase {
         const headerUpdates = this.buildHeaderUpdates(invoice, extracted);
 
         const manualMovements = invoice.movements.filter((movement) => movement.source === DataSource.Manual);
-        const aiMovements = this.createAiMovements(extracted.invoice.movements);
+        const aiMovements = createMovementsFromInput(
+            extracted.invoice.movements,
+            () => this.dependencies.invoiceMovementIdGenerator.generate(),
+            { source: DataSource.Ai, status: InvoiceMovementStatus.Proposed },
+        );
 
         const updated = invoice.updateDetails({
             ...headerUpdates,
@@ -160,30 +162,5 @@ export class ReprocessInvoiceExtractionUseCase {
             headerSource: DataSource.Ai,
             headerStatus: InvoiceHeaderStatus.Proposed,
         };
-    }
-
-    private createAiMovements(
-        movements: Array<{
-            concepto: string;
-            cantidad: number;
-            precio: number;
-            baseImponible?: number;
-            iva?: number;
-            total: number;
-        }>,
-    ): InvoiceMovement[] {
-        return movements.map((movement) =>
-            InvoiceMovement.create({
-                id: this.dependencies.invoiceMovementIdGenerator.generate(),
-                concepto: movement.concepto,
-                cantidad: movement.cantidad,
-                precio: movement.precio,
-                ...(movement.baseImponible !== undefined && { baseImponible: movement.baseImponible }),
-                ...(movement.iva !== undefined && { iva: movement.iva }),
-                total: movement.total,
-                source: DataSource.Ai,
-                status: InvoiceMovementStatus.Proposed,
-            }),
-        );
     }
 }

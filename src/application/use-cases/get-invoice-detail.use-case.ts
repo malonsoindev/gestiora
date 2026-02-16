@@ -2,6 +2,7 @@ import type { InvoiceRepository } from '@application/ports/invoice.repository.js
 import type { PortError } from '@application/errors/port.error.js';
 import type { GetInvoiceDetailRequest } from '@application/dto/get-invoice-detail.request.js';
 import type { GetInvoiceDetailResponse } from '@application/dto/get-invoice-detail.response.js';
+import { mapMovementsToDto } from '@application/shared/movement-mappers.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { ok, fail, type Result } from '@shared/result.js';
 
@@ -46,17 +47,7 @@ export class GetInvoiceDetailUseCase {
             createdAt: invoice.createdAt.toISOString(),
             updatedAt: invoice.updatedAt.toISOString(),
             ...(invoice.deletedAt === undefined ? {} : { deletedAt: invoice.deletedAt.toISOString() }),
-            movements: invoice.movements.map((movement) => ({
-                id: movement.id,
-                concepto: movement.concepto,
-                cantidad: movement.cantidad,
-                precio: movement.precio,
-                ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
-                ...(movement.iva === undefined ? {} : { iva: movement.iva }),
-                total: movement.total,
-                source: movement.source,
-                status: movement.status,
-            })),
+            movements: mapMovementsToDto(invoice.movements),
         });
     }
 }

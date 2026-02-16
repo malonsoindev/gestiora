@@ -101,33 +101,7 @@ export class PostgresInvoiceRepository implements InvoiceRepository {
                 )
             `;
 
-            for (const movement of invoice.movements) {
-                await this.sql`
-                    insert into invoice_movements (
-                        id,
-                        invoice_id,
-                        concepto,
-                        cantidad,
-                        precio,
-                        base_imponible,
-                        iva,
-                        total,
-                        source,
-                        status
-                    ) values (
-                        ${movement.id},
-                        ${invoice.id},
-                        ${movement.concepto},
-                        ${movement.cantidad},
-                        ${movement.precio},
-                        ${movement.baseImponible ?? null},
-                        ${movement.iva ?? null},
-                        ${movement.total},
-                        ${movement.source},
-                        ${movement.status}
-                    )
-                `;
-            }
+            await this.insertMovements(invoice.id, invoice.movements);
 
             return ok(undefined);
         } catch (error) {
@@ -187,33 +161,7 @@ export class PostgresInvoiceRepository implements InvoiceRepository {
                 where invoice_id = ${invoice.id}
             `;
 
-            for (const movement of invoice.movements) {
-                await this.sql`
-                    insert into invoice_movements (
-                        id,
-                        invoice_id,
-                        concepto,
-                        cantidad,
-                        precio,
-                        base_imponible,
-                        iva,
-                        total,
-                        source,
-                        status
-                    ) values (
-                        ${movement.id},
-                        ${invoice.id},
-                        ${movement.concepto},
-                        ${movement.cantidad},
-                        ${movement.precio},
-                        ${movement.baseImponible ?? null},
-                        ${movement.iva ?? null},
-                        ${movement.total},
-                        ${movement.source},
-                        ${movement.status}
-                    )
-                `;
-            }
+            await this.insertMovements(invoice.id, invoice.movements);
 
             return ok(undefined);
         } catch (error) {
@@ -266,6 +214,36 @@ export class PostgresInvoiceRepository implements InvoiceRepository {
             order by id
         `;
         return rows;
+    }
+
+    private async insertMovements(invoiceId: string, movements: InvoiceMovement[]): Promise<void> {
+        for (const movement of movements) {
+            await this.sql`
+                insert into invoice_movements (
+                    id,
+                    invoice_id,
+                    concepto,
+                    cantidad,
+                    precio,
+                    base_imponible,
+                    iva,
+                    total,
+                    source,
+                    status
+                ) values (
+                    ${movement.id},
+                    ${invoiceId},
+                    ${movement.concepto},
+                    ${movement.cantidad},
+                    ${movement.precio},
+                    ${movement.baseImponible ?? null},
+                    ${movement.iva ?? null},
+                    ${movement.total},
+                    ${movement.source},
+                    ${movement.status}
+                )
+            `;
+        }
     }
 
     private mapRowToInvoice(row: InvoiceRow, movements: MovementRow[]): Invoice {

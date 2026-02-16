@@ -11,8 +11,9 @@ import type { UploadInvoiceDocumentRequest } from '@application/dto/upload-invoi
 import type { UploadInvoiceDocumentResponse } from '@application/dto/upload-invoice-document.response.js';
 import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
 import { Invoice, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
-import { InvoiceMovement, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
 import { DataSource } from '@domain/enums/data-source.enum.js';
+import { createMovementsFromInput } from '@application/shared/movement-mappers.js';
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
@@ -179,18 +180,10 @@ export class UploadInvoiceDocumentUseCase {
         now: Date,
         status: InvoiceStatus,
     ): Invoice {
-        const movements = extracted.invoice.movements.map((movement) =>
-            InvoiceMovement.create({
-                id: this.dependencies.invoiceMovementIdGenerator.generate(),
-                concepto: movement.concepto,
-                cantidad: movement.cantidad,
-                precio: movement.precio,
-                ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
-                ...(movement.iva === undefined ? {} : { iva: movement.iva }),
-                total: movement.total,
-                source: DataSource.Ai,
-                status: InvoiceMovementStatus.Proposed,
-            }),
+        const movements = createMovementsFromInput(
+            extracted.invoice.movements,
+            () => this.dependencies.invoiceMovementIdGenerator.generate(),
+            { source: DataSource.Ai, status: InvoiceMovementStatus.Proposed },
         );
 
         return Invoice.create({

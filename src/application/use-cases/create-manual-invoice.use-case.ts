@@ -8,7 +8,7 @@ import type { ProviderRepository } from '@application/ports/provider.repository.
 import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
 import type { PortError } from '@application/errors/port.error.js';
 import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
-import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
+import { createMovementsFromInput } from '@application/shared/movement-mappers.js';
 import type { Provider } from '@domain/entities/provider.entity.js';
 import { ProviderStatus } from '@domain/entities/provider.entity.js';
 import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
@@ -64,16 +64,9 @@ export class CreateManualInvoiceUseCase {
             return fail(new InvalidProviderStatusError());
         }
 
-        const movements = request.invoice.movements.map((movement) =>
-            InvoiceMovement.create({
-                id: this.dependencies.invoiceMovementIdGenerator.generate(),
-                concepto: movement.concepto,
-                cantidad: movement.cantidad,
-                precio: movement.precio,
-                ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
-                ...(movement.iva === undefined ? {} : { iva: movement.iva }),
-                total: movement.total,
-            }),
+        const movements = createMovementsFromInput(
+            request.invoice.movements,
+            () => this.dependencies.invoiceMovementIdGenerator.generate(),
         );
 
         const invoice = Invoice.create({
