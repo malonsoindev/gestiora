@@ -15,6 +15,10 @@ export class Email {
         return this.value;
     }
 
+    equals(other: Email): boolean {
+        return this.value === other.value;
+    }
+
     private static isValid(value: string): boolean {
         if (value.length > 254) {
             return false;

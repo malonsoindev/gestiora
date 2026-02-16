@@ -12,4 +12,18 @@ describe('Email', () => {
     it('rejects invalid email format', () => {
         expect(() => Email.create('not-an-email')).toThrow(InvalidEmailError);
     });
+
+    it('equals returns true for same value', () => {
+        const email1 = Email.create('user@example.com');
+        const email2 = Email.create('USER@EXAMPLE.COM');
+
+        expect(email1.equals(email2)).toBe(true);
+    });
+
+    it('equals returns false for different values', () => {
+        const email1 = Email.create('user@example.com');
+        const email2 = Email.create('other@example.com');
+
+        expect(email1.equals(email2)).toBe(false);
+    });
 });

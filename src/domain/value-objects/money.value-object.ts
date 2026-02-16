@@ -13,4 +13,8 @@ export class Money {
     getValue(): number {
         return this.value;
     }
+
+    equals(other: Money): boolean {
+        return this.value === other.value;
+    }
 }

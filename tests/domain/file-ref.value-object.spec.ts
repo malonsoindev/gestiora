@@ -62,4 +62,42 @@ describe('FileRef', () => {
             }),
         ).toThrow(InvalidFileRefError);
     });
+
+    it('equals returns true for same values', () => {
+        const fileRef1 = FileRef.create({
+            storageKey: 'invoices/2026/02/fac-1.pdf',
+            filename: 'factura-1.pdf',
+            mimeType: 'application/pdf',
+            sizeBytes: 2048,
+            checksum: 'checksum-1',
+        });
+        const fileRef2 = FileRef.create({
+            storageKey: 'invoices/2026/02/fac-1.pdf',
+            filename: 'factura-1.pdf',
+            mimeType: 'application/pdf',
+            sizeBytes: 2048,
+            checksum: 'checksum-1',
+        });
+
+        expect(fileRef1.equals(fileRef2)).toBe(true);
+    });
+
+    it('equals returns false for different values', () => {
+        const fileRef1 = FileRef.create({
+            storageKey: 'invoices/2026/02/fac-1.pdf',
+            filename: 'factura-1.pdf',
+            mimeType: 'application/pdf',
+            sizeBytes: 2048,
+            checksum: 'checksum-1',
+        });
+        const fileRef2 = FileRef.create({
+            storageKey: 'invoices/2026/02/fac-2.pdf',
+            filename: 'factura-2.pdf',
+            mimeType: 'application/pdf',
+            sizeBytes: 4096,
+            checksum: 'checksum-2',
+        });
+
+        expect(fileRef1.equals(fileRef2)).toBe(false);
+    });
 });
