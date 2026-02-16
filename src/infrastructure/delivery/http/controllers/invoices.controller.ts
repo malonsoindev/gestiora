@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { CreateManualInvoiceUseCase } from '@application/use-cases/create-manual-invoice.use-case.js';
 import type { AttachInvoiceFileUseCase } from '@application/use-cases/attach-invoice-file.use-case.js';
@@ -12,9 +11,10 @@ import type { ConfirmInvoiceMovementsUseCase } from '@application/use-cases/conf
 import type { ConfirmInvoiceHeaderUseCase } from '@application/use-cases/confirm-invoice-header.use-case.js';
 import type { ReprocessInvoiceExtractionUseCase } from '@application/use-cases/reprocess-invoice-extraction.use-case.js';
 import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
-import { PortError } from '@application/errors/port.error.js';
 import { respondError, type ErrorOverride } from '@infrastructure/delivery/http/errors/respond-error.js';
 import { getPaginationParams } from '@shared/pagination.js';
+import { parseMultipartFile } from '@infrastructure/delivery/http/helpers/parse-multipart-file.js';
+import { logUseCaseError } from '@infrastructure/delivery/http/helpers/log-use-case-error.js';
 
 export type CreateManualInvoiceBody = {
     providerId?: string;
@@ -125,15 +125,7 @@ export class InvoicesController {
             return reply.code(201).send({ invoiceId: result.value.invoiceId });
         }
 
-        if (result.error instanceof PortError) {
-            request.log.error({
-                err: result.error.cause ?? result.error,
-                message: result.error.message,
-                port: result.error.port,
-            }, 'Port error during invoice upload');
-        } else {
-            request.log.error({ err: result.error }, 'Unhandled invoice upload error');
-        }
+        logUseCaseError(request.log, result.error, 'manual invoice creation');
 
         return respondError(reply, result.error, invoiceErrorOverrides);
     }
@@ -146,38 +138,21 @@ export class InvoicesController {
                 return reply.code(401).send({ error: 'UNAUTHORIZED' });
             }
 
-            const file = await request.file();
+            const file = await parseMultipartFile(request, reply);
             if (!file) {
-                return reply.code(400).send({ error: 'INVALID_FILE' });
+                return;
             }
-
-            const content = await file.toBuffer();
-            const checksum = createHash('sha256').update(content).digest('hex');
 
             const result = await this.uploadInvoiceDocumentUseCase.execute({
                 actorUserId,
-                file: {
-                    filename: file.filename,
-                    mimeType: file.mimetype,
-                    sizeBytes: content.length,
-                    checksum,
-                    content,
-                },
+                file,
             });
 
             if (result.success) {
                 return reply.code(201).send({ invoiceId: result.value.invoiceId });
             }
 
-            if (result.error instanceof PortError) {
-                request.log.error({
-                    err: result.error.cause ?? result.error,
-                    message: result.error.message,
-                    port: result.error.port,
-                }, 'Port error during invoice upload');
-            } else {
-                request.log.error({ err: result.error }, 'Unhandled invoice upload error');
-            }
+            logUseCaseError(request.log, result.error, 'invoice upload');
 
             return respondError(reply, result.error, invoiceErrorOverrides);
         } catch (error) {
@@ -195,24 +170,15 @@ export class InvoicesController {
             return reply.code(401).send({ error: 'UNAUTHORIZED' });
         }
 
-        const file = await request.file();
+        const file = await parseMultipartFile(request, reply);
         if (!file) {
-            return reply.code(400).send({ error: 'INVALID_FILE' });
+            return;
         }
-
-        const content = await file.toBuffer();
-        const checksum = createHash('sha256').update(content).digest('hex');
 
         const result = await this.attachInvoiceFileUseCase.execute({
             actorUserId,
             invoiceId: request.params.invoiceId,
-            file: {
-                filename: file.filename,
-                mimeType: file.mimetype,
-                sizeBytes: content.length,
-                checksum,
-                content,
-            },
+            file,
         });
 
         if (result.success) {
