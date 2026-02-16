@@ -5,14 +5,16 @@ import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
 import { InvalidUserStatusError } from '@domain/errors/invalid-user-status.error.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 import { buildUserUseCaseSut } from '@tests/shared/helpers/user-use-case-sut.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 
 const fixedNow = new Date('2026-02-03T14:00:00.000Z');
+const dateProvider = new DateProviderStub(fixedNow);
 
 describe('UpdateUserStatusUseCase', () => {
     it('updates user status', async () => {
         const { useCase, userRepository } = buildUserUseCaseSut(
             createTestUser({ now: fixedNow }),
-            (userRepository) => new UpdateUserStatusUseCase({ userRepository, now: () => fixedNow }),
+            (userRepository) => new UpdateUserStatusUseCase({ userRepository, dateProvider }),
         );
 
         const result = await useCase.execute({ userId: 'user-1', status: UserStatus.Inactive });
@@ -25,7 +27,7 @@ describe('UpdateUserStatusUseCase', () => {
     it('rejects deleted status update', async () => {
         const { useCase } = buildUserUseCaseSut(
             createTestUser({ now: fixedNow }),
-            (userRepository) => new UpdateUserStatusUseCase({ userRepository, now: () => fixedNow }),
+            (userRepository) => new UpdateUserStatusUseCase({ userRepository, dateProvider }),
         );
 
         const result = await useCase.execute({ userId: 'user-1', status: UserStatus.Deleted });
@@ -39,7 +41,7 @@ describe('UpdateUserStatusUseCase', () => {
     it('returns not found when user does not exist', async () => {
         const { useCase } = buildUserUseCaseSut(
             null,
-            (userRepository) => new UpdateUserStatusUseCase({ userRepository, now: () => fixedNow }),
+            (userRepository) => new UpdateUserStatusUseCase({ userRepository, dateProvider }),
         );
 
         const result = await useCase.execute({ userId: 'missing-user', status: UserStatus.Active });

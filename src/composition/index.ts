@@ -63,10 +63,10 @@ import { UploadInvoiceDocumentUseCase } from '@application/use-cases/upload-invo
 import { StubInvoiceExtractionAgent } from '@infrastructure/adapters/invoice-extraction/stub-invoice-extraction-agent.js';
 import { StubErrorInvoiceExtractionAgent } from '@infrastructure/adapters/invoice-extraction/stub-error-invoice-extraction-agent.js';
 import type { InvoiceExtractionAgent } from '@application/ports/invoice-extraction-agent.js';
-import { createRequire } from 'node:module';
 import { GenkitInvoiceExtractionAgent } from '@infrastructure/adapters/invoice-extraction/genkit-invoice-extraction-agent.js';
 import { createGenkitInvoicePromptRunner } from '@infrastructure/adapters/invoice-extraction/genkit-invoice-extraction-prompt-runner.js';
 import { PdfTextExtractor } from '@infrastructure/adapters/invoice-extraction/pdf-text-extractor.js';
+import { loadPdfParse } from '@infrastructure/adapters/pdf-parse-resolver.js';
 import { InMemoryFileStorage } from '@infrastructure/adapters/in-memory/in-memory-file-storage.js';
 import { LocalFileStorage } from '@infrastructure/adapters/local/local-file-storage.js';
 import { createGenkitRagClient } from '@infrastructure/adapters/rag/genkit-rag-client.js';
@@ -94,9 +94,7 @@ const sqlClient = usePostgres ? DatabaseFactory.createClient() : undefined;
 const unitOfWork = usePostgres ? DatabaseFactory.createUnitOfWork() : undefined;
 
 if (usePostgres && sqlClient) {
-
     await DatabaseFactory.checkConnection();
-    
 }
 
 const userRepository = usePostgres && sqlClient
@@ -266,23 +264,23 @@ const getUserDetailUseCase = new GetUserDetailUseCase({
 
 const updateUserUseCase = new UpdateUserUseCase({
     userRepository,
-    now: () => new Date(),
+    dateProvider,
 });
 
 const updateUserStatusUseCase = new UpdateUserStatusUseCase({
     userRepository,
-    now: () => new Date(),
+    dateProvider,
 });
 
 const softDeleteUserUseCase = new SoftDeleteUserUseCase({
     userRepository,
     sessionRepository,
-    now: () => new Date(),
+    dateProvider,
 });
 
 const updateOwnProfileUseCase = new UpdateOwnProfileUseCase({
     userRepository,
-    now: () => new Date(),
+    dateProvider,
 });
 
 const revokeUserSessionsUseCase = new RevokeUserSessionsUseCase({
@@ -380,7 +378,6 @@ const confirmInvoiceHeaderUseCase = new ConfirmInvoiceHeaderUseCase({
     ragReindexInvoiceService,
 });
 
-
 const listInvoicesUseCase = new ListInvoicesUseCase({
     invoiceRepository,
 });
@@ -401,44 +398,7 @@ const getInvoiceFileUseCase = new GetInvoiceFileUseCase({
     fileStorage,
 });
 
-type PdfParse = (content: Buffer) => Promise<{ text: string }>;
-const require = createRequire(import.meta.url);
-const resolvePdfParse = (module: unknown): PdfParse => {
-    if (typeof module === 'function') {
-        return module as PdfParse;
-    }
-
-    if (module && typeof module === 'object') {
-        const candidate = module as Record<string, unknown>;
-        if (typeof candidate.default === 'function') {
-            return candidate.default as PdfParse;
-        }
-
-        if (
-            candidate.default &&
-            typeof candidate.default === 'object' &&
-            typeof (candidate.default as Record<string, unknown>).default === 'function'
-        ) {
-            return (candidate.default as Record<string, unknown>).default as PdfParse;
-        }
-
-        if (typeof candidate.PDFParse === 'function') {
-            return async (content: Buffer) => {
-                const parser = new (candidate.PDFParse as new (options: { data: Buffer }) => {
-                    getText: () => Promise<{ text: string }>;
-                    destroy: () => Promise<void>;
-                })({ data: content });
-                const result = await parser.getText();
-                await parser.destroy();
-                return result;
-            };
-        }
-    }
-
-    throw new Error('Unsupported pdf-parse module format');
-};
-const pdfParseModule = require('pdf-parse');
-const pdfParse = resolvePdfParse(pdfParseModule);
+const pdfParse = loadPdfParse();
 const pdfTextExtractor = new PdfTextExtractor(async (content) => pdfParse(content));
 const genkitPromptRunner = createGenkitInvoicePromptRunner({
     model: config.OAI_MODEL_NAME ?? 'gpt-4o-mini',

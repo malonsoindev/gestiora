@@ -1,6 +1,7 @@
 import type { SoftDeleteUserRequest } from '@application/dto/soft-delete-user.request.js';
 import type { UserRepository } from '@application/ports/user.repository.js';
 import type { SessionRepository } from '@application/ports/session.repository.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
 import type { PortError } from '@application/errors/port.error.js';
 import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
 import { SelfDeletionNotAllowedError } from '@domain/errors/self-deletion-not-allowed.error.js';
@@ -10,7 +11,7 @@ import { fail, ok, type Result } from '@shared/result.js';
 export type SoftDeleteUserDependencies = {
     userRepository: UserRepository;
     sessionRepository: SessionRepository;
-    now: () => Date;
+    dateProvider: DateProvider;
 };
 
 export type SoftDeleteUserError = UserNotFoundError | SelfDeletionNotAllowedError | PortError;
@@ -23,6 +24,12 @@ export class SoftDeleteUserUseCase {
             return fail(new SelfDeletionNotAllowedError());
         }
 
+        const nowResult = this.dependencies.dateProvider.now();
+        if (!nowResult.success) {
+            return fail(nowResult.error);
+        }
+        const now = nowResult.value;
+
         const userResult = await this.dependencies.userRepository.findById(request.userId);
         if (!userResult.success) {
             return fail(userResult.error);
@@ -33,7 +40,6 @@ export class SoftDeleteUserUseCase {
             return fail(new UserNotFoundError());
         }
 
-        const now = this.dependencies.now();
         const softDeleted = existingUser.updateInfo({
             status: UserStatus.Deleted,
             deletedAt: now,

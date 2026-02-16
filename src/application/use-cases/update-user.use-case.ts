@@ -1,5 +1,6 @@
 import type { UpdateUserRequest } from '@application/dto/update-user.request.js';
 import type { UserRepository } from '@application/ports/user.repository.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
 import type { PortError } from '@application/errors/port.error.js';
 import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
 import { InvalidUserRolesError } from '@domain/errors/invalid-user-roles.error.js';
@@ -9,7 +10,7 @@ import { UserStatus } from '@domain/entities/user.entity.js';
 
 export type UpdateUserDependencies = {
     userRepository: UserRepository;
-    now: () => Date;
+    dateProvider: DateProvider;
 };
 
 export type UpdateUserError =
@@ -30,6 +31,12 @@ export class UpdateUserUseCase {
             return fail(new InvalidUserStatusError());
         }
 
+        const nowResult = this.dependencies.dateProvider.now();
+        if (!nowResult.success) {
+            return fail(nowResult.error);
+        }
+        const now = nowResult.value;
+
         const userResult = await this.dependencies.userRepository.findById(request.userId);
         if (!userResult.success) {
             return fail(userResult.error);
@@ -45,7 +52,7 @@ export class UpdateUserUseCase {
             ...(request.avatar === undefined ? {} : { avatar: request.avatar }),
             ...(request.roles ? { roles: request.roles } : {}),
             ...(request.status ? { status: request.status } : {}),
-            updatedAt: this.dependencies.now(),
+            updatedAt: now,
         });
 
         const updateResult = await this.dependencies.userRepository.update(updatedUser);
