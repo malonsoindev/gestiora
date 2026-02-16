@@ -1,22 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { LogoutUserUseCase } from '@application/use-cases/logout-user.use-case.js';
-import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher.js';
 import type { SessionRepository } from '@application/ports/session.repository.js';
 import { Session, SessionStatus } from '@domain/entities/session.entity.js';
 import type { SessionProps } from '@domain/entities/session.entity.js';
 import { ok } from '@shared/result.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 
 const fixedNow = new Date('2026-01-29T15:00:00.000Z');
-
-class FixedDateProvider implements DateProvider {
-    constructor(private readonly date: Date) {}
-
-    now() {
-        return ok(this.date);
-    }
-}
 
 class SessionRepositorySpy implements SessionRepository {
     updated: Session | null = null;
@@ -36,15 +30,6 @@ class SessionRepositorySpy implements SessionRepository {
     }
 
     async revokeByUserId(_userId: string) {
-        return ok(undefined);
-    }
-}
-
-class AuditLoggerSpy implements AuditLogger {
-    events: AuditEvent[] = [];
-
-    async log(event: AuditEvent) {
-        this.events.push(event);
         return ok(undefined);
     }
 }
@@ -74,7 +59,7 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
         sessionRepository,
         refreshTokenHasher: new RefreshTokenHasherStub(),
         auditLogger,
-        dateProvider: new FixedDateProvider(fixedNow),
+        dateProvider: new DateProviderStub(fixedNow),
         ...dependencies,
     };
 

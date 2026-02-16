@@ -1,19 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { AuthorizeRequestUseCase } from '@application/use-cases/authorize-request.use-case.js';
 import type { TokenService, AccessTokenPayload } from '@application/ports/token.service.js';
-import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
-import type { DateProvider } from '@application/ports/date-provider.js';
 import { PortError } from '@application/errors/port.error.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { fail, ok } from '@shared/result.js';
-
-class FixedDateProvider implements DateProvider {
-    constructor(private readonly date: Date) {}
-
-    now() {
-        return ok(this.date);
-    }
-}
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 
 class TokenServiceStub implements TokenService {
     accessPayloads: AccessTokenPayload[] = [];
@@ -38,21 +30,12 @@ class TokenServiceStub implements TokenService {
     }
 }
 
-class AuditLoggerSpy implements AuditLogger {
-    events: AuditEvent[] = [];
-
-    async log(event: AuditEvent) {
-        this.events.push(event);
-        return ok(undefined);
-    }
-}
-
 describe('AuthorizeRequestUseCase', () => {
     it('rejects requests without token', async () => {
         const useCase = new AuthorizeRequestUseCase({
             tokenService: new TokenServiceStub(),
             auditLogger: new AuditLoggerSpy(),
-            dateProvider: new FixedDateProvider(new Date('2026-01-29T16:00:00.000Z')),
+            dateProvider: new DateProviderStub(new Date('2026-01-29T16:00:00.000Z')),
         });
 
         const result = await useCase.execute({ requiresAdmin: false });
@@ -64,7 +47,7 @@ describe('AuthorizeRequestUseCase', () => {
         const useCase = new AuthorizeRequestUseCase({
             tokenService: new TokenServiceStub(),
             auditLogger: new AuditLoggerSpy(),
-            dateProvider: new FixedDateProvider(new Date('2026-01-29T16:00:00.000Z')),
+            dateProvider: new DateProviderStub(new Date('2026-01-29T16:00:00.000Z')),
         });
 
         const result = await useCase.execute({ token: 'invalid', requiresAdmin: false });
@@ -76,7 +59,7 @@ describe('AuthorizeRequestUseCase', () => {
         const useCase = new AuthorizeRequestUseCase({
             tokenService: new TokenServiceStub(),
             auditLogger: new AuditLoggerSpy(),
-            dateProvider: new FixedDateProvider(new Date('2026-01-29T16:00:00.000Z')),
+            dateProvider: new DateProviderStub(new Date('2026-01-29T16:00:00.000Z')),
         });
 
         const result = await useCase.execute({ token: 'valid', requiresAdmin: false });
@@ -92,7 +75,7 @@ describe('AuthorizeRequestUseCase', () => {
         const useCase = new AuthorizeRequestUseCase({
             tokenService: new TokenServiceStub(),
             auditLogger: new AuditLoggerSpy(),
-            dateProvider: new FixedDateProvider(new Date('2026-01-29T16:00:00.000Z')),
+            dateProvider: new DateProviderStub(new Date('2026-01-29T16:00:00.000Z')),
         });
 
         const result = await useCase.execute({ token: 'valid', requiresAdmin: true });
@@ -111,7 +94,7 @@ describe('AuthorizeRequestUseCase', () => {
         const useCase = new AuthorizeRequestUseCase({
             tokenService,
             auditLogger: new AuditLoggerSpy(),
-            dateProvider: new FixedDateProvider(new Date('2026-01-29T16:00:00.000Z')),
+            dateProvider: new DateProviderStub(new Date('2026-01-29T16:00:00.000Z')),
         });
 
         const result = await useCase.execute({ token: 'admin-token', requiresAdmin: true });

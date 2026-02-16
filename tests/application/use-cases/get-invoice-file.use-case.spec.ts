@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { GetInvoiceFileUseCase } from '@application/use-cases/get-invoice-file.use-case.js';
-import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
 import type { FileStorage } from '@application/ports/file-storage.js';
 import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
 import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
@@ -11,32 +10,9 @@ import { FileRef } from '@domain/value-objects/file-ref.value-object.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
 import { ok } from '@shared/result.js';
+import { InvoiceRepositoryStub } from '@tests/shared/stubs/invoice-repository.stub.js';
 
 const fixedNow = new Date('2026-02-23T10:00:00.000Z');
-
-class InvoiceRepositoryStub implements InvoiceRepository {
-    constructor(private readonly invoice: Invoice | null) {}
-
-    async create() {
-        return ok(undefined);
-    }
-
-    async findById() {
-        return ok(this.invoice);
-    }
-
-    async update() {
-        return ok(undefined);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async getDetail() {
-        return ok(null);
-    }
-}
 
 class FileStorageStub implements FileStorage {
     async store() {

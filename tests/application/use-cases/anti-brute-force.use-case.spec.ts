@@ -1,18 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { AntiBruteForceUseCase } from '@application/use-cases/anti-brute-force.use-case.js';
 import type { LoginAttemptRepository } from '@application/ports/login-attempt.repository.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
-import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
 import { AuthRateLimitedError } from '@domain/errors/auth-rate-limited.error.js';
 import { ok } from '@shared/result.js';
-
-class FixedDateProvider implements DateProvider {
-    constructor(private readonly date: Date) {}
-
-    now() {
-        return ok(this.date);
-    }
-}
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 
 class LoginAttemptRepositoryStub implements LoginAttemptRepository {
     attemptsInWindow = 0;
@@ -22,15 +16,6 @@ class LoginAttemptRepositoryStub implements LoginAttemptRepository {
     }
 
     async recordAttempt() {
-        return ok(undefined);
-    }
-}
-
-class AuditLoggerSpy implements AuditLogger {
-    events: AuditEvent[] = [];
-
-    async log(event: AuditEvent) {
-        this.events.push(event);
         return ok(undefined);
     }
 }
@@ -46,7 +31,7 @@ describe('AntiBruteForceUseCase', () => {
         const useCase = new AntiBruteForceUseCase({
             loginAttemptRepository: repo,
             auditLogger: new AuditLoggerSpy(),
-            dateProvider: new FixedDateProvider(new Date('2026-01-29T18:00:00.000Z')),
+            dateProvider: new DateProviderStub(new Date('2026-01-29T18:00:00.000Z')),
             maxAttempts: 5,
             windowMinutes: 15,
             lockMinutes: 30,
@@ -65,7 +50,7 @@ describe('AntiBruteForceUseCase', () => {
         const useCase = new AntiBruteForceUseCase({
             loginAttemptRepository: repo,
             auditLogger,
-            dateProvider: new FixedDateProvider(new Date('2026-01-29T18:00:00.000Z')),
+            dateProvider: new DateProviderStub(new Date('2026-01-29T18:00:00.000Z')),
             maxAttempts: 5,
             windowMinutes: 15,
             lockMinutes: 30,

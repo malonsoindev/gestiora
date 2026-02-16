@@ -1,61 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { SoftDeleteInvoiceUseCase } from '@application/use-cases/soft-delete-invoice.use-case.js';
-import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
-import type { DateProvider } from '@application/ports/date-provider.js';
-import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
-import type { PortError } from '@application/errors/port.error.js';
 import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
 import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
 import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
-import { ok, type Result } from '@shared/result.js';
 import { RagReindexInvoiceServiceStub } from '@tests/application/stubs/rag-reindex-invoice.service.stub.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import { InvoiceRepositoryStub } from '@tests/shared/stubs/invoice-repository.stub.js';
 
 const fixedNow = new Date('2026-02-22T10:00:00.000Z');
-
-class DateProviderStub implements DateProvider {
-    now(): Result<Date, PortError> {
-        return ok(fixedNow);
-    }
-}
-
-class AuditLoggerSpy implements AuditLogger {
-    events: AuditEvent[] = [];
-
-    async log(event: AuditEvent) {
-        this.events.push(event);
-        return ok(undefined);
-    }
-}
-
-class InvoiceRepositoryStub implements InvoiceRepository {
-    updatedInvoice: Invoice | null = null;
-
-    constructor(private readonly invoice: Invoice | null) {}
-
-    async create() {
-        return ok(undefined);
-    }
-
-    async findById() {
-        return ok(this.invoice);
-    }
-
-    async update(invoice: Invoice) {
-        this.updatedInvoice = invoice;
-        return ok(undefined);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async getDetail() {
-        return ok(null);
-    }
-}
 
 const createInvoice = (overrides: Partial<InvoiceProps> = {}): Invoice =>
     Invoice.create({
@@ -92,9 +48,9 @@ describe('SoftDeleteInvoiceUseCase', () => {
         const useCase = new SoftDeleteInvoiceUseCase({
             invoiceRepository,
             auditLogger,
-            dateProvider: new DateProviderStub(),
-            ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
-        });
+        dateProvider: new DateProviderStub(fixedNow),
+        ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
+    });
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
@@ -113,7 +69,7 @@ describe('SoftDeleteInvoiceUseCase', () => {
         const useCase = new SoftDeleteInvoiceUseCase({
             invoiceRepository,
             auditLogger,
-            dateProvider: new DateProviderStub(),
+            dateProvider: new DateProviderStub(fixedNow),
             ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 

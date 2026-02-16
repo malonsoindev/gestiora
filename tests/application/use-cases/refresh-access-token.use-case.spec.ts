@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RefreshAccessTokenUseCase } from '@application/use-cases/refresh-access-token.use-case.js';
-import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher.js';
 import type { SessionRepository } from '@application/ports/session.repository.js';
@@ -14,16 +14,10 @@ import type { UserProps } from '@domain/entities/user.entity.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { ok } from '@shared/result.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 
 const fixedNow = new Date('2026-01-29T12:00:00.000Z');
-
-class FixedDateProvider implements DateProvider {
-    constructor(private readonly date: Date) {}
-
-    now() {
-        return ok(this.date);
-    }
-}
 
 class SessionRepositorySpy implements SessionRepository {
     created: Session | null = null;
@@ -45,15 +39,6 @@ class SessionRepositorySpy implements SessionRepository {
     }
 
     async revokeByUserId(_userId: string) {
-        return ok(undefined);
-    }
-}
-
-class AuditLoggerSpy implements AuditLogger {
-    events: AuditEvent[] = [];
-
-    async log(event: AuditEvent) {
-        this.events.push(event);
         return ok(undefined);
     }
 }
@@ -119,7 +104,7 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
         tokenService,
         refreshTokenHasher: new RefreshTokenHasherStub(),
         auditLogger,
-        dateProvider: new FixedDateProvider(fixedNow),
+        dateProvider: new DateProviderStub(fixedNow),
         accessTokenTtlSeconds: 900,
         refreshTokenTtlSeconds: 2_592_000,
         rotateRefreshTokens: false,

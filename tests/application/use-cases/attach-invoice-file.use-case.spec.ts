@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { AttachInvoiceFileUseCase } from '@application/use-cases/attach-invoice-file.use-case.js';
-import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
 import type { FileStorage } from '@application/ports/file-storage.js';
 import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
 import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
@@ -15,33 +14,7 @@ import { RagReindexInvoiceServiceStub } from '@tests/application/stubs/rag-reind
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
-
-class InvoiceRepositoryStub implements InvoiceRepository {
-    updatedInvoice: Invoice | null = null;
-
-    constructor(private readonly invoice: Invoice | null) {}
-
-    async create() {
-        return ok(undefined);
-    }
-
-    async findById() {
-        return ok(this.invoice);
-    }
-
-    async update(invoice: Invoice) {
-        this.updatedInvoice = invoice;
-        return ok(undefined);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async getDetail() {
-        return ok(null);
-    }
-}
+import { InvoiceRepositoryStub } from '@tests/shared/stubs/invoice-repository.stub.js';
 
 class FileStorageStub implements FileStorage {
     deletedStorageKey: string | null = null;
