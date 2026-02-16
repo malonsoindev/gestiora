@@ -10,6 +10,7 @@ import type { ChangeUserPasswordUseCase } from '@application/use-cases/change-us
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { UserStatus } from '@domain/entities/user.entity.js';
 import { respondError } from '@infrastructure/delivery/http/errors/respond-error.js';
+import { getPaginationParams } from '@shared/pagination.js';
 
 export type AdminCreateUserBody = {
     email: string;
@@ -102,8 +103,7 @@ export class AdminUsersController {
             return reply.code(400).send({ error: 'INVALID_STATUS' });
         }
 
-        const page = request.query.page ?? 1;
-        const pageSize = request.query.pageSize ?? 20;
+        const { page, pageSize } = getPaginationParams(request.query);
 
         const result = await this.listUsersUseCase.execute({
             page,

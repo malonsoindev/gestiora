@@ -14,6 +14,7 @@ import type { ReprocessInvoiceExtractionUseCase } from '@application/use-cases/r
 import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
 import { PortError } from '@application/errors/port.error.js';
 import { respondError, type ErrorOverride } from '@infrastructure/delivery/http/errors/respond-error.js';
+import { getPaginationParams } from '@shared/pagination.js';
 
 export type CreateManualInvoiceBody = {
     providerId?: string;
@@ -247,8 +248,7 @@ export class InvoicesController {
         request: FastifyRequest<{ Querystring: InvoicesListQuery }>,
         reply: FastifyReply,
     ) {
-        const page = request.query.page ?? 1;
-        const pageSize = request.query.pageSize ?? 20;
+        const { page, pageSize } = getPaginationParams(request.query);
 
         const result = await this.listInvoicesUseCase.execute({
             page,

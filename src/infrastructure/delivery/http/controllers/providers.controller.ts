@@ -7,6 +7,7 @@ import type { UpdateProviderStatusUseCase } from '@application/use-cases/update-
 import type { SoftDeleteProviderUseCase } from '@application/use-cases/soft-delete-provider.use-case.js';
 import { ProviderStatus } from '@domain/entities/provider.entity.js';
 import { respondError } from '@infrastructure/delivery/http/errors/respond-error.js';
+import { getPaginationParams } from '@shared/pagination.js';
 
 export type CreateProviderBody = {
     razonSocial: string;
@@ -90,8 +91,7 @@ export class ProvidersController {
             return reply.code(400).send({ error: 'INVALID_STATUS' });
         }
 
-        const page = request.query.page ?? 1;
-        const pageSize = request.query.pageSize ?? 20;
+        const { page, pageSize } = getPaginationParams(request.query);
 
         const result = await this.listProvidersUseCase.execute({
             page,
