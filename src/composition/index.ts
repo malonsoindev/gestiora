@@ -62,7 +62,7 @@ import { SoftDeleteProviderUseCase } from '@application/use-cases/soft-delete-pr
 import { User, UserStatus } from '@domain/entities/user.entity.js';
 import { Email } from '@domain/value-objects/email.value-object.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
-import { config } from '@config/env.js';
+import { config, usePostgresDatabase } from '@config/env.js';
 import { DatabaseFactory } from '@infrastructure/database/database-factory.js';
 import { PostgresUserRepository } from '@infrastructure/persistence/postgres/postgres-user.repository.js';
 import { PostgresSessionRepository } from '@infrastructure/persistence/postgres/postgres-session.repository.js';
@@ -164,7 +164,7 @@ const LOGIN_LOCK_MINUTES = 30;
  * ========================================================================= */
 
 /** Indica si se usa PostgreSQL como base de datos */
-const usePostgres = config.DATABASE_TYPE === 'postgres';
+const usePostgres = usePostgresDatabase();
 
 /** Cliente SQL para PostgreSQL (undefined si se usa in-memory) */
 const sqlClient = usePostgres ? DatabaseFactory.createClient() : undefined;
