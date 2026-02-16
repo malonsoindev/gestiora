@@ -23,3 +23,8 @@
 
 ## Security
 - Avoid `Math.random()` for IDs; prefer `crypto.randomUUID()` or `randomBytes`.
+
+## Human Supervision
+- All code changes must be approved by a human before being applied.
+- Agents must propose changes and wait for explicit approval before executing.
+- No commits are made without explicit human request.

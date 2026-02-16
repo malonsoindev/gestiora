@@ -4,15 +4,6 @@ import type { RefreshAccessTokenUseCase } from '@application/use-cases/refresh-a
 import type { LogoutUserUseCase } from '@application/use-cases/logout-user.use-case.js';
 import { respondError } from '@infrastructure/delivery/http/errors/respond-error.js';
 
-type LoginBody = {
-    email: string;
-    password: string;
-};
-
-type RefreshBody = {
-    refreshToken: string;
-};
-
 export type AuthLoginBody = {
     email: string;
     password: string;
