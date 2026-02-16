@@ -5,13 +5,8 @@ import type { GetProviderDetailUseCase } from '@application/use-cases/get-provid
 import type { UpdateProviderUseCase } from '@application/use-cases/update-provider.use-case.js';
 import type { UpdateProviderStatusUseCase } from '@application/use-cases/update-provider-status.use-case.js';
 import type { SoftDeleteProviderUseCase } from '@application/use-cases/soft-delete-provider.use-case.js';
-import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
-import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
-import { ProviderAlreadyExistsError } from '@domain/errors/provider-already-exists.error.js';
-import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
 import { ProviderStatus } from '@domain/entities/provider.entity.js';
-import { PortError } from '@application/errors/port.error.js';
-import { sendInternalError } from '@infrastructure/delivery/http/errors/internal-error-response.js';
+import { respondError } from '@infrastructure/delivery/http/errors/respond-error.js';
 
 export type CreateProviderBody = {
     razonSocial: string;
@@ -83,23 +78,7 @@ export class ProvidersController {
             return reply.code(201).send(result.value);
         }
 
-        if (result.error instanceof ProviderAlreadyExistsError) {
-            return reply.code(400).send({ error: 'PROVIDER_ALREADY_EXISTS' });
-        }
-
-        if (result.error instanceof InvalidCifError) {
-            return reply.code(400).send({ error: 'INVALID_CIF' });
-        }
-
-        if (result.error instanceof InvalidProviderStatusError) {
-            return reply.code(400).send({ error: 'INVALID_STATUS' });
-        }
-
-        if (result.error instanceof PortError) {
-            return sendInternalError(reply);
-        }
-
-        return sendInternalError(reply);
+        return respondError(reply, result.error);
     }
 
     async listProviders(
@@ -134,7 +113,7 @@ export class ProvidersController {
             });
         }
 
-        return sendInternalError(reply);
+        return respondError(reply, result.error);
     }
 
     async getProviderDetail(
@@ -161,11 +140,7 @@ export class ProvidersController {
             });
         }
 
-        if (result.error instanceof ProviderNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        return sendInternalError(reply);
+        return respondError(reply, result.error);
     }
 
     async updateProvider(
@@ -192,23 +167,7 @@ export class ProvidersController {
             return this.respondWithProviderDetail(reply, request.params.providerId);
         }
 
-        if (result.error instanceof ProviderNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof ProviderAlreadyExistsError) {
-            return reply.code(400).send({ error: 'PROVIDER_ALREADY_EXISTS' });
-        }
-
-        if (result.error instanceof InvalidCifError) {
-            return reply.code(400).send({ error: 'INVALID_CIF' });
-        }
-
-        if (result.error instanceof PortError) {
-            return sendInternalError(reply);
-        }
-
-        return sendInternalError(reply);
+        return respondError(reply, result.error);
     }
 
     async updateProviderStatus(
@@ -235,19 +194,7 @@ export class ProvidersController {
             return this.respondWithProviderDetail(reply, request.params.providerId);
         }
 
-        if (result.error instanceof ProviderNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof InvalidProviderStatusError) {
-            return reply.code(400).send({ error: 'INVALID_STATUS' });
-        }
-
-        if (result.error instanceof PortError) {
-            return sendInternalError(reply);
-        }
-
-        return sendInternalError(reply);
+        return respondError(reply, result.error);
     }
 
     async softDeleteProvider(
@@ -268,15 +215,7 @@ export class ProvidersController {
             return reply.code(204).send();
         }
 
-        if (result.error instanceof ProviderNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof PortError) {
-            return sendInternalError(reply);
-        }
-
-        return sendInternalError(reply);
+        return respondError(reply, result.error);
     }
 
     private mapStatus(value: 'ACTIVE' | 'INACTIVE' | 'DELETED' | 'DRAFT'): ProviderStatus | null {
@@ -328,6 +267,6 @@ export class ProvidersController {
             });
         }
 
-        return sendInternalError(reply);
+        return respondError(reply, detail.error);
     }
 }

@@ -7,17 +7,9 @@ import type { UpdateUserStatusUseCase } from '@application/use-cases/update-user
 import type { SoftDeleteUserUseCase } from '@application/use-cases/soft-delete-user.use-case.js';
 import type { RevokeUserSessionsUseCase } from '@application/use-cases/revoke-user-sessions.use-case.js';
 import type { ChangeUserPasswordUseCase } from '@application/use-cases/change-user-password.use-case.js';
-import { InvalidEmailError } from '@domain/errors/invalid-email.error.js';
-import { InvalidPasswordError } from '@domain/errors/invalid-password.error.js';
-import { InvalidUserRolesError } from '@domain/errors/invalid-user-roles.error.js';
-import { InvalidUserStatusError } from '@domain/errors/invalid-user-status.error.js';
-import { UserAlreadyExistsError } from '@domain/errors/user-already-exists.error.js';
-import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
-import { SelfDeletionNotAllowedError } from '@domain/errors/self-deletion-not-allowed.error.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { UserStatus } from '@domain/entities/user.entity.js';
-import { PortError } from '@application/errors/port.error.js';
-import { sendInternalError } from '@infrastructure/delivery/http/errors/internal-error-response.js';
+import { respondError } from '@infrastructure/delivery/http/errors/respond-error.js';
 
 export type AdminCreateUserBody = {
     email: string;
@@ -93,24 +85,7 @@ export class AdminUsersController {
             return reply.code(201).send(result.value);
         }
 
-        if (result.error instanceof UserAlreadyExistsError) {
-            return reply.code(400).send({ error: 'USER_ALREADY_EXISTS' });
-        }
-
-        if (
-            result.error instanceof InvalidEmailError ||
-            result.error instanceof InvalidPasswordError ||
-            result.error instanceof InvalidUserRolesError ||
-            result.error instanceof InvalidUserStatusError
-        ) {
-            return reply.code(400).send({ error: 'VALIDATION_ERROR' });
-        }
-
-        if (result.error instanceof PortError) {
-            return sendInternalError(reply);
-        }
-
-        return sendInternalError(reply);
+        return respondError(reply, result.error);
     }
 
     async listUsers(
@@ -154,7 +129,7 @@ export class AdminUsersController {
             });
         }
 
-        return sendInternalError(reply);
+        return respondError(reply, result.error);
     }
 
     async getUserDetail(
@@ -177,11 +152,7 @@ export class AdminUsersController {
             });
         }
 
-        if (result.error instanceof UserNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        return sendInternalError(reply);
+        return respondError(reply, result.error);
     }
 
     async updateUser(
@@ -210,18 +181,7 @@ export class AdminUsersController {
             return this.respondWithUserDetail(reply, request.params.userId);
         }
 
-        if (result.error instanceof UserNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (
-            result.error instanceof InvalidUserRolesError ||
-            result.error instanceof InvalidUserStatusError
-        ) {
-            return reply.code(400).send({ error: 'VALIDATION_ERROR' });
-        }
-
-        return sendInternalError(reply);
+        return respondError(reply, result.error);
     }
 
     async updateUserStatus(
@@ -242,15 +202,7 @@ export class AdminUsersController {
             return this.respondWithUserDetail(reply, request.params.userId);
         }
 
-        if (result.error instanceof UserNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof InvalidUserStatusError) {
-            return reply.code(400).send({ error: 'VALIDATION_ERROR' });
-        }
-
-        return sendInternalError(reply);
+        return respondError(reply, result.error);
     }
 
     async softDeleteUser(
@@ -271,15 +223,7 @@ export class AdminUsersController {
             return reply.code(204).send();
         }
 
-        if (result.error instanceof UserNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof SelfDeletionNotAllowedError) {
-            return reply.code(400).send({ error: 'SELF_DELETE_NOT_ALLOWED' });
-        }
-
-        return sendInternalError(reply);
+        return respondError(reply, result.error);
     }
 
     async revokeUserSessions(
@@ -294,11 +238,7 @@ export class AdminUsersController {
             return reply.code(204).send();
         }
 
-        if (result.error instanceof UserNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        return sendInternalError(reply);
+        return respondError(reply, result.error);
     }
 
     async changeUserPassword(
@@ -320,19 +260,7 @@ export class AdminUsersController {
             return reply.code(204).send();
         }
 
-        if (result.error instanceof UserNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof InvalidPasswordError) {
-            return reply.code(400).send({ error: 'VALIDATION_ERROR' });
-        }
-
-        if (result.error instanceof PortError) {
-            return sendInternalError(reply);
-        }
-
-        return sendInternalError(reply);
+        return respondError(reply, result.error);
     }
 
     private mapRoles(values: Array<'Usuario' | 'Administrador'>): UserRole[] | null {
@@ -371,11 +299,7 @@ export class AdminUsersController {
             });
         }
 
-        if (detail.error instanceof UserNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        return sendInternalError(reply);
+        return respondError(reply, detail.error);
     }
 
     private mapRole(value: 'Usuario' | 'Administrador'): UserRole | null {
