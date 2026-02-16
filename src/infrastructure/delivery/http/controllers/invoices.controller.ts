@@ -18,6 +18,7 @@ import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js'
 import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
 import { InvalidInvoiceTotalsError } from '@domain/errors/invalid-invoice-totals.error.js';
 import { PortError } from '@application/errors/port.error.js';
+import { sendInternalError } from '@infrastructure/delivery/http/errors/internal-error-response.js';
 
 export type CreateManualInvoiceBody = {
     providerId?: string;
@@ -139,11 +140,11 @@ export class InvoicesController {
                 message: result.error.message,
                 port: result.error.port,
             }, 'Port error during invoice upload');
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
         request.log.error({ err: result.error }, 'Unhandled invoice upload error');
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async uploadInvoiceDocument(request: FastifyRequest, reply: FastifyReply) {
@@ -200,14 +201,14 @@ export class InvoicesController {
                     message: result.error.message,
                     port: result.error.port,
                 }, 'Port error during invoice upload');
-                return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+                return sendInternalError(reply);
             }
 
             request.log.error({ err: result.error }, 'Unhandled invoice upload error');
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         } catch (error) {
             request.log.error({ err: error }, 'Upload invoice failed');
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
     }
 
@@ -258,10 +259,10 @@ export class InvoicesController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async updateManualInvoice(
@@ -292,10 +293,10 @@ export class InvoicesController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async listInvoices(
@@ -326,7 +327,7 @@ export class InvoicesController {
             });
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async getInvoiceDetail(
@@ -346,10 +347,10 @@ export class InvoicesController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async softDeleteInvoice(
@@ -375,10 +376,10 @@ export class InvoicesController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async getInvoiceFile(
@@ -405,10 +406,10 @@ export class InvoicesController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async confirmInvoiceMovements(
@@ -439,10 +440,10 @@ export class InvoicesController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async confirmInvoiceHeader(
@@ -473,10 +474,10 @@ export class InvoicesController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async reprocessInvoiceExtraction(
@@ -506,9 +507,9 @@ export class InvoicesController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 }

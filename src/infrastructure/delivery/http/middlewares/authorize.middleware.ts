@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest, HookHandlerDoneFunction } from 'fast
 import type { AuthorizeRequestUseCase } from '@application/use-cases/authorize-request.use-case.js';
 import { AuthorizationError } from '@application/errors/authorization.error.js';
 import { PortError } from '@application/errors/port.error.js';
+import { sendInternalError } from '@infrastructure/delivery/http/errors/internal-error-response.js';
 
 export const buildAuthorizeMiddleware = (
     authorizeRequestUseCase: AuthorizeRequestUseCase,
@@ -31,13 +32,13 @@ export const buildAuthorizeMiddleware = (
                 }
 
                 if (result.error instanceof PortError) {
-                    return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+                    return sendInternalError(reply);
                 }
 
-                return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+                return sendInternalError(reply);
             })
             .catch(() => {
-                return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+                return sendInternalError(reply);
             });
     };
 };

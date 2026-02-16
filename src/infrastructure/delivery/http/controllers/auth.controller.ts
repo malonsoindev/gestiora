@@ -8,6 +8,7 @@ import { AuthUserLockedError } from '@domain/errors/auth-user-locked.error.js';
 import { AuthRateLimitedError } from '@domain/errors/auth-rate-limited.error.js';
 import { AuthInvalidRefreshTokenError } from '@domain/errors/auth-invalid-refresh-token.error.js';
 import { PortError } from '@application/errors/port.error.js';
+import { sendInternalError } from '@infrastructure/delivery/http/errors/internal-error-response.js';
 
 type LoginBody = {
     email: string;
@@ -63,10 +64,10 @@ export class AuthController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async refresh(request: FastifyRequest<{ Body: AuthRefreshBody }>, reply: FastifyReply) {
@@ -83,10 +84,10 @@ export class AuthController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async logout(request: FastifyRequest<{ Body: AuthRefreshBody }>, reply: FastifyReply) {
@@ -99,9 +100,9 @@ export class AuthController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 }

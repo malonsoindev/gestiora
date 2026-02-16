@@ -11,6 +11,7 @@ import { ProviderAlreadyExistsError } from '@domain/errors/provider-already-exis
 import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
 import { ProviderStatus } from '@domain/entities/provider.entity.js';
 import { PortError } from '@application/errors/port.error.js';
+import { sendInternalError } from '@infrastructure/delivery/http/errors/internal-error-response.js';
 
 export type CreateProviderBody = {
     razonSocial: string;
@@ -95,10 +96,10 @@ export class ProvidersController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async listProviders(
@@ -133,7 +134,7 @@ export class ProvidersController {
             });
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async getProviderDetail(
@@ -164,7 +165,7 @@ export class ProvidersController {
             return reply.code(404).send({ error: 'NOT_FOUND' });
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async updateProvider(
@@ -204,10 +205,10 @@ export class ProvidersController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async updateProviderStatus(
@@ -243,10 +244,10 @@ export class ProvidersController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async softDeleteProvider(
@@ -272,10 +273,10 @@ export class ProvidersController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     private mapStatus(value: 'ACTIVE' | 'INACTIVE' | 'DELETED' | 'DRAFT'): ProviderStatus | null {
@@ -327,6 +328,6 @@ export class ProvidersController {
             });
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 }

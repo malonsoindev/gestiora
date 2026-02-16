@@ -17,6 +17,7 @@ import { SelfDeletionNotAllowedError } from '@domain/errors/self-deletion-not-al
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { UserStatus } from '@domain/entities/user.entity.js';
 import { PortError } from '@application/errors/port.error.js';
+import { sendInternalError } from '@infrastructure/delivery/http/errors/internal-error-response.js';
 
 export type AdminCreateUserBody = {
     email: string;
@@ -106,10 +107,10 @@ export class AdminUsersController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async listUsers(
@@ -153,7 +154,7 @@ export class AdminUsersController {
             });
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async getUserDetail(
@@ -180,7 +181,7 @@ export class AdminUsersController {
             return reply.code(404).send({ error: 'NOT_FOUND' });
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async updateUser(
@@ -220,7 +221,7 @@ export class AdminUsersController {
             return reply.code(400).send({ error: 'VALIDATION_ERROR' });
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async updateUserStatus(
@@ -249,7 +250,7 @@ export class AdminUsersController {
             return reply.code(400).send({ error: 'VALIDATION_ERROR' });
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async softDeleteUser(
@@ -278,7 +279,7 @@ export class AdminUsersController {
             return reply.code(400).send({ error: 'SELF_DELETE_NOT_ALLOWED' });
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async revokeUserSessions(
@@ -297,7 +298,7 @@ export class AdminUsersController {
             return reply.code(404).send({ error: 'NOT_FOUND' });
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async changeUserPassword(
@@ -328,10 +329,10 @@ export class AdminUsersController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     private mapRoles(values: Array<'Usuario' | 'Administrador'>): UserRole[] | null {
@@ -374,7 +375,7 @@ export class AdminUsersController {
             return reply.code(404).send({ error: 'NOT_FOUND' });
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     private mapRole(value: 'Usuario' | 'Administrador'): UserRole | null {

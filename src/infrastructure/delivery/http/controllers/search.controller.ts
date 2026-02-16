@@ -4,6 +4,7 @@ import type { GetSearchResultUseCase } from '@application/use-cases/get-search-r
 import { PortError } from '@application/errors/port.error.js';
 import { SearchQueryNotFoundError } from '@domain/errors/search-query-not-found.error.js';
 import { QueryTooAmbiguousError } from '@application/errors/query-too-ambiguous.error.js';
+import { sendInternalError } from '@infrastructure/delivery/http/errors/internal-error-response.js';
 
 export type SearchBody = {
     query: string;
@@ -38,10 +39,10 @@ export class SearchController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async getById(request: FastifyRequest<{ Params: { queryId: string } }>, reply: FastifyReply) {
@@ -61,9 +62,9 @@ export class SearchController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 }

@@ -5,6 +5,7 @@ import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
 import { InvalidPasswordError } from '@domain/errors/invalid-password.error.js';
 import { AuthInvalidCredentialsError } from '@domain/errors/auth-invalid-credentials.error.js';
 import { PortError } from '@application/errors/port.error.js';
+import { sendInternalError } from '@infrastructure/delivery/http/errors/internal-error-response.js';
 
 export type UpdateOwnProfileBody = {
     name?: string;
@@ -46,10 +47,10 @@ export class UsersController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 
     async changeOwnPassword(
@@ -84,9 +85,9 @@ export class UsersController {
         }
 
         if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return sendInternalError(reply);
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return sendInternalError(reply);
     }
 }
