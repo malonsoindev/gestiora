@@ -22,6 +22,7 @@ import { Cif } from '@domain/value-objects/cif.value-object.js';
 import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { ok, fail, type Result } from '@shared/result.js';
+import { tryCif } from '@shared/cif-utils.js';
 
 
 export type UploadInvoiceDocumentError =
@@ -109,11 +110,14 @@ export class UploadInvoiceDocumentUseCase {
         extracted: InvoiceExtractionResult,
         now: Date,
     ): Promise<Result<Provider, UploadInvoiceDocumentError>> {
-        const cifResult = this.normalizeCif(extracted.providerCif);
+        const cifResult = tryCif(extracted.providerCif);
         if (!cifResult.success) {
             return fail(cifResult.error);
         }
-        const normalizedCif = cifResult.value;
+        if (!cifResult.value) {
+            return fail(new InvalidCifError());
+        }
+        const normalizedCif = cifResult.value.getValue();
 
         const providerResult = await this.dependencies.providerRepository.findByCif(normalizedCif);
         if (!providerResult.success) {
@@ -130,20 +134,6 @@ export class UploadInvoiceDocumentUseCase {
         }
 
         return ok(provider);
-    }
-
-    private normalizeCif(providerCif: string | undefined): Result<string, InvalidCifError> {
-        if (!providerCif) {
-            return fail(new InvalidCifError());
-        }
-        try {
-            return ok(Cif.create(providerCif).getValue());
-        } catch (error) {
-            if (error instanceof InvalidCifError) {
-                return fail(error);
-            }
-            throw error;
-        }
     }
 
     private async createDraftProvider(

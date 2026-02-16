@@ -12,6 +12,7 @@ import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-stat
 import { Cif } from '@domain/value-objects/cif.value-object.js';
 import { ok, fail, type Result } from '@shared/result.js';
 import { normalizeText } from '@shared/text-utils.js';
+import { tryCif } from '@shared/cif-utils.js';
 
 export type CreateProviderDependencies = {
     providerRepository: ProviderRepository;
@@ -39,7 +40,7 @@ export class CreateProviderUseCase {
 
         const now = nowResult.value;
 
-        const cifResult = this.buildCif(request);
+        const cifResult = tryCif(request.cif);
         if (!cifResult.success) {
             return fail(cifResult.error);
         }
@@ -89,21 +90,6 @@ export class CreateProviderUseCase {
         }
 
         return ok({ providerId: provider.id });
-    }
-
-    private buildCif(request: CreateProviderRequest): Result<Cif | undefined, InvalidCifError> {
-        if (!request.cif) {
-            return ok(undefined);
-        }
-
-        try {
-            return ok(Cif.create(request.cif));
-        } catch (error) {
-            if (error instanceof InvalidCifError) {
-                return fail(error);
-            }
-            throw error;
-        }
     }
 
     private async ensureProviderNotExists(

@@ -21,6 +21,7 @@ import { Cif } from '@domain/value-objects/cif.value-object.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
 import { ok, fail, type Result } from '@shared/result.js';
+import { tryCif } from '@shared/cif-utils.js';
 
 export type CreateManualInvoiceDependencies = {
     providerRepository: ProviderRepository;
@@ -95,10 +96,6 @@ export class CreateManualInvoiceUseCase {
             return fail(new InvalidInvoiceTotalsError());
         }
 
-        if (!invoice.isTotalsConsistent()) {
-            return fail(new InvalidInvoiceTotalsError());
-        }
-
         const createResult = await this.dependencies.invoiceRepository.create(invoice);
         if (!createResult.success) {
             return fail(createResult.error);
@@ -134,16 +131,14 @@ export class CreateManualInvoiceUseCase {
             return this.dependencies.providerRepository.findById(request.providerId);
         }
         if (request.providerCif) {
-            let cif: Cif;
-            try {
-                cif = Cif.create(request.providerCif);
-            } catch (error) {
-                if (error instanceof InvalidCifError) {
-                    return fail(error);
-                }
-                throw error;
+            const cifResult = tryCif(request.providerCif);
+            if (!cifResult.success) {
+                return fail(cifResult.error);
             }
-            return this.dependencies.providerRepository.findByCif(cif.getValue());
+            if (!cifResult.value) {
+                return fail(new InvalidCifError());
+            }
+            return this.dependencies.providerRepository.findByCif(cifResult.value.getValue());
         }
         return ok(null);
     }
