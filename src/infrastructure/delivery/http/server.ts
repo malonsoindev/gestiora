@@ -21,33 +21,39 @@ import { registerProvidersRoutes } from '@infrastructure/delivery/http/routes/pr
 import { registerInvoicesRoutes } from '@infrastructure/delivery/http/routes/invoices.routes.js';
 import { registerSearchRoutes } from '@infrastructure/delivery/http/routes/search.routes.js';
 import { compositionRoot } from '@composition/index.js';
-import { config, isDevelopment, isProduction } from '@config/env.js';
+import { config, isDevelopment, isProduction, type Config } from '@config/env.js';
+
+/**
+ * Resolves CORS origin configuration from environment config.
+ * Returns undefined to disable CORS, true for wildcard, or specific origins.
+ */
+const resolveCorsOrigin = (cfg: Config): boolean | string | string[] | undefined => {
+    if (cfg.CORS === false) {
+        return undefined;
+    }
+
+    if (cfg.CORS === true) {
+        return true;
+    }
+
+    if (typeof cfg.CORS === 'string') {
+        return cfg.CORS;
+    }
+
+    if (Array.isArray(cfg.CORS)) {
+        return cfg.CORS;
+    }
+
+    if (isDevelopment(cfg)) {
+        return true;
+    }
+
+    return undefined;
+};
 
 export const buildServer = async (): Promise<FastifyInstance> => {
     const app = Fastify({ logger: true });
-    const corsOrigin = (() => {
-        if (config.CORS === false) {
-            return undefined;
-        }
-
-        if (config.CORS === true) {
-            return true;
-        }
-
-        if (typeof config.CORS === 'string') {
-            return config.CORS;
-        }
-
-        if (Array.isArray(config.CORS)) {
-            return config.CORS;
-        }
-
-        if (isDevelopment()) {
-            return true;
-        }
-
-        return undefined;
-    })();
+    const corsOrigin = resolveCorsOrigin(config);
 
     if (!isProduction() || corsOrigin !== undefined) {
         if (corsOrigin !== undefined) {
