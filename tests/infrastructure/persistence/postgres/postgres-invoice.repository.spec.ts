@@ -171,9 +171,11 @@ describeIf('PostgresInvoiceRepository', () => {
 
         expect(updateResult.success).toBe(true);
         expect(findResult.success).toBe(true);
-        if (findResult.success) {
-            expect(findResult.value?.movements).toHaveLength(1);
-            expect(findResult.value?.movements[0].id).toBe('movement-2');
+        if (findResult.success && findResult.value) {
+            expect(findResult.value.movements).toHaveLength(1);
+            const firstMovement = findResult.value.movements[0];
+            expect(firstMovement).toBeDefined();
+            expect(firstMovement!.id).toBe('movement-2');
         }
     });
 
@@ -191,7 +193,9 @@ describeIf('PostgresInvoiceRepository', () => {
         expect(listResult.success).toBe(true);
         if (listResult.success) {
             expect(listResult.value.items).toHaveLength(1);
-            expect(listResult.value.items[0].id).toBe('invoice-1');
+            const firstItem = listResult.value.items[0];
+            expect(firstItem).toBeDefined();
+            expect(firstItem!.id).toBe('invoice-1');
         }
     });
 });

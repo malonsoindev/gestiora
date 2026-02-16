@@ -23,7 +23,6 @@ const createUser = (overrides: Partial<UserProps> = {}): User =>
         roles: [UserRole.user()],
         createdAt: fixedNow,
         updatedAt: fixedNow,
-        deletedAt: undefined,
         ...overrides,
     });
 

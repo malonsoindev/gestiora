@@ -63,7 +63,7 @@ describe('Provider', () => {
 
     it('supports updating deletedAt', () => {
         const now = new Date('2026-02-03T00:00:00.000Z');
-        const provider = createProvider({ deletedAt: undefined });
+        const provider = createProvider();
 
         const updated = provider.updateInfo({
             deletedAt: now,

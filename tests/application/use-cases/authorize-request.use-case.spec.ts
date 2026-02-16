@@ -55,7 +55,7 @@ describe('AuthorizeRequestUseCase', () => {
             dateProvider: new FixedDateProvider(new Date('2026-01-29T16:00:00.000Z')),
         });
 
-        const result = await useCase.execute({ token: undefined, requiresAdmin: false });
+        const result = await useCase.execute({ requiresAdmin: false });
 
         expect(result.success).toBe(false);
     });

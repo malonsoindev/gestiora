@@ -14,7 +14,6 @@ const createUser = (overrides: Partial<UserProps> = {}): User => {
         email: Email.create('user@example.com'),
         passwordHash: testCredentialHashValue,
         status: UserStatus.Active,
-        lockedUntil: undefined,
         roles: [UserRole.user()],
         createdAt: baseDate,
         updatedAt: baseDate,
@@ -63,7 +62,7 @@ describe('User', () => {
 
     it('does not treat a user as locked when no lock is set', () => {
         const now = new Date('2026-01-01T00:00:00.000Z');
-        const unlockedUser = createUser({ lockedUntil: undefined });
+        const unlockedUser = createUser();
 
         expect(unlockedUser.isLocked(now)).toBe(false);
     });
@@ -111,7 +110,7 @@ describe('User', () => {
 
     it('supports updating deletedAt', () => {
         const now = new Date('2026-01-03T00:00:00.000Z');
-        const user = createUser({ deletedAt: undefined });
+        const user = createUser();
 
         const updated = user.updateInfo({
             deletedAt: now,

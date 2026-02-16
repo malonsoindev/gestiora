@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
 import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
 import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
+import type { InvoiceMovementProps } from '@domain/entities/invoice-movement.entity.js';
 import { FileRef } from '@domain/value-objects/file-ref.value-object.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
 
 const baseDate = new Date('2026-02-05T10:00:00.000Z');
 
-const createMovement = (overrides: Partial<InvoiceMovement> = {}): InvoiceMovement =>
+const createMovement = (overrides: Partial<InvoiceMovementProps> = {}): InvoiceMovement =>
     InvoiceMovement.create({
         id: 'movement-1',
         concepto: 'Servicio de consultoria',
@@ -39,7 +40,7 @@ const createInvoice = (overrides: Partial<InvoiceProps> = {}): Invoice =>
 
 describe('Invoice', () => {
     it('creates a draft invoice without fileRef', () => {
-        const invoice = createInvoice({ fileRef: undefined });
+        const invoice = createInvoice();
 
         expect(invoice.status).toBe(InvoiceStatus.Draft);
         expect(invoice.fileRef).toBeUndefined();
@@ -48,7 +49,7 @@ describe('Invoice', () => {
     });
 
     it('returns a new instance when attaching a fileRef', () => {
-        const invoice = createInvoice({ fileRef: undefined });
+        const invoice = createInvoice();
         const now = new Date('2026-02-06T10:00:00.000Z');
 
         const updated = invoice.attachFileRef(
