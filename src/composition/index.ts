@@ -38,11 +38,7 @@ import { BcryptPasswordHasher } from '@infrastructure/adapters/bcrypt-password-h
 import { SimpleRefreshTokenHasher } from '@infrastructure/adapters/simple-refresh-token-hasher.js';
 import { JwtTokenService } from '@infrastructure/adapters/jwt-token.service.js';
 import { InMemoryLoginRateLimiter } from '@infrastructure/adapters/in-memory/in-memory-login-rate-limiter.js';
-import { TimestampProviderIdGenerator } from '@infrastructure/adapters/timestamp-provider-id-generator.js';
-import { TimestampUserIdGenerator } from '@infrastructure/adapters/timestamp-user-id-generator.js';
-import { TimestampSessionIdGenerator } from '@infrastructure/adapters/timestamp-session-id-generator.js';
-import { TimestampInvoiceIdGenerator } from '@infrastructure/adapters/timestamp-invoice-id-generator.js';
-import { TimestampInvoiceMovementIdGenerator } from '@infrastructure/adapters/timestamp-invoice-movement-id-generator.js';
+import { PrefixedIdGenerator } from '@infrastructure/adapters/prefixed-id-generator.js';
 import { LoginUserUseCase } from '@application/use-cases/login-user.use-case.js';
 import { RefreshAccessTokenUseCase } from '@application/use-cases/refresh-access-token.use-case.js';
 import { LogoutUserUseCase } from '@application/use-cases/logout-user.use-case.js';
@@ -267,19 +263,19 @@ const dateProvider = new SystemDateProvider();
  * ========================================================================= */
 
 /** Generador de IDs para entidades User */
-const userIdGenerator = new TimestampUserIdGenerator();
+const userIdGenerator = new PrefixedIdGenerator('user');
 
 /** Generador de IDs para entidades Provider */
-const providerIdGenerator = new TimestampProviderIdGenerator();
+const providerIdGenerator = new PrefixedIdGenerator('provider');
 
 /** Generador de IDs para entidades Invoice */
-const invoiceIdGenerator = new TimestampInvoiceIdGenerator();
+const invoiceIdGenerator = new PrefixedIdGenerator('invoice');
 
 /** Generador de IDs para entidades InvoiceMovement */
-const invoiceMovementIdGenerator = new TimestampInvoiceMovementIdGenerator();
+const invoiceMovementIdGenerator = new PrefixedIdGenerator('movement');
 
 /** Generador de IDs para entidades Session */
-const sessionIdGenerator = new TimestampSessionIdGenerator();
+const sessionIdGenerator = new PrefixedIdGenerator('session');
 
 /* ============================================================================
  * SEGURIDAD: HASHING Y TOKENS
