@@ -3,7 +3,7 @@ import { CreateUserUseCase } from '@application/use-cases/create-user.use-case.j
 import type { PasswordHasher } from '@application/ports/password-hasher.js';
 import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
-import type { AuditLogger, AuditEvent } from '@application/ports/audit-logger.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { UserRepository } from '@application/ports/user.repository.js';
 import { PortError } from '@application/errors/port.error.js';
 import { InvalidPasswordError } from '@domain/errors/invalid-password.error.js';
@@ -19,6 +19,11 @@ import { UserRepositorySpy } from '@tests/shared/spies/user-repository.spy.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { PasswordHasherStub } from '@tests/shared/stubs/password-hasher.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import {
+    FailingDateProvider,
+    FailingAuditLogger,
+    FailingPasswordHasher,
+} from '@tests/shared/stubs/failing-stubs.js';
 import { fail, ok, type Result } from '@shared/result.js';
 
 const fixedNow = new Date('2026-02-02T10:00:00.000Z');
@@ -42,21 +47,8 @@ class UserIdGeneratorStub implements IdGenerator {
     }
 }
 
-// --- Failing Stubs for PortError tests ---
-
-class FailingDateProvider implements DateProvider {
-    now(): Result<Date, PortError> {
-        return fail(new PortError('DateProvider', 'Clock sync error'));
-    }
-}
-
-class FailingAuditLogger implements AuditLogger {
-    async log(_event: AuditEvent): Promise<Result<void, PortError>> {
-        return fail(new PortError('AuditLogger', 'Audit service unavailable'));
-    }
-}
-
-class FailingUserRepository implements UserRepository {
+// Conditional failing repository for specific method failure tests
+class FailingUserRepositoryOnMethod implements UserRepository {
     constructor(private readonly failOn: 'findByEmail' | 'create') {}
 
     async findByEmail(_email: string): Promise<Result<User | null, PortError>> {
@@ -83,16 +75,6 @@ class FailingUserRepository implements UserRepository {
 
     async update(_user: User): Promise<Result<void, PortError>> {
         return ok(undefined);
-    }
-}
-
-class FailingPasswordHasher implements PasswordHasher {
-    async hash(_plainText: string): Promise<Result<string, PortError>> {
-        return fail(new PortError('PasswordHasher', 'Hash service unavailable'));
-    }
-
-    async verify(_plainText: string, _hash: string): Promise<Result<boolean, PortError>> {
-        return ok(true);
     }
 }
 
@@ -264,7 +246,7 @@ describe('CreateUserUseCase', () => {
 
         it('propagates PortError when UserRepository.findByEmail fails', async () => {
             const { useCase } = makeSut({
-                userRepository: new FailingUserRepository('findByEmail'),
+                userRepository: new FailingUserRepositoryOnMethod('findByEmail'),
             });
 
             const result = await useCase.execute(baseRequest);
@@ -292,7 +274,7 @@ describe('CreateUserUseCase', () => {
 
         it('propagates PortError when UserRepository.create fails', async () => {
             const { useCase } = makeSut({
-                userRepository: new FailingUserRepository('create'),
+                userRepository: new FailingUserRepositoryOnMethod('create'),
             });
 
             const result = await useCase.execute(baseRequest);

@@ -8,6 +8,10 @@ import { AuthRateLimitedError } from '@domain/errors/auth-rate-limited.error.js'
 import { ok, fail, type Result } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import {
+    FailingDateProvider,
+    FailingAuditLogger,
+} from '@tests/shared/stubs/failing-stubs.js';
 
 class LoginAttemptRepositoryStub implements LoginAttemptRepository {
     attemptsInWindow = 0;
@@ -21,21 +25,8 @@ class LoginAttemptRepositoryStub implements LoginAttemptRepository {
     }
 }
 
-// --- Failing Stubs for PortError tests ---
-
-class FailingDateProvider implements DateProvider {
-    now(): Result<Date, PortError> {
-        return fail(new PortError('DateProvider', 'Clock sync error'));
-    }
-}
-
-class FailingAuditLogger implements AuditLogger {
-    async log(_event: AuditEvent): Promise<Result<void, PortError>> {
-        return fail(new PortError('AuditLogger', 'Audit service unavailable'));
-    }
-}
-
-class FailingLoginAttemptRepository implements LoginAttemptRepository {
+// Local stub with conditional failure logic (not suitable for centralized failing-stubs)
+class FailingLoginAttemptRepositoryOnMethod implements LoginAttemptRepository {
     constructor(
         private readonly failOn: 'countFailedAttempts' | 'recordAttempt',
         private readonly attemptsInWindow = 0,
@@ -127,7 +118,7 @@ describe('AntiBruteForceUseCase', () => {
 
         it('propagates PortError when LoginAttemptRepository.countFailedAttempts fails', async () => {
             const useCase = new AntiBruteForceUseCase({
-                loginAttemptRepository: new FailingLoginAttemptRepository('countFailedAttempts'),
+                loginAttemptRepository: new FailingLoginAttemptRepositoryOnMethod('countFailedAttempts'),
                 auditLogger: new AuditLoggerSpy(),
                 dateProvider: new DateProviderStub(new Date('2026-01-29T18:00:00.000Z')),
                 ...defaultConfig,
@@ -145,7 +136,7 @@ describe('AntiBruteForceUseCase', () => {
         it('propagates PortError when AuditLogger.log fails during rate limit', async () => {
             // Need attemptsInWindow >= maxAttempts to trigger audit log
             const useCase = new AntiBruteForceUseCase({
-                loginAttemptRepository: new FailingLoginAttemptRepository('recordAttempt', 5),
+                loginAttemptRepository: new FailingLoginAttemptRepositoryOnMethod('recordAttempt', 5),
                 auditLogger: new FailingAuditLogger(),
                 dateProvider: new DateProviderStub(new Date('2026-01-29T18:00:00.000Z')),
                 ...defaultConfig,
@@ -162,7 +153,7 @@ describe('AntiBruteForceUseCase', () => {
 
         it('propagates PortError when LoginAttemptRepository.recordAttempt fails', async () => {
             const useCase = new AntiBruteForceUseCase({
-                loginAttemptRepository: new FailingLoginAttemptRepository('recordAttempt', 0),
+                loginAttemptRepository: new FailingLoginAttemptRepositoryOnMethod('recordAttempt', 0),
                 auditLogger: new AuditLoggerSpy(),
                 dateProvider: new DateProviderStub(new Date('2026-01-29T18:00:00.000Z')),
                 ...defaultConfig,

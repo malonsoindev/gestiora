@@ -26,6 +26,13 @@ import { TokenServiceStub } from '@tests/shared/stubs/token-service.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
+import {
+    FailingDateProvider,
+    FailingRateLimiter,
+    FailingAuditLogger,
+    FailingPasswordHasher,
+    FailingRefreshTokenHasher,
+} from '@tests/shared/stubs/failing-stubs.js';
 
 const testCredentialHashValue = 'hashed-password';
 const validLoginCredential = 'valid-password';
@@ -123,19 +130,7 @@ class LoginAttemptRepositorySpy implements LoginAttemptRepository {
     }
 }
 
-// ========== PortError Stubs ==========
-
-class FailingDateProvider implements DateProvider {
-    now() {
-        return fail(new PortError('DateProvider', 'Clock service unavailable'));
-    }
-}
-
-class FailingRateLimiter implements LoginRateLimiter {
-    async assertAllowed() {
-        return fail(new PortError('LoginRateLimiter', 'Rate limiter unavailable'));
-    }
-}
+// ========== PortError Stubs (specific behavior not covered by shared stubs) ==========
 
 const buildFailingUserRepository = (method: 'findByEmail'): UserRepository => ({
     findByEmail: async () =>
@@ -148,35 +143,14 @@ const buildFailingUserRepository = (method: 'findByEmail'): UserRepository => ({
     update: async () => ok(undefined),
 });
 
-class FailingLoginAttemptRepository implements LoginAttemptRepository {
+// FailingLoginAttemptRepositoryOnRecord with specific behavior: only recordAttempt fails
+class FailingLoginAttemptRepositoryOnRecord implements LoginAttemptRepository {
     async countFailedAttempts() {
         return ok(0);
     }
 
     async recordAttempt() {
         return fail(new PortError('LoginAttemptRepository', 'Database write failed'));
-    }
-}
-
-class FailingAuditLogger implements AuditLogger {
-    async log() {
-        return fail(new PortError('AuditLogger', 'Audit service unavailable'));
-    }
-}
-
-class FailingPasswordHasher implements PasswordHasher {
-    async verify() {
-        return fail(new PortError('PasswordHasher', 'Hashing service unavailable'));
-    }
-
-    async hash() {
-        return fail(new PortError('PasswordHasher', 'Hashing service unavailable'));
-    }
-}
-
-class FailingRefreshTokenHasher implements RefreshTokenHasher {
-    hash() {
-        return fail(new PortError('RefreshTokenHasher', 'Hashing service unavailable'));
     }
 }
 
@@ -210,7 +184,8 @@ class FailingTokenService implements TokenService {
     }
 }
 
-class FailingSessionRepository implements SessionRepository {
+// FailingSessionRepositoryOnCreate with specific behavior: only create fails
+class FailingSessionRepositoryOnCreate implements SessionRepository {
     async create() {
         return fail(new PortError('SessionRepository', 'Database write failed'));
     }
@@ -444,7 +419,7 @@ describe('LoginUserUseCase', () => {
         it('propagates PortError when LoginAttemptRepository.recordAttempt fails during user-not-found logging', async () => {
             const { useCase } = createUseCase({
                 userRepository: buildUserRepository(null),
-                loginAttemptRepository: new FailingLoginAttemptRepository(),
+                loginAttemptRepository: new FailingLoginAttemptRepositoryOnRecord(),
             });
 
             const result = await useCase.execute(buildLoginRequest());
@@ -523,7 +498,7 @@ describe('LoginUserUseCase', () => {
             const user = createUser();
             const { useCase } = createUseCase({
                 userRepository: buildUserRepository(user),
-                sessionRepository: new FailingSessionRepository(),
+                sessionRepository: new FailingSessionRepositoryOnCreate(),
             });
 
             const result = await useCase.execute(buildLoginRequest({ email: user.email }));
@@ -555,7 +530,7 @@ describe('LoginUserUseCase', () => {
             const user = createUser();
             const { useCase } = createUseCase({
                 userRepository: buildUserRepository(user),
-                loginAttemptRepository: new FailingLoginAttemptRepository(),
+                loginAttemptRepository: new FailingLoginAttemptRepositoryOnRecord(),
             });
 
             const result = await useCase.execute(buildLoginRequest({ email: user.email }));

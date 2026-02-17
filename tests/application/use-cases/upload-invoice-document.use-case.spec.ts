@@ -21,6 +21,13 @@ import { InvoiceRepositorySpy } from '@tests/shared/spies/invoice-repository.spy
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
 import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
+import {
+    FailingDateProvider,
+    FailingExtractionAgent,
+    FailingFileStorage,
+    FailingInvoiceRepository,
+    FailingAuditLogger,
+} from '@tests/shared/stubs/failing-stubs.js';
 
 class ExtractionAgentStub implements InvoiceExtractionAgent {
     async extract(): Promise<Result<InvoiceExtractionResult, PortError>> {
@@ -120,21 +127,9 @@ class ExtractionAgentTotalsMismatchStub implements InvoiceExtractionAgent {
     }
 }
 
-// ========== PortError Stubs ==========
+// ========== Local PortError Stubs (with specific logic not suitable for centralization) ==========
 
-class FailingDateProvider implements DateProvider {
-    now() {
-        return fail(new PortError('DateProvider', 'Clock service unavailable'));
-    }
-}
-
-class FailingExtractionAgent implements InvoiceExtractionAgent {
-    async extract(): Promise<Result<InvoiceExtractionResult, PortError>> {
-        return fail(new PortError('InvoiceExtractionAgent', 'AI service unavailable'));
-    }
-}
-
-class FailingProviderRepository implements ProviderRepository {
+class FailingProviderRepositoryOnMethod implements ProviderRepository {
     private readonly failOn: 'findByCif' | 'create';
 
     constructor(failOn: 'findByCif' | 'create' = 'findByCif') {
@@ -172,49 +167,8 @@ class FailingProviderRepository implements ProviderRepository {
     }
 }
 
-class FailingFileStorage implements FileStorage {
-    async store() {
-        return fail(new PortError('FileStorage', 'Storage service unavailable'));
-    }
-
-    async get() {
-        return fail(new PortError('FileStorage', 'Storage service unavailable'));
-    }
-
-    async delete() {
-        return fail(new PortError('FileStorage', 'Storage service unavailable'));
-    }
-}
-
-class FailingInvoiceRepository implements InvoiceRepository {
-    async create() {
-        return fail(new PortError('InvoiceRepository', 'Database write failed'));
-    }
-
-    async findById() {
-        return ok(null);
-    }
-
-    async getDetail() {
-        return ok(null);
-    }
-
-    async update() {
-        return ok(undefined);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-}
-
-class FailingAuditLogger implements AuditLogger {
-    async log() {
-        return fail(new PortError('AuditLogger', 'Audit service unavailable'));
-    }
-}
-
-class FailingRagReindexService implements RagReindexInvoiceHandler {
+// Local stub with different port name (RagReindexInvoiceService vs RagReindexService)
+class FailingRagReindexServiceLocal implements RagReindexInvoiceHandler {
     async reindex() {
         return fail(new PortError('RagReindexInvoiceService', 'RAG service unavailable'));
     }
@@ -356,7 +310,7 @@ describe('UploadInvoiceDocumentUseCase', () => {
 
         it('propagates PortError when ProviderRepository.findByCif fails', async () => {
             const { useCase } = makeSut({
-                providerRepository: new FailingProviderRepository('findByCif'),
+                providerRepository: new FailingProviderRepositoryOnMethod('findByCif'),
             });
 
             const result = await useCase.execute(baseCommand);
@@ -371,7 +325,7 @@ describe('UploadInvoiceDocumentUseCase', () => {
         it('propagates PortError when ProviderRepository.create fails for draft provider', async () => {
             const { useCase } = makeSut({
                 provider: null,
-                providerRepository: new FailingProviderRepository('create'),
+                providerRepository: new FailingProviderRepositoryOnMethod('create'),
             });
 
             const result = await useCase.execute(baseCommand);
@@ -427,7 +381,7 @@ describe('UploadInvoiceDocumentUseCase', () => {
 
         it('propagates PortError when RagReindexInvoiceService.reindex fails', async () => {
             const { useCase } = makeSut({
-                ragReindexInvoiceService: new FailingRagReindexService(),
+                ragReindexInvoiceService: new FailingRagReindexServiceLocal(),
             });
 
             const result = await useCase.execute(baseCommand);

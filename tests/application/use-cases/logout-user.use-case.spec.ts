@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { LogoutUserUseCase } from '@application/use-cases/logout-user.use-case.js';
-import type { AuditLogger, AuditEvent } from '@application/ports/audit-logger.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher.js';
 import type { SessionRepository } from '@application/ports/session.repository.js';
@@ -10,6 +10,11 @@ import type { SessionProps } from '@domain/entities/session.entity.js';
 import { ok, fail, type Result } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import {
+    FailingDateProvider,
+    FailingAuditLogger,
+    FailingRefreshTokenHasher,
+} from '@tests/shared/stubs/failing-stubs.js';
 
 const fixedNow = new Date('2026-01-29T15:00:00.000Z');
 
@@ -41,27 +46,8 @@ class RefreshTokenHasherStub implements RefreshTokenHasher {
     }
 }
 
-// --- Failing Stubs for PortError tests ---
-
-class FailingDateProvider implements DateProvider {
-    now(): Result<Date, PortError> {
-        return fail(new PortError('DateProvider', 'Clock sync error'));
-    }
-}
-
-class FailingAuditLogger implements AuditLogger {
-    async log(_event: AuditEvent): Promise<Result<void, PortError>> {
-        return fail(new PortError('AuditLogger', 'Audit service unavailable'));
-    }
-}
-
-class FailingRefreshTokenHasher implements RefreshTokenHasher {
-    hash(_value: string): Result<string, PortError> {
-        return fail(new PortError('RefreshTokenHasher', 'Hash service unavailable'));
-    }
-}
-
-class FailingSessionRepository implements SessionRepository {
+// Local stub with conditional failure logic (not suitable for centralized failing-stubs)
+class FailingSessionRepositoryOnMethod implements SessionRepository {
     constructor(private readonly failOn: 'findByRefreshTokenHash' | 'update') {}
 
     async create(_session: Session): Promise<Result<void, PortError>> {
@@ -202,7 +188,7 @@ describe('LogoutUserUseCase', () => {
 
         it('propagates PortError when SessionRepository.findByRefreshTokenHash fails', async () => {
             const { useCase } = createUseCase({
-                sessionRepository: new FailingSessionRepository('findByRefreshTokenHash'),
+                sessionRepository: new FailingSessionRepositoryOnMethod('findByRefreshTokenHash'),
             });
 
             const result = await useCase.execute({ refreshToken: 'refresh-token' });
@@ -216,7 +202,7 @@ describe('LogoutUserUseCase', () => {
 
         it('propagates PortError when SessionRepository.update fails', async () => {
             const { useCase } = createUseCase({
-                sessionRepository: new FailingSessionRepository('update'),
+                sessionRepository: new FailingSessionRepositoryOnMethod('update'),
             });
 
             const result = await useCase.execute({ refreshToken: 'refresh-token' });

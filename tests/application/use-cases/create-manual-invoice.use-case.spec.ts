@@ -22,22 +22,15 @@ import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { InvoiceRepositorySpy } from '@tests/shared/spies/invoice-repository.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
 import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
+import {
+    FailingDateProvider,
+    FailingAuditLogger,
+    FailingInvoiceRepository,
+    FailingRagReindexService,
+} from '@tests/shared/stubs/failing-stubs.js';
 
-// --- Failing Stubs for PortError tests ---
-
-class FailingDateProvider implements DateProvider {
-    now(): Result<Date, PortError> {
-        return fail(new PortError('DateProvider', 'Clock sync error'));
-    }
-}
-
-class FailingAuditLogger implements AuditLogger {
-    async log(_event: AuditEvent): Promise<Result<void, PortError>> {
-        return fail(new PortError('AuditLogger', 'Audit service unavailable'));
-    }
-}
-
-class FailingProviderRepository implements ProviderRepository {
+// Local stub with conditional failure logic (not suitable for centralized failing-stubs)
+class FailingProviderRepositoryOnMethod implements ProviderRepository {
     constructor(
         private readonly provider: Provider | null,
         private readonly failOn: 'findById' | 'findByCif',
@@ -71,34 +64,6 @@ class FailingProviderRepository implements ProviderRepository {
 
     async findByRazonSocialNormalized(_normalized: string): Promise<Result<Provider | null, PortError>> {
         return ok(null);
-    }
-}
-
-class FailingInvoiceRepository implements InvoiceRepository {
-    async create(_invoice: Invoice): Promise<Result<void, PortError>> {
-        return fail(new PortError('InvoiceRepository', 'Database write error'));
-    }
-
-    async findById(_invoiceId: string): Promise<Result<Invoice | null, PortError>> {
-        return ok(null);
-    }
-
-    async update(_invoice: Invoice): Promise<Result<void, PortError>> {
-        return ok(undefined);
-    }
-
-    async list(_filters: InvoiceListFilters): Promise<Result<InvoiceListResult, PortError>> {
-        return ok({ items: [], total: 0 });
-    }
-
-    async getDetail(_invoiceId: string): Promise<Result<Invoice | null, PortError>> {
-        return ok(null);
-    }
-}
-
-class FailingRagReindexService implements RagReindexInvoiceHandler {
-    async reindex(_invoiceId: string): Promise<Result<void, RagReindexInvoiceError>> {
-        return fail(new PortError('RagReindexService', 'Index service unavailable'));
     }
 }
 
@@ -407,7 +372,7 @@ describe('CreateManualInvoiceUseCase', () => {
         it('propagates PortError when ProviderRepository.findById fails', async () => {
             const provider = createProvider();
             const { useCase } = makeSut({
-                providerRepository: new FailingProviderRepository(provider, 'findById'),
+                providerRepository: new FailingProviderRepositoryOnMethod(provider, 'findById'),
             });
 
             const result = await useCase.execute(validInput);
@@ -422,7 +387,7 @@ describe('CreateManualInvoiceUseCase', () => {
         it('propagates PortError when ProviderRepository.findByCif fails', async () => {
             const provider = createProvider();
             const { useCase } = makeSut({
-                providerRepository: new FailingProviderRepository(provider, 'findByCif'),
+                providerRepository: new FailingProviderRepositoryOnMethod(provider, 'findByCif'),
             });
 
             const inputWithCif = {

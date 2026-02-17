@@ -17,6 +17,11 @@ import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { TokenServiceStub } from '@tests/shared/stubs/token-service.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import {
+    FailingDateProvider,
+    FailingRefreshTokenHasher,
+    FailingAuditLogger,
+} from '@tests/shared/stubs/failing-stubs.js';
 
 const fixedNow = new Date('2026-01-29T12:00:00.000Z');
 
@@ -50,21 +55,9 @@ class RefreshTokenHasherStub implements RefreshTokenHasher {
     }
 }
 
-// ========== PortError Stubs ==========
+// ========== Local PortError Stubs (with specific logic not suitable for centralization) ==========
 
-class FailingDateProvider implements DateProvider {
-    now() {
-        return fail(new PortError('DateProvider', 'Clock service unavailable'));
-    }
-}
-
-class FailingRefreshTokenHasher implements RefreshTokenHasher {
-    hash() {
-        return fail(new PortError('RefreshTokenHasher', 'Hashing service unavailable'));
-    }
-}
-
-class FailingSessionRepository implements SessionRepository {
+class FailingSessionRepositoryOnMethod implements SessionRepository {
     private readonly failOn: 'findByRefreshTokenHash' | 'update';
 
     constructor(failOn: 'findByRefreshTokenHash' | 'update' = 'findByRefreshTokenHash') {
@@ -94,12 +87,6 @@ class FailingSessionRepository implements SessionRepository {
     }
 }
 
-class FailingAuditLogger implements AuditLogger {
-    async log() {
-        return fail(new PortError('AuditLogger', 'Audit service unavailable'));
-    }
-}
-
 const buildFailingUserRepository = (): UserRepository => ({
     findByEmail: async () => ok(null),
     findById: async () => fail(new PortError('UserRepository', 'Database connection lost')),
@@ -108,7 +95,7 @@ const buildFailingUserRepository = (): UserRepository => ({
     update: async () => ok(undefined),
 });
 
-class FailingTokenService implements TokenService {
+class FailingTokenServiceOnMethod implements TokenService {
     private readonly failOn: 'createAccessToken' | 'createRefreshToken';
 
     constructor(failOn: 'createAccessToken' | 'createRefreshToken') {
@@ -366,7 +353,7 @@ describe('RefreshAccessTokenUseCase', () => {
 
         it('propagates PortError when SessionRepository.findByRefreshTokenHash fails', async () => {
             const { useCase } = createUseCase({
-                sessionRepository: new FailingSessionRepository('findByRefreshTokenHash'),
+                sessionRepository: new FailingSessionRepositoryOnMethod('findByRefreshTokenHash'),
             });
 
             const result = await useCase.execute(baseRequest);
@@ -435,7 +422,7 @@ describe('RefreshAccessTokenUseCase', () => {
         it('propagates PortError when TokenService.createAccessToken fails', async () => {
             const session = createSession();
             const { useCase, sessionRepository } = createUseCase({
-                tokenService: new FailingTokenService('createAccessToken'),
+                tokenService: new FailingTokenServiceOnMethod('createAccessToken'),
             });
             sessionRepository.session = session;
 
@@ -451,7 +438,7 @@ describe('RefreshAccessTokenUseCase', () => {
         it('propagates PortError when TokenService.createRefreshToken fails during rotation', async () => {
             const session = createSession();
             const { useCase, sessionRepository } = createUseCase({
-                tokenService: new FailingTokenService('createRefreshToken'),
+                tokenService: new FailingTokenServiceOnMethod('createRefreshToken'),
                 rotateRefreshTokens: true,
             });
             sessionRepository.session = session;

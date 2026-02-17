@@ -1,27 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { AuthorizeRequestUseCase } from '@application/use-cases/authorize-request.use-case.js';
-import type { AuditLogger } from '@application/ports/audit-logger.js';
-import type { DateProvider } from '@application/ports/date-provider.js';
 import { PortError } from '@application/errors/port.error.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
-import { fail, ok } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { TokenServiceStub } from '@tests/shared/stubs/token-service.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
-
-// ========== PortError Stubs ==========
-
-class FailingDateProvider implements DateProvider {
-    now() {
-        return fail(new PortError('DateProvider', 'Clock service unavailable'));
-    }
-}
-
-class FailingAuditLogger implements AuditLogger {
-    async log() {
-        return fail(new PortError('AuditLogger', 'Audit service unavailable'));
-    }
-}
+import { FailingDateProvider, FailingAuditLogger } from '@tests/shared/stubs/failing-stubs.js';
 
 describe('AuthorizeRequestUseCase', () => {
     it('rejects requests without token', async () => {

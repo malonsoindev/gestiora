@@ -13,6 +13,10 @@ import { fail, ok } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
+import {
+    FailingDateProvider,
+    FailingAuditLogger,
+} from '@tests/shared/stubs/failing-stubs.js';
 
 const fixedNow = new Date('2026-02-03T10:00:00.000Z');
 
@@ -60,21 +64,8 @@ class ProviderRepositorySpy implements ProviderRepository {
     }
 }
 
-// ========== PortError Stubs ==========
-
-class FailingDateProvider implements DateProvider {
-    now() {
-        return fail(new PortError('DateProvider', 'Clock service unavailable'));
-    }
-}
-
-class FailingAuditLogger implements AuditLogger {
-    async log() {
-        return fail(new PortError('AuditLogger', 'Audit service unavailable'));
-    }
-}
-
-class FailingProviderRepository implements ProviderRepository {
+// Local stub with conditional failure logic (not suitable for centralized failing-stubs)
+class FailingProviderRepositoryOnMethod implements ProviderRepository {
     private readonly failOn: 'findByCif' | 'findByRazonSocialNormalized' | 'create';
 
     constructor(failOn: 'findByCif' | 'findByRazonSocialNormalized' | 'create') {
@@ -262,7 +253,7 @@ describe('CreateProviderUseCase', () => {
         });
 
         it('propagates PortError when ProviderRepository.findByCif fails', async () => {
-            const providerRepository = new FailingProviderRepository('findByCif');
+            const providerRepository = new FailingProviderRepositoryOnMethod('findByCif');
             const auditLogger = new AuditLoggerSpy();
             const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
 
@@ -287,7 +278,7 @@ describe('CreateProviderUseCase', () => {
         });
 
         it('propagates PortError when ProviderRepository.findByRazonSocialNormalized fails', async () => {
-            const providerRepository = new FailingProviderRepository('findByRazonSocialNormalized');
+            const providerRepository = new FailingProviderRepositoryOnMethod('findByRazonSocialNormalized');
             const auditLogger = new AuditLoggerSpy();
             const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
 
@@ -311,7 +302,7 @@ describe('CreateProviderUseCase', () => {
         });
 
         it('propagates PortError when ProviderRepository.create fails', async () => {
-            const providerRepository = new FailingProviderRepository('create');
+            const providerRepository = new FailingProviderRepositoryOnMethod('create');
             const auditLogger = new AuditLoggerSpy();
             const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
 
