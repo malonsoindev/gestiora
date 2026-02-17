@@ -54,6 +54,7 @@ type TestResult = {
 // ============================================================================
 
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
+//const BASE_URL = process.env.BASE_URL ?? 'https://gestiora.onrender.com';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@example.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'AdminPass1!a';
 const USER_EMAIL = process.env.USER_EMAIL ?? 'user@example.com';
@@ -202,16 +203,15 @@ const requestJson = async <T>(
     body?: T,
     accessToken?: string,
 ): Promise<RequestResult> => {
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-    };
+    const headers: Record<string, string> = {};
 
     if (accessToken) {
         headers.Authorization = `Bearer ${accessToken}`;
     }
 
     const requestInit: RequestInit = { method, headers };
-    if (body) {
+    if (body !== undefined) {
+        headers['Content-Type'] = 'application/json';
         requestInit.body = JSON.stringify(body);
     }
 
@@ -463,25 +463,7 @@ const run = async (): Promise<void> => {
     await delay(DELAY_MS);
 
     // ------------------------------------------------------------------------
-    // 7. Update User Status
-    // ------------------------------------------------------------------------
-    printSeparator();
-    printEndpointInfo('PATCH', '/admin/users/{userId}/status',
-        'Cambia el estado de un usuario (ACTIVE/INACTIVE). ' +
-        'Permite activar o desactivar usuarios sin eliminarlos.');
-
-    const updateStatusResult = await requestJson(
-        'PATCH',
-        `/admin/users/${testUserId}/status`,
-        { status: 'INACTIVE' },
-        adminTokens.accessToken,
-    );
-    recordResult('PATCH', '/admin/users/{userId}/status', updateStatusResult.status, updateStatusResult.duration);
-
-    await delay(DELAY_MS);
-
-    // ------------------------------------------------------------------------
-    // 8. Change User Password (Admin)
+    // 7. Change User Password (Admin)
     // ------------------------------------------------------------------------
     printSeparator();
     printEndpointInfo('POST', '/admin/users/{userId}/password',
@@ -499,12 +481,12 @@ const run = async (): Promise<void> => {
     await delay(DELAY_MS);
 
     // ------------------------------------------------------------------------
-    // 9. Login Test User (to create a session to revoke)
+    // 8. Login Test User (to create a session to revoke later)
     // ------------------------------------------------------------------------
     printSeparator();
     printEndpointInfo('POST', '/auth/login (test user)',
-        'Iniciamos sesion con el usuario de prueba creado para generar una sesion activa. ' +
-        'Esto permite probar el endpoint de revocacion de sesiones.');
+        'Iniciamos sesion con el usuario de prueba para generar una sesion activa. ' +
+        'Esto permite probar el endpoint de revocacion de sesiones mas adelante.');
 
     const testUserLoginResult = await requestJson(
         'POST',
@@ -516,7 +498,7 @@ const run = async (): Promise<void> => {
     await delay(DELAY_MS);
 
     // ------------------------------------------------------------------------
-    // 10. Revoke User Sessions
+    // 9. Revoke User Sessions
     // ------------------------------------------------------------------------
     printSeparator();
     printEndpointInfo('POST', '/admin/users/{userId}/sessions/revoke',
@@ -530,6 +512,24 @@ const run = async (): Promise<void> => {
         adminTokens.accessToken,
     );
     recordResult('POST', '/admin/users/{userId}/sessions/revoke', revokeSessionsResult.status, revokeSessionsResult.duration);
+
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 10. Update User Status
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('PATCH', '/admin/users/{userId}/status',
+        'Cambia el estado de un usuario (ACTIVE/INACTIVE). ' +
+        'Permite activar o desactivar usuarios sin eliminarlos.');
+
+    const updateStatusResult = await requestJson(
+        'PATCH',
+        `/admin/users/${testUserId}/status`,
+        { status: 'INACTIVE' },
+        adminTokens.accessToken,
+    );
+    recordResult('PATCH', '/admin/users/{userId}/status', updateStatusResult.status, updateStatusResult.duration);
 
     await delay(DELAY_MS);
 
