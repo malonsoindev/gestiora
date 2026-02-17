@@ -4,6 +4,10 @@
  * Ejecuta pruebas de humo contra todos los 34 endpoints de la API de Gestiora.
  * Muestra por pantalla cada peticion realizada y su resultado de forma visual.
  *
+ * Flujo:
+ * 1. Admin login -> operaciones de admin -> logout
+ * 2. User login -> proveedores, facturas, busqueda, perfil -> refresh -> logout
+ *
  * @example
  * npx tsx scripts/api-smoke.ts
  *
@@ -11,6 +15,7 @@
  * - BASE_URL: URL base del servidor (default: http://localhost:3000)
  * - ADMIN_EMAIL: Email del administrador (default: admin@example.com)
  * - ADMIN_PASSWORD: Password del administrador (default: AdminPass1!a)
+ * - DELAY_MS: Delay entre peticiones en ms (default: 5000)
  */
 
 import { readFile } from 'node:fs/promises';
@@ -52,7 +57,8 @@ const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@example.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'AdminPass1!a';
 const USER_EMAIL = process.env.USER_EMAIL ?? 'user@example.com';
-const USER_PASSWORD = process.env.USER_PASSWORD ?? 'UserPass1!a';
+const USER_PASSWORD = process.env.USER_PASSWORD ?? 'UserPass1!a01';
+const DELAY_MS = Number(process.env.DELAY_MS) || 5000;
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const DEMO_DIR = join(__dirname, '..', 'demo');
@@ -76,6 +82,7 @@ const colors = {
     bgRed: '\x1b[41m',
     bgYellow: '\x1b[43m',
     bgBlue: '\x1b[44m',
+    bgCyan: '\x1b[46m',
 };
 
 const methodColors: Record<HttpMethod, string> = {
@@ -121,7 +128,7 @@ const formatSuccess = (success: boolean): string => {
 };
 
 const printHeader = (title: string): void => {
-    const line = '='.repeat(70);
+    const line = '='.repeat(80);
     console.log(`\n${colors.cyan}${line}${colors.reset}`);
     console.log(`${colors.bold}${colors.cyan}  ${title}${colors.reset}`);
     console.log(`${colors.cyan}${line}${colors.reset}\n`);
@@ -129,26 +136,36 @@ const printHeader = (title: string): void => {
 
 const printSection = (title: string): void => {
     console.log(`\n${colors.bold}${colors.blue}>> ${title}${colors.reset}`);
-    console.log(`${colors.dim}${'─'.repeat(50)}${colors.reset}`);
+    console.log(`${colors.dim}${'─'.repeat(60)}${colors.reset}`);
+};
+
+const printSeparator = (): void => {
+    console.log(`\n${colors.dim}${'━'.repeat(80)}${colors.reset}\n`);
+};
+
+const printEndpointInfo = (method: HttpMethod, path: string, description: string): void => {
+    console.log(`${colors.bgCyan}${colors.white} ENDPOINT ${colors.reset}`);
+    console.log(`${colors.bold}${formatMethod(method)} ${colors.white}${path}${colors.reset}`);
+    console.log(`${colors.dim}${description}${colors.reset}`);
 };
 
 const printRequest = (method: HttpMethod, path: string, body?: unknown): void => {
-    console.log(`\n${colors.dim}┌─ Request ────────────────────────────────────────${colors.reset}`);
+    console.log(`\n${colors.dim}┌─ Request ─────────────────────────────────────────────────────────${colors.reset}`);
     console.log(`${colors.dim}│${colors.reset} ${formatMethod(method)} ${colors.white}${path}${colors.reset}`);
     if (body) {
         const bodyStr = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
         const lines = bodyStr.split('\n');
-        for (const line of lines.slice(0, 5)) {
+        for (const line of lines.slice(0, 6)) {
             console.log(`${colors.dim}│${colors.reset} ${colors.dim}${line}${colors.reset}`);
         }
-        if (lines.length > 5) {
-            console.log(`${colors.dim}│${colors.reset} ${colors.dim}... (${lines.length - 5} more lines)${colors.reset}`);
+        if (lines.length > 6) {
+            console.log(`${colors.dim}│${colors.reset} ${colors.dim}... (${lines.length - 6} more lines)${colors.reset}`);
         }
     }
 };
 
 const printResponse = (result: RequestResult): void => {
-    console.log(`${colors.dim}├─ Response ───────────────────────────────────────${colors.reset}`);
+    console.log(`${colors.dim}├─ Response ────────────────────────────────────────────────────────${colors.reset}`);
     console.log(`${colors.dim}│${colors.reset} Status: ${formatStatus(result.status)} ${result.statusText}`);
     console.log(`${colors.dim}│${colors.reset} Time:   ${formatDuration(result.duration)}`);
     
@@ -156,14 +173,23 @@ const printResponse = (result: RequestResult): void => {
         const bodyStr = typeof result.body === 'string' ? result.body : JSON.stringify(result.body, null, 2);
         const lines = bodyStr.split('\n');
         console.log(`${colors.dim}│${colors.reset} Body:`);
-        for (const line of lines.slice(0, 8)) {
+        for (const line of lines.slice(0, 10)) {
             console.log(`${colors.dim}│${colors.reset}   ${colors.dim}${line}${colors.reset}`);
         }
-        if (lines.length > 8) {
-            console.log(`${colors.dim}│${colors.reset}   ${colors.dim}... (${lines.length - 8} more lines)${colors.reset}`);
+        if (lines.length > 10) {
+            console.log(`${colors.dim}│${colors.reset}   ${colors.dim}... (${lines.length - 10} more lines)${colors.reset}`);
         }
     }
-    console.log(`${colors.dim}└──────────────────────────────────────────────────${colors.reset}`);
+    console.log(`${colors.dim}└───────────────────────────────────────────────────────────────────${colors.reset}`);
+};
+
+// ============================================================================
+// DELAY
+// ============================================================================
+
+const delay = (ms: number): Promise<void> => {
+    console.log(`\n${colors.dim}⏳ Esperando ${ms / 1000} segundos...${colors.reset}`);
+    return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 // ============================================================================
@@ -297,14 +323,32 @@ const recordResult = (
 
 const run = async (): Promise<void> => {
     printHeader('GESTIORA API SMOKE TEST');
-    console.log(`${colors.dim}Base URL: ${BASE_URL}${colors.reset}`);
-    console.log(`${colors.dim}Admin:    ${ADMIN_EMAIL}${colors.reset}`);
-    console.log(`${colors.dim}Demo Dir: ${DEMO_DIR}${colors.reset}`);
+    console.log(`${colors.dim}Base URL:    ${BASE_URL}${colors.reset}`);
+    console.log(`${colors.dim}Admin:       ${ADMIN_EMAIL}${colors.reset}`);
+    console.log(`${colors.dim}User:        ${USER_EMAIL}${colors.reset}`);
+    console.log(`${colors.dim}Demo Dir:    ${DEMO_DIR}${colors.reset}`);
+    console.log(`${colors.dim}Delay:       ${DELAY_MS}ms entre peticiones${colors.reset}`);
+
+    const uniqueSuffix = Date.now().toString(36);
+    let testUserId = '';
+    let testProviderId = '';
+    let testInvoiceId = '';
+    let testMovementId = '';
+    let uploadedInvoiceId = '';
+    let queryId = '';
 
     // ========================================================================
-    // 1. AUTH - Login Admin
+    // FASE 1: SESION DE ADMINISTRADOR
     // ========================================================================
-    printSection('1. AUTH - Login Admin');
+    printHeader('FASE 1: SESION DE ADMINISTRADOR');
+
+    // ------------------------------------------------------------------------
+    // 1. Login Admin
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('POST', '/auth/login', 
+        'Autentica un usuario y devuelve tokens JWT (access y refresh). ' +
+        'El access token se usa en el header Authorization para peticiones autenticadas.');
 
     const loginAdminResult = await requestJson('POST', '/auth/login', {
         email: ADMIN_EMAIL,
@@ -314,41 +358,33 @@ const run = async (): Promise<void> => {
 
     const adminTokens = parseJson<Tokens>(loginAdminResult.body);
     if (!adminTokens?.accessToken) {
-        throw new Error('Admin login failed');
+        throw new Error('Admin login failed - cannot continue');
     }
 
-    // ========================================================================
-    // 2. AUTH - Login User
-    // ========================================================================
-    printSection('2. AUTH - Login User');
+    await delay(DELAY_MS);
 
-    const loginUserResult = await requestJson('POST', '/auth/login', {
-        email: USER_EMAIL,
-        password: USER_PASSWORD,
-    });
-    recordResult('POST', '/auth/login (user)', loginUserResult.status, loginUserResult.duration);
-
-    const userTokens = parseJson<Tokens>(loginUserResult.body);
-    if (!userTokens?.accessToken) {
-        console.log(`${colors.yellow}Warning: User login failed, some tests will be skipped${colors.reset}`);
-    }
-
-    // ========================================================================
-    // 3. ADMIN - Ping
-    // ========================================================================
-    printSection('3. ADMIN - Ping');
+    // ------------------------------------------------------------------------
+    // 2. Admin Ping
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('GET', '/admin/ping',
+        'Endpoint de verificacion de acceso administrativo. ' +
+        'Solo accesible para usuarios con rol ADMIN. Devuelve "pong" si el acceso es correcto.');
 
     const pingResult = await requestJson('GET', '/admin/ping', undefined, adminTokens.accessToken);
     recordResult('GET', '/admin/ping', pingResult.status, pingResult.duration);
 
-    // ========================================================================
-    // 4. ADMIN USERS - CRUD
-    // ========================================================================
-    printSection('4. ADMIN USERS - Create');
+    await delay(DELAY_MS);
 
-    const uniqueSuffix = Date.now().toString(36);
+    // ------------------------------------------------------------------------
+    // 3. Create User
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('POST', '/admin/users',
+        'Crea un nuevo usuario en el sistema. Solo administradores pueden crear usuarios. ' +
+        'Requiere email, password, roles y estado inicial.');
+
     const testUserEmail = `smoke-${uniqueSuffix}@example.com`;
-
     const createUserResult = await requestJson(
         'POST',
         '/admin/users',
@@ -364,9 +400,17 @@ const run = async (): Promise<void> => {
     recordResult('POST', '/admin/users', createUserResult.status, createUserResult.duration);
 
     const createdUser = parseJson<{ userId: string }>(createUserResult.body);
-    const testUserId = createdUser?.userId ?? 'user-unknown';
+    testUserId = createdUser?.userId ?? 'user-unknown';
 
-    printSection('4. ADMIN USERS - List');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 4. List Users
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('GET', '/admin/users',
+        'Lista todos los usuarios del sistema con paginacion. ' +
+        'Soporta parametros page y pageSize para controlar la paginacion.');
 
     const listUsersResult = await requestJson(
         'GET',
@@ -376,7 +420,15 @@ const run = async (): Promise<void> => {
     );
     recordResult('GET', '/admin/users', listUsersResult.status, listUsersResult.duration);
 
-    printSection('4. ADMIN USERS - Get Detail');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 5. Get User Detail
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('GET', '/admin/users/{userId}',
+        'Obtiene el detalle completo de un usuario especifico por su ID. ' +
+        'Incluye email, nombre, roles, estado y fechas de creacion/actualizacion.');
 
     const getUserResult = await requestJson(
         'GET',
@@ -386,7 +438,15 @@ const run = async (): Promise<void> => {
     );
     recordResult('GET', '/admin/users/{userId}', getUserResult.status, getUserResult.duration);
 
-    printSection('4. ADMIN USERS - Update');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 6. Update User
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('PUT', '/admin/users/{userId}',
+        'Actualiza los datos de un usuario existente. ' +
+        'Permite modificar nombre, roles y estado del usuario.');
 
     const updateUserResult = await requestJson(
         'PUT',
@@ -400,7 +460,15 @@ const run = async (): Promise<void> => {
     );
     recordResult('PUT', '/admin/users/{userId}', updateUserResult.status, updateUserResult.duration);
 
-    printSection('4. ADMIN USERS - Update Status');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 7. Update User Status
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('PATCH', '/admin/users/{userId}/status',
+        'Cambia el estado de un usuario (ACTIVE/INACTIVE). ' +
+        'Permite activar o desactivar usuarios sin eliminarlos.');
 
     const updateStatusResult = await requestJson(
         'PATCH',
@@ -410,7 +478,15 @@ const run = async (): Promise<void> => {
     );
     recordResult('PATCH', '/admin/users/{userId}/status', updateStatusResult.status, updateStatusResult.duration);
 
-    printSection('4. ADMIN USERS - Change Password');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 8. Change User Password (Admin)
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('POST', '/admin/users/{userId}/password',
+        'Permite a un administrador cambiar la contraseña de cualquier usuario. ' +
+        'No requiere la contraseña actual del usuario.');
 
     const changePasswordResult = await requestJson(
         'POST',
@@ -420,7 +496,15 @@ const run = async (): Promise<void> => {
     );
     recordResult('POST', '/admin/users/{userId}/password', changePasswordResult.status, changePasswordResult.duration);
 
-    printSection('4. ADMIN USERS - Revoke Sessions');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 9. Revoke User Sessions
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('POST', '/admin/users/{userId}/sessions/revoke',
+        'Revoca todas las sesiones activas de un usuario. ' +
+        'Fuerza al usuario a volver a autenticarse en todos sus dispositivos.');
 
     const revokeSessionsResult = await requestJson(
         'POST',
@@ -430,7 +514,15 @@ const run = async (): Promise<void> => {
     );
     recordResult('POST', '/admin/users/{userId}/sessions/revoke', revokeSessionsResult.status, revokeSessionsResult.duration);
 
-    printSection('4. ADMIN USERS - Delete');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 10. Delete User (Soft Delete)
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('DELETE', '/admin/users/{userId}',
+        'Elimina un usuario del sistema (soft delete). ' +
+        'El usuario se marca como eliminado pero los datos se conservan para auditoria.');
 
     const deleteUserResult = await requestJson(
         'DELETE',
@@ -440,51 +532,64 @@ const run = async (): Promise<void> => {
     );
     recordResult('DELETE', '/admin/users/{userId}', deleteUserResult.status, deleteUserResult.duration);
 
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 11. Admin Logout
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('POST', '/auth/logout',
+        'Cierra la sesion del usuario invalidando el refresh token. ' +
+        'El access token sigue siendo valido hasta su expiracion natural.');
+
+    const adminLogoutResult = await requestJson(
+        'POST',
+        '/auth/logout',
+        { refreshToken: adminTokens.refreshToken },
+        adminTokens.accessToken,
+    );
+    recordResult('POST', '/auth/logout (admin)', adminLogoutResult.status, adminLogoutResult.duration);
+
+    await delay(DELAY_MS);
+
     // ========================================================================
-    // 5. USERS (SELF)
+    // FASE 2: SESION DE USUARIO
     // ========================================================================
-    printSection('5. USERS (SELF) - Update Profile');
+    printHeader('FASE 2: SESION DE USUARIO');
 
-    if (userTokens?.accessToken) {
-        const updateProfileResult = await requestJson(
-            'PATCH',
-            '/users/me',
-            { name: 'Smoke Profile Update' },
-            userTokens.accessToken,
-        );
-        recordResult('PATCH', '/users/me', updateProfileResult.status, updateProfileResult.duration);
+    // ------------------------------------------------------------------------
+    // 12. Login User
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('POST', '/auth/login',
+        'Autentica al usuario estandar. Los usuarios con rol Usuario pueden gestionar ' +
+        'proveedores, facturas y realizar busquedas, pero no acceder a endpoints de admin.');
 
-        printSection('5. USERS (SELF) - Change Own Password');
+    const loginUserResult = await requestJson('POST', '/auth/login', {
+        email: USER_EMAIL,
+        password: USER_PASSWORD,
+    });
+    recordResult('POST', '/auth/login (user)', loginUserResult.status, loginUserResult.duration);
 
-        const changeOwnPasswordResult = await requestJson(
-            'POST',
-            '/users/me/password',
-            {
-                currentPassword: USER_PASSWORD,
-                newPassword: 'UserPass1!aNew',
-            },
-            userTokens.accessToken,
-        );
-        recordResult('POST', '/users/me/password', changeOwnPasswordResult.status, changeOwnPasswordResult.duration);
-
-        // Restore original password
-        if (isSuccess(changeOwnPasswordResult.status)) {
-            await requestJson(
-                'POST',
-                '/users/me/password',
-                {
-                    currentPassword: 'UserPass1!aNew',
-                    newPassword: USER_PASSWORD,
-                },
-                userTokens.accessToken,
-            );
-        }
+    const userTokens = parseJson<Tokens>(loginUserResult.body);
+    if (!userTokens?.accessToken) {
+        throw new Error('User login failed - cannot continue');
     }
 
+    await delay(DELAY_MS);
+
     // ========================================================================
-    // 6. PROVIDERS - CRUD
+    // PROVEEDORES
     // ========================================================================
-    printSection('6. PROVIDERS - Create');
+    printSection('PROVEEDORES');
+
+    // ------------------------------------------------------------------------
+    // 13. Create Provider
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('POST', '/providers',
+        'Crea un nuevo proveedor en el sistema. Requiere razon social, CIF valido, ' +
+        'direccion y datos de ubicacion. El CIF debe ser unico en el sistema.');
 
     const testCif = `B${Date.now().toString().slice(-8)}`;
     const createProviderResult = await requestJson(
@@ -499,34 +604,58 @@ const run = async (): Promise<void> => {
             pais: 'ES',
             status: 'ACTIVE',
         },
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('POST', '/providers', createProviderResult.status, createProviderResult.duration);
 
     const createdProvider = parseJson<{ providerId: string }>(createProviderResult.body);
-    const testProviderId = createdProvider?.providerId ?? 'provider-1';
+    testProviderId = createdProvider?.providerId ?? 'provider-1';
 
-    printSection('6. PROVIDERS - List');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 14. List Providers
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('GET', '/providers',
+        'Lista todos los proveedores con paginacion. ' +
+        'Devuelve razon social, CIF, ubicacion y estado de cada proveedor.');
 
     const listProvidersResult = await requestJson(
         'GET',
         '/providers?page=1&pageSize=10',
         undefined,
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('GET', '/providers', listProvidersResult.status, listProvidersResult.duration);
 
-    printSection('6. PROVIDERS - Get Detail');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 15. Get Provider Detail
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('GET', '/providers/{providerId}',
+        'Obtiene el detalle completo de un proveedor por su ID. ' +
+        'Incluye todos los datos del proveedor y metadatos de auditoria.');
 
     const getProviderResult = await requestJson(
         'GET',
         `/providers/${testProviderId}`,
         undefined,
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('GET', '/providers/{providerId}', getProviderResult.status, getProviderResult.duration);
 
-    printSection('6. PROVIDERS - Update');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 16. Update Provider
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('PUT', '/providers/{providerId}',
+        'Actualiza los datos de un proveedor existente. ' +
+        'Permite modificar razon social, direccion y ubicacion. El CIF no se puede cambiar.');
 
     const updateProviderResult = await requestJson(
         'PUT',
@@ -540,32 +669,45 @@ const run = async (): Promise<void> => {
             pais: 'ES',
             status: 'ACTIVE',
         },
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('PUT', '/providers/{providerId}', updateProviderResult.status, updateProviderResult.duration);
 
-    printSection('6. PROVIDERS - Update Status');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 17. Update Provider Status
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('PATCH', '/providers/{providerId}/status',
+        'Cambia el estado de un proveedor (ACTIVE/INACTIVE/DRAFT). ' +
+        'Proveedores inactivos no pueden recibir nuevas facturas.');
 
     const updateProviderStatusResult = await requestJson(
         'PATCH',
         `/providers/${testProviderId}/status`,
         { status: 'INACTIVE' },
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('PATCH', '/providers/{providerId}/status', updateProviderStatusResult.status, updateProviderStatusResult.duration);
 
     // Re-activate for invoice tests
-    await requestJson(
-        'PATCH',
-        `/providers/${testProviderId}/status`,
-        { status: 'ACTIVE' },
-        adminTokens.accessToken,
-    );
+    await requestJson('PATCH', `/providers/${testProviderId}/status`, { status: 'ACTIVE' }, userTokens.accessToken);
+
+    await delay(DELAY_MS);
 
     // ========================================================================
-    // 7. DOCUMENTS - Manual Invoice
+    // FACTURAS
     // ========================================================================
-    printSection('7. DOCUMENTS - Create Manual Invoice');
+    printSection('FACTURAS');
+
+    // ------------------------------------------------------------------------
+    // 18. Create Manual Invoice
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('POST', '/documents/manual',
+        'Crea una factura de forma manual sin necesidad de PDF. ' +
+        'Permite introducir cabecera y movimientos directamente. Estado inicial: DRAFT.');
 
     const createInvoiceResult = await requestJson(
         'POST',
@@ -592,38 +734,61 @@ const run = async (): Promise<void> => {
                 ],
             },
         },
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('POST', '/documents/manual', createInvoiceResult.status, createInvoiceResult.duration);
 
     const createdInvoice = parseJson<{ invoiceId: string }>(createInvoiceResult.body);
-    const testInvoiceId = createdInvoice?.invoiceId ?? 'invoice-unknown';
+    testInvoiceId = createdInvoice?.invoiceId ?? 'invoice-unknown';
 
-    printSection('7. DOCUMENTS - List Invoices');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 19. List Invoices
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('GET', '/documents',
+        'Lista todas las facturas con paginacion. ' +
+        'Muestra numero de factura, proveedor, importes y estado de cada documento.');
 
     const listInvoicesResult = await requestJson(
         'GET',
         '/documents?page=1&pageSize=10',
         undefined,
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('GET', '/documents', listInvoicesResult.status, listInvoicesResult.duration);
 
-    printSection('7. DOCUMENTS - Get Invoice Detail');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 20. Get Invoice Detail
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('GET', '/documents/{invoiceId}',
+        'Obtiene el detalle completo de una factura incluyendo todos sus movimientos. ' +
+        'Muestra origen de cada campo (IA/MANUAL) y estado de confirmacion.');
 
     const getInvoiceResult = await requestJson(
         'GET',
         `/documents/${testInvoiceId}`,
         undefined,
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('GET', '/documents/{invoiceId}', getInvoiceResult.status, getInvoiceResult.duration);
 
-    // Get movement ID for confirmation tests
     const invoiceDetail = parseJson<{ movements?: Array<{ id: string }> }>(getInvoiceResult.body);
-    const testMovementId = invoiceDetail?.movements?.[0]?.id ?? 'movement-unknown';
+    testMovementId = invoiceDetail?.movements?.[0]?.id ?? 'movement-unknown';
 
-    printSection('7. DOCUMENTS - Update Invoice');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 21. Update Invoice
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('PUT', '/documents/{invoiceId}/invoice',
+        'Actualiza la cabecera y movimientos de una factura existente. ' +
+        'Permite corregir datos extraidos por IA o modificar entradas manuales.');
 
     const updateInvoiceResult = await requestJson(
         'PUT',
@@ -646,11 +811,19 @@ const run = async (): Promise<void> => {
                 },
             ],
         },
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('PUT', '/documents/{invoiceId}/invoice', updateInvoiceResult.status, updateInvoiceResult.duration);
 
-    printSection('7. DOCUMENTS - Confirm Header');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 22. Confirm Invoice Header
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('PUT', '/documents/{invoiceId}/header/confirm',
+        'Confirma los campos de la cabecera de una factura. ' +
+        'Cada campo puede confirmarse (CONFIRM) o corregirse (CORRECT) con un nuevo valor.');
 
     const confirmHeaderResult = await requestJson(
         'PUT',
@@ -665,11 +838,24 @@ const run = async (): Promise<void> => {
                 total: { action: 'CONFIRM' },
             },
         },
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('PUT', '/documents/{invoiceId}/header/confirm', confirmHeaderResult.status, confirmHeaderResult.duration);
 
-    printSection('7. DOCUMENTS - Confirm Movements');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 23. Confirm Invoice Movements
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('PUT', '/documents/{invoiceId}/movements/confirm',
+        'Confirma los movimientos de una factura. ' +
+        'Cada movimiento puede confirmarse, corregirse o eliminarse.');
+
+    // Get updated movements
+    const refreshInvoice = await requestJson('GET', `/documents/${testInvoiceId}`, undefined, userTokens.accessToken);
+    const refreshedDetail = parseJson<{ movements?: Array<{ id: string }> }>(refreshInvoice.body);
+    testMovementId = refreshedDetail?.movements?.[0]?.id ?? testMovementId;
 
     const confirmMovementsResult = await requestJson(
         'PUT',
@@ -679,186 +865,313 @@ const run = async (): Promise<void> => {
                 { id: testMovementId, action: 'CONFIRM' },
             ],
         },
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('PUT', '/documents/{invoiceId}/movements/confirm', confirmMovementsResult.status, confirmMovementsResult.duration);
 
-    printSection('7. DOCUMENTS - Attach File');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 24. Attach File to Invoice
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('PUT', '/documents/{invoiceId}/file',
+        'Adjunta un archivo PDF a una factura existente. ' +
+        'El PDF se convierte en la fuente de verdad inmutable del documento.');
 
     const demoFilePath = join(DEMO_DIR, 'ficticia1.pdf');
     const attachFileResult = await requestMultipart(
         'PUT',
         `/documents/${testInvoiceId}/file`,
         demoFilePath,
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('PUT', '/documents/{invoiceId}/file', attachFileResult.status, attachFileResult.duration);
 
-    printSection('7. DOCUMENTS - Download File');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 25. Download Invoice File
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('GET', '/documents/{invoiceId}/file',
+        'Descarga el archivo PDF asociado a una factura. ' +
+        'Devuelve el archivo binario con el content-type apropiado.');
 
     const downloadFileResult = await requestJson(
         'GET',
         `/documents/${testInvoiceId}/file`,
         undefined,
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('GET', '/documents/{invoiceId}/file', downloadFileResult.status, downloadFileResult.duration);
 
-    printSection('7. DOCUMENTS - Reprocess Invoice');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 26. Reprocess Invoice
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('POST', '/documents/{invoiceId}/reprocess',
+        'Reprocesa la extraccion de datos de una factura usando IA. ' +
+        'Util cuando el modelo de IA se ha actualizado o la extraccion inicial fallo.');
 
     const reprocessResult = await requestJson(
         'POST',
         `/documents/${testInvoiceId}/reprocess`,
         undefined,
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('POST', '/documents/{invoiceId}/reprocess', reprocessResult.status, reprocessResult.duration);
 
-    // ========================================================================
-    // 8. DOCUMENTS - Upload (Auto Extraction)
-    // ========================================================================
-    printSection('8. DOCUMENTS - Upload PDF (Auto Extraction)');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 27. Upload Invoice (Auto Extraction)
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('POST', '/documents',
+        'Sube un PDF y extrae automaticamente los datos usando IA. ' +
+        'Crea la factura con datos propuestos que el usuario debe validar.');
 
     const uploadFilePath = join(DEMO_DIR, 'ficticia2.pdf');
     const uploadResult = await requestMultipart(
         'POST',
         '/documents',
         uploadFilePath,
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('POST', '/documents (upload)', uploadResult.status, uploadResult.duration);
 
     const uploadedInvoice = parseJson<{ invoiceId: string }>(uploadResult.body);
-    const uploadedInvoiceId = uploadedInvoice?.invoiceId;
+    uploadedInvoiceId = uploadedInvoice?.invoiceId ?? '';
+
+    await delay(DELAY_MS);
 
     // ========================================================================
-    // 9. SEARCH (RAG)
+    // BUSQUEDA RAG
     // ========================================================================
-    printSection('9. SEARCH - Query');
+    printSection('BUSQUEDA RAG');
+
+    // ------------------------------------------------------------------------
+    // 28. Search Query
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('POST', '/search',
+        'Realiza una busqueda en lenguaje natural sobre las facturas. ' +
+        'Usa RAG (Retrieval-Augmented Generation) para generar respuestas contextuales.');
 
     const searchResult = await requestJson(
         'POST',
         '/search',
         { query: 'Cual es el importe total de las facturas?' },
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('POST', '/search', searchResult.status, searchResult.duration);
 
     const searchResponse = parseJson<{ queryId: string }>(searchResult.body);
-    const queryId = searchResponse?.queryId;
+    queryId = searchResponse?.queryId ?? '';
 
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 29. Get Search Result
+    // ------------------------------------------------------------------------
     if (queryId) {
-        printSection('9. SEARCH - Get Result');
+        printSeparator();
+        printEndpointInfo('GET', '/search/{queryId}',
+            'Obtiene el resultado de una consulta de busqueda por su ID. ' +
+            'Incluye la respuesta generada y las referencias a documentos relevantes.');
 
         const getSearchResult = await requestJson(
             'GET',
             `/search/${queryId}`,
             undefined,
-            adminTokens.accessToken,
+            userTokens.accessToken,
         );
         recordResult('GET', '/search/{queryId}', getSearchResult.status, getSearchResult.duration);
+
+        await delay(DELAY_MS);
     }
 
     // ========================================================================
-    // 10. CLEANUP - Delete Invoices
+    // PERFIL DE USUARIO
     // ========================================================================
-    printSection('10. CLEANUP - Delete Invoice');
+    printSection('PERFIL DE USUARIO');
+
+    // ------------------------------------------------------------------------
+    // 30. Update Own Profile
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('PATCH', '/users/me',
+        'Permite al usuario actualizar su propio perfil. ' +
+        'Puede modificar nombre y avatar sin necesidad de permisos de admin.');
+
+    const updateProfileResult = await requestJson(
+        'PATCH',
+        '/users/me',
+        { name: 'Smoke Profile Update', avatar: 'https://example.com/avatar.png' },
+        userTokens.accessToken,
+    );
+    recordResult('PATCH', '/users/me', updateProfileResult.status, updateProfileResult.duration);
+
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 31. Change Own Password
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('POST', '/users/me/password',
+        'Permite al usuario cambiar su propia contraseña. ' +
+        'Requiere la contraseña actual para validar la identidad.');
+
+    const changeOwnPasswordResult = await requestJson(
+        'POST',
+        '/users/me/password',
+        {
+            currentPassword: USER_PASSWORD,
+            newPassword: 'UserPass1!aNew',
+        },
+        userTokens.accessToken,
+    );
+    recordResult('POST', '/users/me/password', changeOwnPasswordResult.status, changeOwnPasswordResult.duration);
+
+    // Restore original password
+    if (isSuccess(changeOwnPasswordResult.status)) {
+        await requestJson(
+            'POST',
+            '/users/me/password',
+            { currentPassword: 'UserPass1!aNew', newPassword: USER_PASSWORD },
+            userTokens.accessToken,
+        );
+    }
+
+    await delay(DELAY_MS);
+
+    // ========================================================================
+    // CLEANUP
+    // ========================================================================
+    printSection('CLEANUP');
+
+    // ------------------------------------------------------------------------
+    // 32. Delete Invoice
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('DELETE', '/documents/{invoiceId}',
+        'Elimina una factura del sistema (soft delete). ' +
+        'La factura se marca como eliminada pero se conserva para auditoria.');
 
     const deleteInvoiceResult = await requestJson(
         'DELETE',
         `/documents/${testInvoiceId}`,
         undefined,
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('DELETE', '/documents/{invoiceId}', deleteInvoiceResult.status, deleteInvoiceResult.duration);
 
+    // Delete uploaded invoice too
     if (uploadedInvoiceId) {
-        await requestJson(
-            'DELETE',
-            `/documents/${uploadedInvoiceId}`,
-            undefined,
-            adminTokens.accessToken,
-        );
+        await requestJson('DELETE', `/documents/${uploadedInvoiceId}`, undefined, userTokens.accessToken);
     }
 
-    // ========================================================================
-    // 11. CLEANUP - Delete Provider
-    // ========================================================================
-    printSection('11. CLEANUP - Delete Provider');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 33. Delete Provider
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('DELETE', '/providers/{providerId}',
+        'Elimina un proveedor del sistema (soft delete). ' +
+        'Las facturas asociadas se mantienen pero el proveedor queda inactivo.');
 
     const deleteProviderResult = await requestJson(
         'DELETE',
         `/providers/${testProviderId}`,
         undefined,
-        adminTokens.accessToken,
+        userTokens.accessToken,
     );
     recordResult('DELETE', '/providers/{providerId}', deleteProviderResult.status, deleteProviderResult.duration);
 
+    await delay(DELAY_MS);
+
     // ========================================================================
-    // 12. AUTH - Refresh Token
+    // REFRESH TOKEN Y LOGOUT
     // ========================================================================
-    printSection('12. AUTH - Refresh Token');
+    printSection('REFRESH TOKEN Y LOGOUT');
+
+    // ------------------------------------------------------------------------
+    // 34. Refresh Token
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('POST', '/auth/refresh',
+        'Renueva el access token usando el refresh token. ' +
+        'Permite mantener la sesion activa sin volver a introducir credenciales.');
 
     const refreshResult = await requestJson(
         'POST',
         '/auth/refresh',
-        { refreshToken: adminTokens.refreshToken },
-        adminTokens.accessToken,
+        { refreshToken: userTokens.refreshToken },
+        userTokens.accessToken,
     );
     recordResult('POST', '/auth/refresh', refreshResult.status, refreshResult.duration);
 
     const refreshedTokens = parseJson<Tokens>(refreshResult.body);
 
-    // ========================================================================
-    // 13. AUTH - Logout
-    // ========================================================================
-    printSection('13. AUTH - Logout');
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 35. Logout User
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('POST', '/auth/logout',
+        'Cierra la sesion del usuario invalidando el refresh token. ' +
+        'Finaliza la sesion de forma segura.');
 
     const logoutResult = await requestJson(
         'POST',
         '/auth/logout',
-        { refreshToken: refreshedTokens?.refreshToken ?? adminTokens.refreshToken },
-        adminTokens.accessToken,
+        { refreshToken: refreshedTokens?.refreshToken ?? userTokens.refreshToken },
+        userTokens.accessToken,
     );
-    recordResult('POST', '/auth/logout', logoutResult.status, logoutResult.duration);
+    recordResult('POST', '/auth/logout (user)', logoutResult.status, logoutResult.duration);
 
     // ========================================================================
-    // SUMMARY
+    // RESUMEN
     // ========================================================================
-    printHeader('TEST SUMMARY');
+    printHeader('RESUMEN DE RESULTADOS');
 
     const passed = results.filter((r) => r.success).length;
     const failed = results.filter((r) => !r.success).length;
     const totalDuration = results.reduce((sum, r) => sum + r.duration, 0);
 
-    console.log(`${colors.bold}Total Endpoints Tested:${colors.reset} ${results.length}`);
-    console.log(`${colors.green}Passed:${colors.reset} ${passed}`);
-    console.log(`${colors.red}Failed:${colors.reset} ${failed}`);
-    console.log(`${colors.cyan}Total Time:${colors.reset} ${totalDuration}ms`);
+    console.log(`${colors.bold}Total Endpoints Testeados:${colors.reset} ${results.length}`);
+    console.log(`${colors.green}${colors.bold}Exitosos:${colors.reset} ${passed}`);
+    console.log(`${colors.red}${colors.bold}Fallidos:${colors.reset} ${failed}`);
+    console.log(`${colors.cyan}${colors.bold}Tiempo Total:${colors.reset} ${totalDuration}ms`);
     console.log();
 
     // Results table
-    console.log(`${colors.dim}${'─'.repeat(70)}${colors.reset}`);
+    console.log(`${colors.dim}${'─'.repeat(80)}${colors.reset}`);
     console.log(
-        `${colors.bold}${'Method'.padEnd(8)}${'Endpoint'.padEnd(45)}${'Status'.padEnd(8)}${'Result'.padEnd(8)}${colors.reset}`,
+        `${colors.bold}${'Method'.padEnd(8)}${'Endpoint'.padEnd(50)}${'Status'.padEnd(10)}${'Result'}${colors.reset}`,
     );
-    console.log(`${colors.dim}${'─'.repeat(70)}${colors.reset}`);
+    console.log(`${colors.dim}${'─'.repeat(80)}${colors.reset}`);
 
     for (const result of results) {
         const statusStr = formatStatus(result.status);
         const resultStr = formatSuccess(result.success);
         console.log(
-            `${formatMethod(result.method)}  ${result.endpoint.padEnd(43)}  ${statusStr}    ${resultStr}`,
+            `${formatMethod(result.method)}  ${result.endpoint.padEnd(48)}  ${statusStr}      ${resultStr}`,
         );
     }
 
-    console.log(`${colors.dim}${'─'.repeat(70)}${colors.reset}`);
+    console.log(`${colors.dim}${'─'.repeat(80)}${colors.reset}`);
 
     if (failed > 0) {
-        console.log(`\n${colors.red}${colors.bold}Some tests failed!${colors.reset}`);
+        console.log(`\n${colors.red}${colors.bold}⚠ Algunos tests fallaron!${colors.reset}`);
         process.exitCode = 1;
     } else {
-        console.log(`\n${colors.green}${colors.bold}All tests passed!${colors.reset}`);
+        console.log(`\n${colors.green}${colors.bold}✓ Todos los tests pasaron correctamente!${colors.reset}`);
     }
 };
 
