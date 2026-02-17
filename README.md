@@ -70,4 +70,19 @@ La organizacion del codigo refleja Clean Architecture, separando responsabilidad
     *   `JWT_ACCESS_SECRET` y `JWT_REFRESH_SECRET`.
     *   `DATABASE_TYPE` (in-memory o postgres) y `DATABASE_URL` si usas Postgres.
     *   `AI_AGENT_TYPE=genkit` y las credenciales del proveedor (`OPENAI_API_KEY`/`PROVIDER_NAME`) si activas IA.
-5.  Iniciar el servidor en desarrollo: `npm run dev`.
+5.  **Desplegar la base de datos:** `npm run db:deploy`.
+6.  **Cargar datos iniciales (seed):** `npm run db:seed`.
+7.  Iniciar el servidor en desarrollo: `npm run dev`.
+
+> **Importante:** Los pasos 5 y 6 son obligatorios si usas `DATABASE_TYPE=postgres`.
+> - `db:deploy` crea las tablas y estructura de la base de datos.
+> - `db:seed` genera dos usuarios de prueba, uno por cada rol.
+>
+> **Nota:** Si usas `DATABASE_TYPE=in-memory`, el seed se ejecuta automaticamente al iniciar el servidor. No es necesario ejecutar `db:deploy` ni `db:seed`.
+
+### Credenciales por defecto (seed)
+
+| Rol | Email | Password |
+|-----|-------|----------|
+| Administrador | admin@example.com | AdminPass1!a |
+| Usuario | user@example.com | UserPass1!a |

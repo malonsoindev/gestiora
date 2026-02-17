@@ -100,6 +100,7 @@ Opcionales:
 - Especificacion: `docs/openapi.yaml`
 
 ## Documentacion
+- `README.md` contiene informacion ampliada del proyecto. Leer para contexto adicional.
 - `docs/` contiene ADRs, design docs, user stories y diagramas.
 - `docs/openapi.yaml` es el contrato de la API.
 - `docs/release-1.0.1.md` y notas de release en `docs/`.
