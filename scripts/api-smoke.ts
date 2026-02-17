@@ -499,7 +499,24 @@ const run = async (): Promise<void> => {
     await delay(DELAY_MS);
 
     // ------------------------------------------------------------------------
-    // 9. Revoke User Sessions
+    // 9. Login Test User (to create a session to revoke)
+    // ------------------------------------------------------------------------
+    printSeparator();
+    printEndpointInfo('POST', '/auth/login (test user)',
+        'Iniciamos sesion con el usuario de prueba creado para generar una sesion activa. ' +
+        'Esto permite probar el endpoint de revocacion de sesiones.');
+
+    const testUserLoginResult = await requestJson(
+        'POST',
+        '/auth/login',
+        { email: testUserEmail, password: 'NewTestPass1!aa' },
+    );
+    recordResult('POST', '/auth/login (test user)', testUserLoginResult.status, testUserLoginResult.duration);
+
+    await delay(DELAY_MS);
+
+    // ------------------------------------------------------------------------
+    // 10. Revoke User Sessions
     // ------------------------------------------------------------------------
     printSeparator();
     printEndpointInfo('POST', '/admin/users/{userId}/sessions/revoke',
@@ -517,7 +534,7 @@ const run = async (): Promise<void> => {
     await delay(DELAY_MS);
 
     // ------------------------------------------------------------------------
-    // 10. Delete User (Soft Delete)
+    // 11. Delete User (Soft Delete)
     // ------------------------------------------------------------------------
     printSeparator();
     printEndpointInfo('DELETE', '/admin/users/{userId}',
@@ -535,7 +552,7 @@ const run = async (): Promise<void> => {
     await delay(DELAY_MS);
 
     // ------------------------------------------------------------------------
-    // 11. Admin Logout
+    // 12. Admin Logout
     // ------------------------------------------------------------------------
     printSeparator();
     printEndpointInfo('POST', '/auth/logout',
