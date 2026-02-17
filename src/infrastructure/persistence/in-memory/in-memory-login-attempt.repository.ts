@@ -51,4 +51,12 @@ export class InMemoryLoginAttemptRepository implements LoginAttemptRepository {
 
         return ok(undefined);
     }
+
+    /**
+     * Clears all recorded login attempts.
+     * Useful for testing purposes to reset rate limiting state.
+     */
+    clear(): void {
+        this.attempts = [];
+    }
 }

@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { CreateUserUseCase } from '@application/use-cases/create-user.use-case.js';
 import type { PasswordHasher } from '@application/ports/password-hasher.js';
 import type { IdGenerator } from '@application/ports/id-generator.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
+import type { UserRepository } from '@application/ports/user.repository.js';
+import { PortError } from '@application/errors/port.error.js';
 import { InvalidPasswordError } from '@domain/errors/invalid-password.error.js';
 import { InvalidUserRolesError } from '@domain/errors/invalid-user-roles.error.js';
 import { InvalidUserStatusError } from '@domain/errors/invalid-user-status.error.js';
@@ -15,6 +19,12 @@ import { UserRepositorySpy } from '@tests/shared/spies/user-repository.spy.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { PasswordHasherStub } from '@tests/shared/stubs/password-hasher.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import {
+    FailingDateProvider,
+    FailingAuditLogger,
+    FailingPasswordHasher,
+} from '@tests/shared/stubs/failing-stubs.js';
+import { fail, ok, type Result } from '@shared/result.js';
 
 const fixedNow = new Date('2026-02-02T10:00:00.000Z');
 
@@ -37,12 +47,63 @@ class UserIdGeneratorStub implements IdGenerator {
     }
 }
 
+// Conditional failing repository for specific method failure tests
+class FailingUserRepositoryOnMethod implements UserRepository {
+    constructor(private readonly failOn: 'findByEmail' | 'create') {}
+
+    async findByEmail(_email: string): Promise<Result<User | null, PortError>> {
+        if (this.failOn === 'findByEmail') {
+            return fail(new PortError('UserRepository', 'Database read error'));
+        }
+        return ok(null);
+    }
+
+    async findById(_id: string): Promise<Result<User | null, PortError>> {
+        return ok(null);
+    }
+
+    async create(_user: User): Promise<Result<void, PortError>> {
+        if (this.failOn === 'create') {
+            return fail(new PortError('UserRepository', 'Database write error'));
+        }
+        return ok(undefined);
+    }
+
+    async list(_filter: { status?: UserStatus; role?: UserRole; page: number; pageSize: number }): Promise<Result<{ items: User[]; total: number }, PortError>> {
+        return ok({ items: [], total: 0 });
+    }
+
+    async update(_user: User): Promise<Result<void, PortError>> {
+        return ok(undefined);
+    }
+}
+
 type SutOverrides = Partial<{
     existingUser: User | null;
     passwordHasher: PasswordHasher;
+    dateProvider: DateProvider;
+    auditLogger: AuditLogger;
+    userRepository: UserRepository;
 }>;
 
 const makeSut = (overrides: SutOverrides = {}) => {
+    const userRepository = overrides.userRepository ?? new UserRepositorySpy(overrides.existingUser ?? null);
+    const auditLogger = overrides.auditLogger ?? new AuditLoggerSpy();
+    const userIdGenerator = new UserIdGeneratorStub('user-fixed');
+    const dateProvider = overrides.dateProvider ?? new DateProviderStub(fixedNow);
+
+    const useCase = new CreateUserUseCase({
+        userRepository,
+        passwordHasher: overrides.passwordHasher ?? new PasswordHasherStub(),
+        auditLogger,
+        dateProvider,
+        userIdGenerator,
+    });
+
+    return { useCase };
+};
+
+const makeSutWithSpies = (overrides: Omit<SutOverrides, 'dateProvider' | 'auditLogger' | 'userRepository'> = {}) => {
     const userRepository = new UserRepositorySpy(overrides.existingUser ?? null);
     const auditLogger = new AuditLoggerSpy();
     const userIdGenerator = new UserIdGeneratorStub('user-fixed');
@@ -68,7 +129,7 @@ const baseRequest = {
 
 describe('CreateUserUseCase', () => {
     it('creates a user and audits the action', async () => {
-        const { useCase, userRepository, auditLogger } = makeSut();
+        const { useCase, userRepository, auditLogger } = makeSutWithSpies();
 
         const result = await useCase.execute({
             ...baseRequest,
@@ -89,7 +150,7 @@ describe('CreateUserUseCase', () => {
     });
 
     it('rejects when user already exists', async () => {
-        const { useCase, userRepository, auditLogger } = makeSut({
+        const { useCase, userRepository, auditLogger } = makeSutWithSpies({
             existingUser: createUserEntity(),
         });
 
@@ -107,7 +168,7 @@ describe('CreateUserUseCase', () => {
     });
 
     it('rejects invalid passwords', async () => {
-        const { useCase, userRepository, auditLogger } = makeSut();
+        const { useCase, userRepository, auditLogger } = makeSutWithSpies();
 
         const result = await useCase.execute({
             ...baseRequest,
@@ -123,7 +184,7 @@ describe('CreateUserUseCase', () => {
     });
 
     it('rejects invalid emails', async () => {
-        const { useCase, userRepository, auditLogger } = makeSut();
+        const { useCase, userRepository, auditLogger } = makeSutWithSpies();
 
         const result = await useCase.execute({
             ...baseRequest,
@@ -139,7 +200,7 @@ describe('CreateUserUseCase', () => {
     });
 
     it('rejects when roles are empty', async () => {
-        const { useCase, userRepository, auditLogger } = makeSut();
+        const { useCase, userRepository, auditLogger } = makeSutWithSpies();
 
         const result = await useCase.execute({
             ...baseRequest,
@@ -155,7 +216,7 @@ describe('CreateUserUseCase', () => {
     });
 
     it('rejects deleted status on creation', async () => {
-        const { useCase, userRepository, auditLogger } = makeSut();
+        const { useCase, userRepository, auditLogger } = makeSutWithSpies();
 
         const result = await useCase.execute({
             ...baseRequest,
@@ -168,5 +229,75 @@ describe('CreateUserUseCase', () => {
         }
         expect(userRepository.createdUser).toBeNull();
         expect(auditLogger.events).toHaveLength(0);
+    });
+
+    describe('PortError propagation', () => {
+        it('propagates PortError when DateProvider.now fails', async () => {
+            const { useCase } = makeSut({ dateProvider: new FailingDateProvider() });
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('DateProvider');
+            }
+        });
+
+        it('propagates PortError when UserRepository.findByEmail fails', async () => {
+            const { useCase } = makeSut({
+                userRepository: new FailingUserRepositoryOnMethod('findByEmail'),
+            });
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('UserRepository');
+            }
+        });
+
+        it('propagates PortError when PasswordHasher.hash fails', async () => {
+            const { useCase } = makeSut({
+                passwordHasher: new FailingPasswordHasher(),
+            });
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('PasswordHasher');
+            }
+        });
+
+        it('propagates PortError when UserRepository.create fails', async () => {
+            const { useCase } = makeSut({
+                userRepository: new FailingUserRepositoryOnMethod('create'),
+            });
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('UserRepository');
+            }
+        });
+
+        it('propagates PortError when AuditLogger.log fails', async () => {
+            const { useCase } = makeSut({
+                auditLogger: new FailingAuditLogger(),
+            });
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('AuditLogger');
+            }
+        });
     });
 });

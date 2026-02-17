@@ -4,11 +4,17 @@ import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher.js';
 import type { SessionRepository } from '@application/ports/session.repository.js';
+import { PortError } from '@application/errors/port.error.js';
 import { Session, SessionStatus } from '@domain/entities/session.entity.js';
 import type { SessionProps } from '@domain/entities/session.entity.js';
-import { ok } from '@shared/result.js';
+import { ok, fail, type Result } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import {
+    FailingDateProvider,
+    FailingAuditLogger,
+    FailingRefreshTokenHasher,
+} from '@tests/shared/stubs/failing-stubs.js';
 
 const fixedNow = new Date('2026-01-29T15:00:00.000Z');
 
@@ -37,6 +43,42 @@ class SessionRepositorySpy implements SessionRepository {
 class RefreshTokenHasherStub implements RefreshTokenHasher {
     hash(value: string) {
         return ok(`hashed:${value}`);
+    }
+}
+
+// Local stub with conditional failure logic (not suitable for centralized failing-stubs)
+class FailingSessionRepositoryOnMethod implements SessionRepository {
+    constructor(private readonly failOn: 'findByRefreshTokenHash' | 'update') {}
+
+    async create(_session: Session): Promise<Result<void, PortError>> {
+        return ok(undefined);
+    }
+
+    async findByRefreshTokenHash(_hash: string): Promise<Result<Session | null, PortError>> {
+        if (this.failOn === 'findByRefreshTokenHash') {
+            return fail(new PortError('SessionRepository', 'Database read error'));
+        }
+        // Return an active session so update() gets called
+        return ok(Session.create({
+            id: 'session-1',
+            userId: 'user-1',
+            refreshTokenHash: 'hashed:refresh-token',
+            status: SessionStatus.Active,
+            createdAt: new Date(),
+            lastUsedAt: new Date(),
+            expiresAt: new Date('2026-02-28T12:00:00.000Z'),
+        }));
+    }
+
+    async update(_session: Session): Promise<Result<void, PortError>> {
+        if (this.failOn === 'update') {
+            return fail(new PortError('SessionRepository', 'Database write error'));
+        }
+        return ok(undefined);
+    }
+
+    async revokeByUserId(_userId: string): Promise<Result<void, PortError>> {
+        return ok(undefined);
     }
 }
 
@@ -117,5 +159,71 @@ describe('LogoutUserUseCase', () => {
         expect(result.success).toBe(true);
         expect(sessionRepository.updated).toBeNull();
         expect(auditLogger.events.some((event) => event.action === 'LOGOUT')).toBe(true);
+    });
+
+    describe('PortError propagation', () => {
+        it('propagates PortError when DateProvider.now fails', async () => {
+            const { useCase } = createUseCase({ dateProvider: new FailingDateProvider() });
+
+            const result = await useCase.execute({ refreshToken: 'refresh-token' });
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('DateProvider');
+            }
+        });
+
+        it('propagates PortError when RefreshTokenHasher.hash fails', async () => {
+            const { useCase } = createUseCase({ refreshTokenHasher: new FailingRefreshTokenHasher() });
+
+            const result = await useCase.execute({ refreshToken: 'refresh-token' });
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('RefreshTokenHasher');
+            }
+        });
+
+        it('propagates PortError when SessionRepository.findByRefreshTokenHash fails', async () => {
+            const { useCase } = createUseCase({
+                sessionRepository: new FailingSessionRepositoryOnMethod('findByRefreshTokenHash'),
+            });
+
+            const result = await useCase.execute({ refreshToken: 'refresh-token' });
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('SessionRepository');
+            }
+        });
+
+        it('propagates PortError when SessionRepository.update fails', async () => {
+            const { useCase } = createUseCase({
+                sessionRepository: new FailingSessionRepositoryOnMethod('update'),
+            });
+
+            const result = await useCase.execute({ refreshToken: 'refresh-token' });
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('SessionRepository');
+            }
+        });
+
+        it('propagates PortError when AuditLogger.log fails', async () => {
+            const { useCase } = createUseCase({ auditLogger: new FailingAuditLogger() });
+
+            const result = await useCase.execute({ refreshToken: 'refresh-token' });
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('AuditLogger');
+            }
+        });
     });
 });

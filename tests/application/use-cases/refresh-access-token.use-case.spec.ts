@@ -6,16 +6,22 @@ import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher
 import type { SessionRepository } from '@application/ports/session.repository.js';
 import type { TokenService } from '@application/ports/token.service.js';
 import type { UserRepository } from '@application/ports/user.repository.js';
+import { PortError } from '@application/errors/port.error.js';
 import { AuthInvalidRefreshTokenError } from '@domain/errors/auth-invalid-refresh-token.error.js';
 import { Session, SessionStatus } from '@domain/entities/session.entity.js';
 import type { SessionProps } from '@domain/entities/session.entity.js';
 import { User } from '@domain/entities/user.entity.js';
 import type { UserProps } from '@domain/entities/user.entity.js';
-import { ok } from '@shared/result.js';
+import { fail, ok } from '@shared/result.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { TokenServiceStub } from '@tests/shared/stubs/token-service.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import {
+    FailingDateProvider,
+    FailingRefreshTokenHasher,
+    FailingAuditLogger,
+} from '@tests/shared/stubs/failing-stubs.js';
 
 const fixedNow = new Date('2026-01-29T12:00:00.000Z');
 
@@ -45,6 +51,117 @@ class SessionRepositorySpy implements SessionRepository {
 
 class RefreshTokenHasherStub implements RefreshTokenHasher {
     hash(value: string) {
+        return ok(`hashed:${value}`);
+    }
+}
+
+// ========== Local PortError Stubs (with specific logic not suitable for centralization) ==========
+
+class FailingSessionRepositoryOnMethod implements SessionRepository {
+    private readonly failOn: 'findByRefreshTokenHash' | 'update';
+
+    constructor(failOn: 'findByRefreshTokenHash' | 'update' = 'findByRefreshTokenHash') {
+        this.failOn = failOn;
+    }
+
+    async create() {
+        return ok(undefined);
+    }
+
+    async findByRefreshTokenHash() {
+        if (this.failOn === 'findByRefreshTokenHash') {
+            return fail(new PortError('SessionRepository', 'Database connection lost'));
+        }
+        return ok(null);
+    }
+
+    async update() {
+        if (this.failOn === 'update') {
+            return fail(new PortError('SessionRepository', 'Database write failed'));
+        }
+        return ok(undefined);
+    }
+
+    async revokeByUserId() {
+        return ok(undefined);
+    }
+}
+
+const buildFailingUserRepository = (): UserRepository => ({
+    findByEmail: async () => ok(null),
+    findById: async () => fail(new PortError('UserRepository', 'Database connection lost')),
+    create: async () => ok(undefined),
+    list: async () => ok({ items: [], total: 0 }),
+    update: async () => ok(undefined),
+});
+
+class FailingTokenServiceOnMethod implements TokenService {
+    private readonly failOn: 'createAccessToken' | 'createRefreshToken';
+
+    constructor(failOn: 'createAccessToken' | 'createRefreshToken') {
+        this.failOn = failOn;
+    }
+
+    createAccessToken() {
+        if (this.failOn === 'createAccessToken') {
+            return fail(new PortError('TokenService', 'Token signing failed'));
+        }
+        return ok('access-token');
+    }
+
+    createRefreshToken() {
+        if (this.failOn === 'createRefreshToken') {
+            return fail(new PortError('TokenService', 'Token signing failed'));
+        }
+        return ok('refresh-token');
+    }
+
+    verifyAccessToken() {
+        return fail(new PortError('TokenService', 'Token verification failed'));
+    }
+
+    verifyRefreshToken() {
+        return fail(new PortError('TokenService', 'Token verification failed'));
+    }
+}
+
+class SessionRepositoryWithSession implements SessionRepository {
+    private readonly session: Session;
+    private readonly failOnUpdate: boolean;
+
+    constructor(session: Session, failOnUpdate = false) {
+        this.session = session;
+        this.failOnUpdate = failOnUpdate;
+    }
+
+    async create() {
+        return ok(undefined);
+    }
+
+    async findByRefreshTokenHash() {
+        return ok(this.session);
+    }
+
+    async update() {
+        if (this.failOnUpdate) {
+            return fail(new PortError('SessionRepository', 'Database write failed'));
+        }
+        return ok(undefined);
+    }
+
+    async revokeByUserId() {
+        return ok(undefined);
+    }
+}
+
+class RefreshTokenHasherFailOnSecondCall implements RefreshTokenHasher {
+    private callCount = 0;
+
+    hash(value: string) {
+        this.callCount++;
+        if (this.callCount > 1) {
+            return fail(new PortError('RefreshTokenHasher', 'Hashing service unavailable'));
+        }
         return ok(`hashed:${value}`);
     }
 }
@@ -203,5 +320,185 @@ describe('RefreshAccessTokenUseCase', () => {
         expect(sessionRepository.updated).not.toBeNull();
         expect(sessionRepository.updated?.refreshTokenHash).toBe('hashed:refresh-token-1');
         expect(auditLogger.events.some((event) => event.action === 'REFRESH_SUCCESS')).toBe(true);
+    });
+
+    describe('PortError propagation', () => {
+        it('propagates PortError when DateProvider.now fails', async () => {
+            const { useCase } = createUseCase({
+                dateProvider: new FailingDateProvider(),
+            });
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('DateProvider');
+            }
+        });
+
+        it('propagates PortError when RefreshTokenHasher.hash fails', async () => {
+            const { useCase } = createUseCase({
+                refreshTokenHasher: new FailingRefreshTokenHasher(),
+            });
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('RefreshTokenHasher');
+            }
+        });
+
+        it('propagates PortError when SessionRepository.findByRefreshTokenHash fails', async () => {
+            const { useCase } = createUseCase({
+                sessionRepository: new FailingSessionRepositoryOnMethod('findByRefreshTokenHash'),
+            });
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('SessionRepository');
+            }
+        });
+
+        it('propagates PortError when AuditLogger.log fails during session-not-found logging', async () => {
+            const { useCase, sessionRepository } = createUseCase({
+                auditLogger: new FailingAuditLogger(),
+            });
+            sessionRepository.session = null;
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('AuditLogger');
+            }
+        });
+
+        it('propagates PortError when UserRepository.findById fails', async () => {
+            const session = createSession();
+            const { useCase, sessionRepository } = createUseCase({
+                userRepository: buildFailingUserRepository(),
+            });
+            sessionRepository.session = session;
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('UserRepository');
+            }
+        });
+
+        it('propagates PortError when AuditLogger.log fails during user-not-found logging', async () => {
+            const session = createSession();
+            const { useCase, sessionRepository } = createUseCase({
+                userRepository: {
+                    findByEmail: async () => ok(null),
+                    findById: async () => ok(null),
+                    create: async () => ok(undefined),
+                    list: async () => ok({ items: [], total: 0 }),
+                    update: async () => ok(undefined),
+                },
+                auditLogger: new FailingAuditLogger(),
+            });
+            sessionRepository.session = session;
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('AuditLogger');
+            }
+        });
+
+        it('propagates PortError when TokenService.createAccessToken fails', async () => {
+            const session = createSession();
+            const { useCase, sessionRepository } = createUseCase({
+                tokenService: new FailingTokenServiceOnMethod('createAccessToken'),
+            });
+            sessionRepository.session = session;
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('TokenService');
+            }
+        });
+
+        it('propagates PortError when TokenService.createRefreshToken fails during rotation', async () => {
+            const session = createSession();
+            const { useCase, sessionRepository } = createUseCase({
+                tokenService: new FailingTokenServiceOnMethod('createRefreshToken'),
+                rotateRefreshTokens: true,
+            });
+            sessionRepository.session = session;
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('TokenService');
+            }
+        });
+
+        it('propagates PortError when RefreshTokenHasher.hash fails during rotation', async () => {
+            const session = createSession();
+            const { useCase } = createUseCase({
+                sessionRepository: new SessionRepositoryWithSession(session),
+                refreshTokenHasher: new RefreshTokenHasherFailOnSecondCall(),
+                rotateRefreshTokens: true,
+            });
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('RefreshTokenHasher');
+            }
+        });
+
+        it('propagates PortError when SessionRepository.update fails during rotation', async () => {
+            const session = createSession();
+            const { useCase } = createUseCase({
+                sessionRepository: new SessionRepositoryWithSession(session, true),
+                rotateRefreshTokens: true,
+            });
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('SessionRepository');
+            }
+        });
+
+        it('propagates PortError when AuditLogger.log fails during success logging', async () => {
+            const session = createSession();
+            const { useCase, sessionRepository } = createUseCase({
+                auditLogger: new FailingAuditLogger(),
+            });
+            sessionRepository.session = session;
+
+            const result = await useCase.execute(baseRequest);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('AuditLogger');
+            }
+        });
     });
 });

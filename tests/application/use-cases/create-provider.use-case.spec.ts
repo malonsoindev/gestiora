@@ -1,15 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { CreateProviderUseCase } from '@application/use-cases/create-provider.use-case.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
 import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { ProviderRepository } from '@application/ports/provider.repository.js';
+import { PortError } from '@application/errors/port.error.js';
 import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
 import { ProviderAlreadyExistsError } from '@domain/errors/provider-already-exists.error.js';
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
-import { ok } from '@shared/result.js';
+import { fail, ok } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
+import {
+    FailingDateProvider,
+    FailingAuditLogger,
+} from '@tests/shared/stubs/failing-stubs.js';
 
 const fixedNow = new Date('2026-02-03T10:00:00.000Z');
 
@@ -54,6 +61,48 @@ class ProviderRepositorySpy implements ProviderRepository {
 
     async findByRazonSocialNormalized() {
         return ok(this.duplicateByRazon);
+    }
+}
+
+// Local stub with conditional failure logic (not suitable for centralized failing-stubs)
+class FailingProviderRepositoryOnMethod implements ProviderRepository {
+    private readonly failOn: 'findByCif' | 'findByRazonSocialNormalized' | 'create';
+
+    constructor(failOn: 'findByCif' | 'findByRazonSocialNormalized' | 'create') {
+        this.failOn = failOn;
+    }
+
+    async findById() {
+        return ok(null);
+    }
+
+    async list() {
+        return ok({ items: [], total: 0 });
+    }
+
+    async create() {
+        if (this.failOn === 'create') {
+            return fail(new PortError('ProviderRepository', 'Database write failed'));
+        }
+        return ok(undefined);
+    }
+
+    async update() {
+        return ok(undefined);
+    }
+
+    async findByCif() {
+        if (this.failOn === 'findByCif') {
+            return fail(new PortError('ProviderRepository', 'Database connection lost'));
+        }
+        return ok(null);
+    }
+
+    async findByRazonSocialNormalized() {
+        if (this.failOn === 'findByRazonSocialNormalized') {
+            return fail(new PortError('ProviderRepository', 'Database connection lost'));
+        }
+        return ok(null);
     }
 }
 
@@ -175,5 +224,131 @@ describe('CreateProviderUseCase', () => {
         }
         expect(providerRepository.createdProvider).toBeNull();
         expect(auditLogger.events).toHaveLength(0);
+    });
+
+    describe('PortError propagation', () => {
+        it('propagates PortError when DateProvider.now fails', async () => {
+            const providerRepository = new ProviderRepositorySpy();
+            const auditLogger = new AuditLoggerSpy();
+            const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+
+            const useCase = new CreateProviderUseCase({
+                providerRepository,
+                auditLogger,
+                dateProvider: new FailingDateProvider(),
+                providerIdGenerator,
+            });
+
+            const result = await useCase.execute({
+                actorUserId: 'user-1',
+                razonSocial: 'Proveedor Uno',
+                cif: 'B12345678',
+            });
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('DateProvider');
+            }
+        });
+
+        it('propagates PortError when ProviderRepository.findByCif fails', async () => {
+            const providerRepository = new FailingProviderRepositoryOnMethod('findByCif');
+            const auditLogger = new AuditLoggerSpy();
+            const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+
+            const useCase = new CreateProviderUseCase({
+                providerRepository,
+                auditLogger,
+                dateProvider: new DateProviderStub(fixedNow),
+                providerIdGenerator,
+            });
+
+            const result = await useCase.execute({
+                actorUserId: 'user-1',
+                razonSocial: 'Proveedor Uno',
+                cif: 'B12345678',
+            });
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('ProviderRepository');
+            }
+        });
+
+        it('propagates PortError when ProviderRepository.findByRazonSocialNormalized fails', async () => {
+            const providerRepository = new FailingProviderRepositoryOnMethod('findByRazonSocialNormalized');
+            const auditLogger = new AuditLoggerSpy();
+            const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+
+            const useCase = new CreateProviderUseCase({
+                providerRepository,
+                auditLogger,
+                dateProvider: new DateProviderStub(fixedNow),
+                providerIdGenerator,
+            });
+
+            const result = await useCase.execute({
+                actorUserId: 'user-1',
+                razonSocial: 'Proveedor Uno',
+            });
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('ProviderRepository');
+            }
+        });
+
+        it('propagates PortError when ProviderRepository.create fails', async () => {
+            const providerRepository = new FailingProviderRepositoryOnMethod('create');
+            const auditLogger = new AuditLoggerSpy();
+            const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+
+            const useCase = new CreateProviderUseCase({
+                providerRepository,
+                auditLogger,
+                dateProvider: new DateProviderStub(fixedNow),
+                providerIdGenerator,
+            });
+
+            const result = await useCase.execute({
+                actorUserId: 'user-1',
+                razonSocial: 'Proveedor Uno',
+                cif: 'B12345678',
+            });
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('ProviderRepository');
+            }
+        });
+
+        it('propagates PortError when AuditLogger.log fails', async () => {
+            const providerRepository = new ProviderRepositorySpy();
+            const auditLogger = new FailingAuditLogger();
+            const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+
+            const useCase = new CreateProviderUseCase({
+                providerRepository,
+                auditLogger,
+                dateProvider: new DateProviderStub(fixedNow),
+                providerIdGenerator,
+            });
+
+            const result = await useCase.execute({
+                actorUserId: 'user-1',
+                razonSocial: 'Proveedor Uno',
+                cif: 'B12345678',
+            });
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('AuditLogger');
+            }
+        });
     });
 });

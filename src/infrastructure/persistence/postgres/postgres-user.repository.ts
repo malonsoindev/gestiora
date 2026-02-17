@@ -16,7 +16,7 @@ export class PostgresUserRepository implements UserRepository {
     async findByEmail(email: string): Promise<Result<User | null, PortError>> {
         try {
             const rows = await this.sql`
-                select id, email, password_hash, status, locked_until, roles, created_at, updated_at
+                select id, email, password_hash, name, avatar, status, locked_until, roles, created_at, updated_at
                 from users
                 where email = ${email}
                 limit 1
@@ -37,7 +37,7 @@ export class PostgresUserRepository implements UserRepository {
     async findById(id: string): Promise<Result<User | null, PortError>> {
         try {
             const rows = await this.sql`
-                select id, email, password_hash, status, locked_until, roles, created_at, updated_at
+                select id, email, password_hash, name, avatar, status, locked_until, roles, created_at, updated_at
                 from users
                 where id = ${id}
                 limit 1
@@ -67,6 +67,8 @@ export class PostgresUserRepository implements UserRepository {
             email: Email.create(String(row.email)),
             passwordHash: String(row.password_hash),
             status,
+            ...(row.name ? { name: String(row.name) } : {}),
+            ...(row.avatar ? { avatar: String(row.avatar) } : {}),
             ...(row.locked_until ? { lockedUntil: toDate(row.locked_until) } : {}),
             roles,
             createdAt: toDate(row.created_at),
@@ -114,7 +116,7 @@ export class PostgresUserRepository implements UserRepository {
         try {
             const offset = (filter.page - 1) * filter.pageSize;
             const rows = await this.sql`
-                select id, email, password_hash, status, locked_until, roles, created_at, updated_at
+                select id, email, password_hash, name, avatar, status, locked_until, roles, created_at, updated_at
                 from users
                 where (${filter.status ?? null}::text is null or status = ${filter.status ?? null})
                   and (${filter.role?.getValue() ?? null}::text is null or ${filter.role?.getValue() ?? null} = any(roles))

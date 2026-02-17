@@ -6,6 +6,7 @@ coverage/
 .env
 .env.local
 .env.*.local
+.env.smoke
 docs/sesiones/
 example/
 storage/
@@ -13,3 +14,4 @@ storage/
 .genkit/
 __db_*.json
 hist_pruebas/
+nul

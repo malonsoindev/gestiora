@@ -34,8 +34,15 @@ class AuditLoggerStub {
 }
 
 const validLoginCredential = 'AdminPass1!a';
+
+// Use unique prefix for test data to avoid conflicts with parallel tests
+const TEST_PREFIX = 'auth-flow-test';
+const TEST_USER_ID = `${TEST_PREFIX}-user-1`;
+const TEST_SESSION_ID = `${TEST_PREFIX}-session-1`;
+const TEST_EMAIL = `${TEST_PREFIX}@example.com`;
+
 const baseLoginRequest = {
-    email: 'user@example.com',
+    email: TEST_EMAIL,
     password: validLoginCredential,
     ip: '127.0.0.1',
     userAgent: 'vitest',
@@ -53,7 +60,7 @@ describeIf('Postgres auth flow', () => {
     const tokenService = new JwtTokenService('access-secret', 'refresh-secret', 900, 2_592_000);
     const dateProvider = new DateProviderStub(fixedNow);
     const auditLogger = new AuditLoggerStub();
-    const sessionIdGenerator = new SessionIdGeneratorStub('session-1');
+    const sessionIdGenerator = new SessionIdGeneratorStub(TEST_SESSION_ID);
 
     const loginUseCase = new LoginUserUseCase({
         userRepository,
@@ -131,9 +138,10 @@ describeIf('Postgres auth flow', () => {
     });
 
     beforeEach(async () => {
-        await sql`delete from login_attempts`;
-        await sql`delete from sessions`;
-        await sql`delete from users`;
+        // Only clean up test-specific data to avoid conflicts with parallel tests
+        await sql`delete from login_attempts where email = ${TEST_EMAIL}`;
+        await sql`delete from sessions where user_id = ${TEST_USER_ID}`;
+        await sql`delete from users where id = ${TEST_USER_ID}`;
     });
 
     afterAll(async () => {
@@ -147,8 +155,8 @@ describeIf('Postgres auth flow', () => {
         }
 
         const user = User.create({
-            id: 'user-1',
-            email: Email.create('user@example.com'),
+            id: TEST_USER_ID,
+            email: Email.create(TEST_EMAIL),
             passwordHash: passwordHashResult.value,
             status: UserStatus.Active,
             roles: [UserRole.user()],
@@ -176,7 +184,7 @@ describeIf('Postgres auth flow', () => {
         expect(sessionResult.success && sessionResult.value?.status).toBe(SessionStatus.Active);
 
         const attempts = await sql`
-            select count(*)::int as count from login_attempts where email = 'user@example.com'
+            select count(*)::int as count from login_attempts where email = ${TEST_EMAIL}
         `;
         expect(attempts[0]?.count).toBe(1);
 
