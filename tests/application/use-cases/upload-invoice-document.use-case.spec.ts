@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { UploadInvoiceDocumentUseCase } from '@application/use-cases/upload-invoice-document.use-case.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
 import type { FileStorage } from '@application/ports/file-storage.js';
 import type { InvoiceExtractionAgent, InvoiceExtractionResult } from '@application/ports/invoice-extraction-agent.js';
+import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
 import type { IdGenerator } from '@application/ports/id-generator.js';
-import type { PortError } from '@application/errors/port.error.js';
+import type { ProviderRepository } from '@application/ports/provider.repository.js';
+import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
+import { PortError } from '@application/errors/port.error.js';
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
-import { ok, type Result } from '@shared/result.js';
+import { fail, ok, type Result } from '@shared/result.js';
 import { RagReindexInvoiceServiceStub } from '@tests/shared/stubs/rag-reindex-invoice.service.stub.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { InvoiceIdGeneratorStub } from '@tests/shared/stubs/invoice-id-generator.stub.js';
@@ -115,6 +120,106 @@ class ExtractionAgentTotalsMismatchStub implements InvoiceExtractionAgent {
     }
 }
 
+// ========== PortError Stubs ==========
+
+class FailingDateProvider implements DateProvider {
+    now() {
+        return fail(new PortError('DateProvider', 'Clock service unavailable'));
+    }
+}
+
+class FailingExtractionAgent implements InvoiceExtractionAgent {
+    async extract(): Promise<Result<InvoiceExtractionResult, PortError>> {
+        return fail(new PortError('InvoiceExtractionAgent', 'AI service unavailable'));
+    }
+}
+
+class FailingProviderRepository implements ProviderRepository {
+    private readonly failOn: 'findByCif' | 'create';
+
+    constructor(failOn: 'findByCif' | 'create' = 'findByCif') {
+        this.failOn = failOn;
+    }
+
+    async findByCif() {
+        if (this.failOn === 'findByCif') {
+            return fail(new PortError('ProviderRepository', 'Database connection lost'));
+        }
+        return ok(null);
+    }
+
+    async findById() {
+        return ok(null);
+    }
+
+    async findByRazonSocialNormalized() {
+        return ok(null);
+    }
+
+    async create() {
+        if (this.failOn === 'create') {
+            return fail(new PortError('ProviderRepository', 'Database write failed'));
+        }
+        return ok(undefined);
+    }
+
+    async update() {
+        return ok(undefined);
+    }
+
+    async list() {
+        return ok({ items: [], total: 0 });
+    }
+}
+
+class FailingFileStorage implements FileStorage {
+    async store() {
+        return fail(new PortError('FileStorage', 'Storage service unavailable'));
+    }
+
+    async get() {
+        return fail(new PortError('FileStorage', 'Storage service unavailable'));
+    }
+
+    async delete() {
+        return fail(new PortError('FileStorage', 'Storage service unavailable'));
+    }
+}
+
+class FailingInvoiceRepository implements InvoiceRepository {
+    async create() {
+        return fail(new PortError('InvoiceRepository', 'Database write failed'));
+    }
+
+    async findById() {
+        return ok(null);
+    }
+
+    async getDetail() {
+        return ok(null);
+    }
+
+    async update() {
+        return ok(undefined);
+    }
+
+    async list() {
+        return ok({ items: [], total: 0 });
+    }
+}
+
+class FailingAuditLogger implements AuditLogger {
+    async log() {
+        return fail(new PortError('AuditLogger', 'Audit service unavailable'));
+    }
+}
+
+class FailingRagReindexService implements RagReindexInvoiceHandler {
+    async reindex() {
+        return fail(new PortError('RagReindexInvoiceService', 'RAG service unavailable'));
+    }
+}
+
 const createProvider = (): Provider =>
     createTestProvider({
         now: fixedNow,
@@ -140,16 +245,29 @@ type SutOverrides = Partial<{
     providerId: string;
     now: Date;
     fileStorage: FileStorage;
+    dateProvider: DateProvider;
+    providerRepository: ProviderRepository;
+    invoiceRepository: InvoiceRepository;
+    auditLogger: AuditLogger;
+    ragReindexInvoiceService: RagReindexInvoiceHandler;
 }>;
 
-const makeSut = (overrides: SutOverrides = {}) => {
+const makeSut = (overrides: SutOverrides = {}): {
+    useCase: UploadInvoiceDocumentUseCase;
+    providerRepository: ProviderRepository;
+    invoiceRepository: InvoiceRepositorySpy;
+    fileStorage: FileStorage;
+    auditLogger: AuditLogger;
+} => {
     const now = overrides.now ?? fixedNow;
     const provider = overrides.provider === undefined ? createProvider() : overrides.provider;
-    const providerRepository = new ProviderRepositoryStub(provider);
-    const invoiceRepository = new InvoiceRepositorySpy();
+    const providerRepository = overrides.providerRepository ?? new ProviderRepositoryStub(provider);
+    const invoiceRepository = (overrides.invoiceRepository ?? new InvoiceRepositorySpy()) as InvoiceRepositorySpy;
     const fileStorage = overrides.fileStorage ?? new FileStorageStub();
     const extractionAgent = overrides.extractionAgent ?? new ExtractionAgentStub();
-    const auditLogger = new AuditLoggerSpy();
+    const auditLogger = overrides.auditLogger ?? new AuditLoggerSpy();
+    const dateProvider = overrides.dateProvider ?? new DateProviderStub(now);
+    const ragReindexInvoiceService = overrides.ragReindexInvoiceService ?? new RagReindexInvoiceServiceStub();
 
     const useCase = new UploadInvoiceDocumentUseCase({
         providerRepository,
@@ -157,11 +275,11 @@ const makeSut = (overrides: SutOverrides = {}) => {
         fileStorage,
         extractionAgent,
         auditLogger,
-        dateProvider: new DateProviderStub(now),
+        dateProvider,
         invoiceIdGenerator: new InvoiceIdGeneratorStub(overrides.invoiceId ?? 'invoice-fixed'),
         invoiceMovementIdGenerator: new InvoiceMovementIdGeneratorStub(overrides.movementIds ?? ['movement-1']),
         providerIdGenerator: new ProviderIdGeneratorStub(overrides.providerId ?? 'provider-fixed'),
-        ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
+        ragReindexInvoiceService,
     });
 
     return { useCase, providerRepository, invoiceRepository, fileStorage, auditLogger };
@@ -205,5 +323,120 @@ describe('UploadInvoiceDocumentUseCase', () => {
         expect(invoiceRepository.createdInvoice).not.toBeNull();
         const createdInvoice = invoiceRepository.createdInvoice as { status?: string };
         expect(createdInvoice.status).toBe('INCONSISTENT');
+    });
+
+    describe('PortError propagation', () => {
+        it('propagates PortError when DateProvider.now fails', async () => {
+            const { useCase } = makeSut({
+                dateProvider: new FailingDateProvider(),
+            });
+
+            const result = await useCase.execute(baseCommand);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('DateProvider');
+            }
+        });
+
+        it('propagates PortError when InvoiceExtractionAgent.extract fails', async () => {
+            const { useCase } = makeSut({
+                extractionAgent: new FailingExtractionAgent(),
+            });
+
+            const result = await useCase.execute(baseCommand);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('InvoiceExtractionAgent');
+            }
+        });
+
+        it('propagates PortError when ProviderRepository.findByCif fails', async () => {
+            const { useCase } = makeSut({
+                providerRepository: new FailingProviderRepository('findByCif'),
+            });
+
+            const result = await useCase.execute(baseCommand);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('ProviderRepository');
+            }
+        });
+
+        it('propagates PortError when ProviderRepository.create fails for draft provider', async () => {
+            const { useCase } = makeSut({
+                provider: null,
+                providerRepository: new FailingProviderRepository('create'),
+            });
+
+            const result = await useCase.execute(baseCommand);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('ProviderRepository');
+            }
+        });
+
+        it('propagates PortError when FileStorage.store fails', async () => {
+            const { useCase } = makeSut({
+                fileStorage: new FailingFileStorage(),
+            });
+
+            const result = await useCase.execute(baseCommand);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('FileStorage');
+            }
+        });
+
+        it('propagates PortError when InvoiceRepository.create fails', async () => {
+            const { useCase } = makeSut({
+                invoiceRepository: new FailingInvoiceRepository(),
+            });
+
+            const result = await useCase.execute(baseCommand);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('InvoiceRepository');
+            }
+        });
+
+        it('propagates PortError when AuditLogger.log fails', async () => {
+            const { useCase } = makeSut({
+                auditLogger: new FailingAuditLogger(),
+            });
+
+            const result = await useCase.execute(baseCommand);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('AuditLogger');
+            }
+        });
+
+        it('propagates PortError when RagReindexInvoiceService.reindex fails', async () => {
+            const { useCase } = makeSut({
+                ragReindexInvoiceService: new FailingRagReindexService(),
+            });
+
+            const result = await useCase.execute(baseCommand);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('RagReindexInvoiceService');
+            }
+        });
     });
 });

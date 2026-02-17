@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { LoginUserUseCase } from '@application/use-cases/login-user.use-case.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { LoginRateLimiter } from '@application/ports/login-rate-limiter.js';
 import type { LoginAttemptRepository } from '@application/ports/login-attempt.repository.js';
@@ -9,6 +10,7 @@ import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { SessionRepository } from '@application/ports/session.repository.js';
 import type { TokenService } from '@application/ports/token.service.js';
 import type { UserRepository } from '@application/ports/user.repository.js';
+import { PortError } from '@application/errors/port.error.js';
 import { AuthInvalidCredentialsError } from '@domain/errors/auth-invalid-credentials.error.js';
 import { AuthRateLimitedError } from '@domain/errors/auth-rate-limited.error.js';
 import { AuthUserDisabledError } from '@domain/errors/auth-user-disabled.error.js';
@@ -121,13 +123,118 @@ class LoginAttemptRepositorySpy implements LoginAttemptRepository {
     }
 }
 
+// ========== PortError Stubs ==========
+
+class FailingDateProvider implements DateProvider {
+    now() {
+        return fail(new PortError('DateProvider', 'Clock service unavailable'));
+    }
+}
+
+class FailingRateLimiter implements LoginRateLimiter {
+    async assertAllowed() {
+        return fail(new PortError('LoginRateLimiter', 'Rate limiter unavailable'));
+    }
+}
+
+const buildFailingUserRepository = (method: 'findByEmail'): UserRepository => ({
+    findByEmail: async () =>
+        method === 'findByEmail'
+            ? fail(new PortError('UserRepository', 'Database connection lost'))
+            : ok(null),
+    findById: async () => ok(null),
+    create: async () => ok(undefined),
+    list: async () => ok({ items: [], total: 0 }),
+    update: async () => ok(undefined),
+});
+
+class FailingLoginAttemptRepository implements LoginAttemptRepository {
+    async countFailedAttempts() {
+        return ok(0);
+    }
+
+    async recordAttempt() {
+        return fail(new PortError('LoginAttemptRepository', 'Database write failed'));
+    }
+}
+
+class FailingAuditLogger implements AuditLogger {
+    async log() {
+        return fail(new PortError('AuditLogger', 'Audit service unavailable'));
+    }
+}
+
+class FailingPasswordHasher implements PasswordHasher {
+    async verify() {
+        return fail(new PortError('PasswordHasher', 'Hashing service unavailable'));
+    }
+
+    async hash() {
+        return fail(new PortError('PasswordHasher', 'Hashing service unavailable'));
+    }
+}
+
+class FailingRefreshTokenHasher implements RefreshTokenHasher {
+    hash() {
+        return fail(new PortError('RefreshTokenHasher', 'Hashing service unavailable'));
+    }
+}
+
+class FailingTokenService implements TokenService {
+    private readonly failOn: 'createAccessToken' | 'createRefreshToken' | 'verifyAccessToken' | 'verifyRefreshToken';
+
+    constructor(failOn: 'createAccessToken' | 'createRefreshToken' | 'verifyAccessToken' | 'verifyRefreshToken') {
+        this.failOn = failOn;
+    }
+
+    createAccessToken() {
+        if (this.failOn === 'createAccessToken') {
+            return fail(new PortError('TokenService', 'Token signing failed'));
+        }
+        return ok('access-token');
+    }
+
+    createRefreshToken() {
+        if (this.failOn === 'createRefreshToken') {
+            return fail(new PortError('TokenService', 'Token signing failed'));
+        }
+        return ok('refresh-token');
+    }
+
+    verifyAccessToken() {
+        return fail(new PortError('TokenService', 'Token verification failed'));
+    }
+
+    verifyRefreshToken() {
+        return fail(new PortError('TokenService', 'Token verification failed'));
+    }
+}
+
+class FailingSessionRepository implements SessionRepository {
+    async create() {
+        return fail(new PortError('SessionRepository', 'Database write failed'));
+    }
+
+    async findByRefreshTokenHash() {
+        return ok(null);
+    }
+
+    async update() {
+        return ok(undefined);
+    }
+
+    async revokeByUserId() {
+        return ok(undefined);
+    }
+}
+
 type UseCaseDependencies = {
     userRepository: UserRepository;
     sessionRepository: SessionRepository;
     passwordHasher: PasswordHasher;
     tokenService: TokenService;
     refreshTokenHasher: RefreshTokenHasher;
-    auditLogger: AuditLoggerSpy;
+    auditLogger: AuditLogger;
     loginRateLimiter: LoginRateLimiter;
     loginAttemptRepository: LoginAttemptRepository;
     dateProvider: DateProvider;
@@ -289,5 +396,191 @@ describe('LoginUserUseCase', () => {
         expect(auditLogger.events.some((event) => event.action === 'LOGIN_FAIL')).toBe(true);
         expect(loginAttemptRepository.attempts).toHaveLength(1);
         expect(loginAttemptRepository.attempts[0]?.succeeded).toBe(false);
+    });
+
+    describe('PortError propagation', () => {
+        it('propagates PortError when DateProvider.now fails', async () => {
+            const { useCase } = createUseCase({
+                dateProvider: new FailingDateProvider(),
+            });
+
+            const result = await useCase.execute(buildLoginRequest());
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('DateProvider');
+            }
+        });
+
+        it('propagates PortError when LoginRateLimiter.assertAllowed fails', async () => {
+            const { useCase } = createUseCase({
+                loginRateLimiter: new FailingRateLimiter(),
+            });
+
+            const result = await useCase.execute(buildLoginRequest());
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('LoginRateLimiter');
+            }
+        });
+
+        it('propagates PortError when UserRepository.findByEmail fails', async () => {
+            const { useCase } = createUseCase({
+                userRepository: buildFailingUserRepository('findByEmail'),
+            });
+
+            const result = await useCase.execute(buildLoginRequest());
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('UserRepository');
+            }
+        });
+
+        it('propagates PortError when LoginAttemptRepository.recordAttempt fails during user-not-found logging', async () => {
+            const { useCase } = createUseCase({
+                userRepository: buildUserRepository(null),
+                loginAttemptRepository: new FailingLoginAttemptRepository(),
+            });
+
+            const result = await useCase.execute(buildLoginRequest());
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('LoginAttemptRepository');
+            }
+        });
+
+        it('propagates PortError when AuditLogger.log fails during failure logging', async () => {
+            const { useCase } = createUseCase({
+                userRepository: buildUserRepository(null),
+                auditLogger: new FailingAuditLogger(),
+            });
+
+            const result = await useCase.execute(buildLoginRequest());
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('AuditLogger');
+            }
+        });
+
+        it('propagates PortError when PasswordHasher.verify fails', async () => {
+            const user = createUser();
+            const { useCase } = createUseCase({
+                userRepository: buildUserRepository(user),
+                passwordHasher: new FailingPasswordHasher(),
+            });
+
+            const result = await useCase.execute(buildLoginRequest({ email: user.email }));
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('PasswordHasher');
+            }
+        });
+
+        it('propagates PortError when TokenService.createRefreshToken fails', async () => {
+            const user = createUser();
+            const { useCase } = createUseCase({
+                userRepository: buildUserRepository(user),
+                tokenService: new FailingTokenService('createRefreshToken'),
+            });
+
+            const result = await useCase.execute(buildLoginRequest({ email: user.email }));
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('TokenService');
+            }
+        });
+
+        it('propagates PortError when RefreshTokenHasher.hash fails', async () => {
+            const user = createUser();
+            const { useCase } = createUseCase({
+                userRepository: buildUserRepository(user),
+                refreshTokenHasher: new FailingRefreshTokenHasher(),
+            });
+
+            const result = await useCase.execute(buildLoginRequest({ email: user.email }));
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('RefreshTokenHasher');
+            }
+        });
+
+        it('propagates PortError when SessionRepository.create fails', async () => {
+            const user = createUser();
+            const { useCase } = createUseCase({
+                userRepository: buildUserRepository(user),
+                sessionRepository: new FailingSessionRepository(),
+            });
+
+            const result = await useCase.execute(buildLoginRequest({ email: user.email }));
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('SessionRepository');
+            }
+        });
+
+        it('propagates PortError when TokenService.createAccessToken fails', async () => {
+            const user = createUser();
+            const { useCase } = createUseCase({
+                userRepository: buildUserRepository(user),
+                tokenService: new FailingTokenService('createAccessToken'),
+            });
+
+            const result = await useCase.execute(buildLoginRequest({ email: user.email }));
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('TokenService');
+            }
+        });
+
+        it('propagates PortError when LoginAttemptRepository.recordAttempt fails during success logging', async () => {
+            const user = createUser();
+            const { useCase } = createUseCase({
+                userRepository: buildUserRepository(user),
+                loginAttemptRepository: new FailingLoginAttemptRepository(),
+            });
+
+            const result = await useCase.execute(buildLoginRequest({ email: user.email }));
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('LoginAttemptRepository');
+            }
+        });
+
+        it('propagates PortError when AuditLogger.log fails during success logging', async () => {
+            const user = createUser();
+            const { useCase } = createUseCase({
+                userRepository: buildUserRepository(user),
+                auditLogger: new FailingAuditLogger(),
+            });
+
+            const result = await useCase.execute(buildLoginRequest({ email: user.email }));
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error).toBeInstanceOf(PortError);
+                expect((result.error as PortError).port).toBe('AuditLogger');
+            }
+        });
     });
 });
