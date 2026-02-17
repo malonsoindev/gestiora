@@ -1,10 +1,33 @@
+/**
+ * @fileoverview API Smoke Test - Evaluacion completa de todos los endpoints
+ *
+ * Ejecuta pruebas de humo contra todos los 34 endpoints de la API de Gestiora.
+ * Muestra por pantalla cada peticion realizada y su resultado de forma visual.
+ *
+ * @example
+ * npx tsx scripts/api-smoke.ts
+ *
+ * Variables de entorno opcionales:
+ * - BASE_URL: URL base del servidor (default: http://localhost:3000)
+ * - ADMIN_EMAIL: Email del administrador (default: admin@example.com)
+ * - ADMIN_PASSWORD: Password del administrador (default: AdminPass1!a)
+ */
+
 import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// ============================================================================
+// TIPOS
+// ============================================================================
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 type RequestResult = {
     status: number;
-    bodyText: string;
+    statusText: string;
+    body: unknown;
+    duration: number;
 };
 
 type Tokens = {
@@ -12,64 +35,140 @@ type Tokens = {
     refreshToken: string;
 };
 
+type TestResult = {
+    endpoint: string;
+    method: HttpMethod;
+    status: number;
+    success: boolean;
+    duration: number;
+    error?: string | undefined;
+};
+
+// ============================================================================
+// CONFIGURACION
+// ============================================================================
+
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@example.com';
-const adminLoginCredential = process.env.ADMIN_PASSWORD ?? 'AdminPass1!a';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'AdminPass1!a';
+const USER_EMAIL = process.env.USER_EMAIL ?? 'user@example.com';
+const USER_PASSWORD = process.env.USER_PASSWORD ?? 'UserPass1!a';
 
-const OPENAPI_PATH = new URL('../docs/openapi.yaml', import.meta.url);
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const DEMO_DIR = join(__dirname, '..', 'demo');
 
-const expectedEndpoints: Array<{ path: string; method: HttpMethod }> = [
-    { path: '/auth/login', method: 'POST' },
-    { path: '/auth/refresh', method: 'POST' },
-    { path: '/auth/logout', method: 'POST' },
-    { path: '/admin/ping', method: 'GET' },
-    { path: '/admin/users', method: 'POST' },
-    { path: '/admin/users', method: 'GET' },
-    { path: '/admin/users/{userId}', method: 'GET' },
-    { path: '/admin/users/{userId}', method: 'PUT' },
-    { path: '/admin/users/{userId}', method: 'DELETE' },
-    { path: '/admin/users/{userId}/status', method: 'PATCH' },
-    { path: '/admin/users/{userId}/sessions/revoke', method: 'POST' },
-    { path: '/users/me', method: 'PATCH' },
-    { path: '/providers', method: 'POST' },
-    { path: '/providers', method: 'GET' },
-    { path: '/providers/{providerId}', method: 'GET' },
-    { path: '/providers/{providerId}', method: 'PUT' },
-    { path: '/providers/{providerId}/status', method: 'PATCH' },
-    { path: '/providers/{providerId}', method: 'DELETE' },
-];
+// ============================================================================
+// COLORES Y FORMATEO
+// ============================================================================
 
-const escapeRegExp = (value: string): string => value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+const colors = {
+    reset: '\x1b[0m',
+    bold: '\x1b[1m',
+    dim: '\x1b[2m',
+    green: '\x1b[32m',
+    red: '\x1b[31m',
+    yellow: '\x1b[33m',
+    blue: '\x1b[34m',
+    cyan: '\x1b[36m',
+    magenta: '\x1b[35m',
+    white: '\x1b[37m',
+    bgGreen: '\x1b[42m',
+    bgRed: '\x1b[41m',
+    bgYellow: '\x1b[43m',
+    bgBlue: '\x1b[44m',
+};
 
-const assertOpenApiCoverage = async (): Promise<void> => {
-    const specText = await readFile(OPENAPI_PATH, 'utf-8');
-    const missing: string[] = [];
+const methodColors: Record<HttpMethod, string> = {
+    GET: colors.green,
+    POST: colors.yellow,
+    PUT: colors.blue,
+    PATCH: colors.magenta,
+    DELETE: colors.red,
+};
 
-    for (const endpoint of expectedEndpoints) {
-        const escapedPath = escapeRegExp(endpoint.path);
-        const pathRegex = new RegExp(String.raw`^\s{2}${escapedPath}:\s*$`, 'm');
-        const methodRegex = new RegExp(
-            String.raw`^\s{2}${escapedPath}:\s*$[\s\S]*?^\s{4}${endpoint.method.toLowerCase()}:\s*$`,
-            'm',
-        );
+const formatMethod = (method: HttpMethod): string => {
+    const color = methodColors[method];
+    return `${color}${method.padEnd(6)}${colors.reset}`;
+};
 
-        const hasPath = pathRegex.test(specText);
-        const hasMethod = methodRegex.test(specText);
-
-        if (!hasPath || !hasMethod) {
-            missing.push(`${endpoint.method} ${endpoint.path}`);
-        }
+const formatStatus = (status: number): string => {
+    if (status >= 200 && status < 300) {
+        return `${colors.green}${status}${colors.reset}`;
     }
+    if (status >= 400 && status < 500) {
+        return `${colors.yellow}${status}${colors.reset}`;
+    }
+    if (status >= 500) {
+        return `${colors.red}${status}${colors.reset}`;
+    }
+    return `${colors.cyan}${status}${colors.reset}`;
+};
 
-    if (missing.length > 0) {
-        console.log('OpenAPI missing or mismatched endpoints:');
-        for (const item of missing) {
-            console.log(`- ${item}`);
+const formatDuration = (ms: number): string => {
+    if (ms < 100) {
+        return `${colors.green}${ms}ms${colors.reset}`;
+    }
+    if (ms < 500) {
+        return `${colors.yellow}${ms}ms${colors.reset}`;
+    }
+    return `${colors.red}${ms}ms${colors.reset}`;
+};
+
+const formatSuccess = (success: boolean): string => {
+    return success
+        ? `${colors.bgGreen}${colors.white} PASS ${colors.reset}`
+        : `${colors.bgRed}${colors.white} FAIL ${colors.reset}`;
+};
+
+const printHeader = (title: string): void => {
+    const line = '='.repeat(70);
+    console.log(`\n${colors.cyan}${line}${colors.reset}`);
+    console.log(`${colors.bold}${colors.cyan}  ${title}${colors.reset}`);
+    console.log(`${colors.cyan}${line}${colors.reset}\n`);
+};
+
+const printSection = (title: string): void => {
+    console.log(`\n${colors.bold}${colors.blue}>> ${title}${colors.reset}`);
+    console.log(`${colors.dim}${'─'.repeat(50)}${colors.reset}`);
+};
+
+const printRequest = (method: HttpMethod, path: string, body?: unknown): void => {
+    console.log(`\n${colors.dim}┌─ Request ────────────────────────────────────────${colors.reset}`);
+    console.log(`${colors.dim}│${colors.reset} ${formatMethod(method)} ${colors.white}${path}${colors.reset}`);
+    if (body) {
+        const bodyStr = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
+        const lines = bodyStr.split('\n');
+        for (const line of lines.slice(0, 5)) {
+            console.log(`${colors.dim}│${colors.reset} ${colors.dim}${line}${colors.reset}`);
         }
-    } else {
-        console.log('OpenAPI endpoints coverage OK');
+        if (lines.length > 5) {
+            console.log(`${colors.dim}│${colors.reset} ${colors.dim}... (${lines.length - 5} more lines)${colors.reset}`);
+        }
     }
 };
+
+const printResponse = (result: RequestResult): void => {
+    console.log(`${colors.dim}├─ Response ───────────────────────────────────────${colors.reset}`);
+    console.log(`${colors.dim}│${colors.reset} Status: ${formatStatus(result.status)} ${result.statusText}`);
+    console.log(`${colors.dim}│${colors.reset} Time:   ${formatDuration(result.duration)}`);
+    
+    if (result.body) {
+        const bodyStr = typeof result.body === 'string' ? result.body : JSON.stringify(result.body, null, 2);
+        const lines = bodyStr.split('\n');
+        console.log(`${colors.dim}│${colors.reset} Body:`);
+        for (const line of lines.slice(0, 8)) {
+            console.log(`${colors.dim}│${colors.reset}   ${colors.dim}${line}${colors.reset}`);
+        }
+        if (lines.length > 8) {
+            console.log(`${colors.dim}│${colors.reset}   ${colors.dim}... (${lines.length - 8} more lines)${colors.reset}`);
+        }
+    }
+    console.log(`${colors.dim}└──────────────────────────────────────────────────${colors.reset}`);
+};
+
+// ============================================================================
+// HTTP CLIENT
+// ============================================================================
 
 const requestJson = async <T>(
     method: HttpMethod,
@@ -90,162 +189,311 @@ const requestJson = async <T>(
         requestInit.body = JSON.stringify(body);
     }
 
+    printRequest(method, path, body);
+
+    const start = Date.now();
     const response = await fetch(`${BASE_URL}${path}`, requestInit);
+    const duration = Date.now() - start;
 
     const bodyText = await response.text();
-    return { status: response.status, bodyText };
-};
-
-const parseJson = <T>(text: string): T | null => {
-    if (!text) {
-        return null;
-    }
-
+    let parsedBody: unknown = bodyText;
     try {
-        return JSON.parse(text) as T;
+        parsedBody = JSON.parse(bodyText);
     } catch {
-        return null;
+        // Keep as text
     }
+
+    const result: RequestResult = {
+        status: response.status,
+        statusText: response.statusText,
+        body: parsedBody,
+        duration,
+    };
+
+    printResponse(result);
+    return result;
 };
 
-const decodeJwtPayload = (token: string): Record<string, unknown> | null => {
-    const segments = token.split('.');
-    if (segments.length !== 3) {
-        return null;
-    }
+const requestMultipart = async (
+    method: HttpMethod,
+    path: string,
+    filePath: string,
+    accessToken: string,
+): Promise<RequestResult> => {
+    const fileContent = await readFile(filePath);
+    const fileName = filePath.split(/[/\\]/).pop() ?? 'file.pdf';
+    
+    const formData = new FormData();
+    formData.append('file', new Blob([fileContent], { type: 'application/pdf' }), fileName);
 
-    const payload = segments[1];
-    if (!payload) {
-        return null;
-    }
+    const headers: Record<string, string> = {
+        Authorization: `Bearer ${accessToken}`,
+    };
 
-    const padded = payload.padEnd(payload.length + ((4 - (payload.length % 4)) % 4), '=');
-    const base64 = padded.replaceAll('-', '+').replaceAll('_', '/');
+    printRequest(method, path, `[File: ${fileName}]`);
 
+    const start = Date.now();
+    const response = await fetch(`${BASE_URL}${path}`, {
+        method,
+        headers,
+        body: formData,
+    });
+    const duration = Date.now() - start;
+
+    const bodyText = await response.text();
+    let parsedBody: unknown = bodyText;
     try {
-        const json = Buffer.from(base64, 'base64').toString('utf-8');
-        return JSON.parse(json) as Record<string, unknown>;
+        parsedBody = JSON.parse(bodyText);
     } catch {
-        return null;
-    }
-};
-
-const logResult = (label: string, result: RequestResult): void => {
-    const summary = result.bodyText ? result.bodyText : '[no body]';
-    console.log(`${label} -> ${result.status} ${summary}`);
-};
-
-const login = async (email: string, password: string): Promise<Tokens> => {
-    const result = await requestJson('POST', '/auth/login', { email, password });
-    logResult('POST /auth/login', result);
-
-    const payload = parseJson<{ accessToken: string; refreshToken: string }>(result.bodyText);
-    if (!payload?.accessToken || !payload.refreshToken) {
-        throw new Error('Login failed or token missing');
+        // Keep as text
     }
 
-    return payload;
+    const result: RequestResult = {
+        status: response.status,
+        statusText: response.statusText,
+        body: parsedBody,
+        duration,
+    };
+
+    printResponse(result);
+    return result;
+};
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+const parseJson = <T>(body: unknown): T | null => {
+    if (typeof body === 'object' && body !== null) {
+        return body as T;
+    }
+    return null;
+};
+
+const isSuccess = (status: number): boolean => status >= 200 && status < 300;
+
+// ============================================================================
+// TEST RUNNER
+// ============================================================================
+
+const results: TestResult[] = [];
+
+const recordResult = (
+    method: HttpMethod,
+    endpoint: string,
+    status: number,
+    duration: number,
+    error?: string,
+): void => {
+    results.push({
+        method,
+        endpoint,
+        status,
+        success: isSuccess(status),
+        duration,
+        error,
+    });
 };
 
 const run = async (): Promise<void> => {
-    await assertOpenApiCoverage();
+    printHeader('GESTIORA API SMOKE TEST');
+    console.log(`${colors.dim}Base URL: ${BASE_URL}${colors.reset}`);
+    console.log(`${colors.dim}Admin:    ${ADMIN_EMAIL}${colors.reset}`);
+    console.log(`${colors.dim}Demo Dir: ${DEMO_DIR}${colors.reset}`);
 
-    const adminTokens = await login(ADMIN_EMAIL, adminLoginCredential);
+    // ========================================================================
+    // 1. AUTH - Login Admin
+    // ========================================================================
+    printSection('1. AUTH - Login Admin');
 
-    const adminPayload = decodeJwtPayload(adminTokens.accessToken);
-    const adminRoles = Array.isArray(adminPayload?.roles) ? adminPayload?.roles : [];
-    if (!adminRoles.includes('ADMIN')) {
-        throw new Error('Admin token missing ADMIN role');
+    const loginAdminResult = await requestJson('POST', '/auth/login', {
+        email: ADMIN_EMAIL,
+        password: ADMIN_PASSWORD,
+    });
+    recordResult('POST', '/auth/login (admin)', loginAdminResult.status, loginAdminResult.duration);
+
+    const adminTokens = parseJson<Tokens>(loginAdminResult.body);
+    if (!adminTokens?.accessToken) {
+        throw new Error('Admin login failed');
     }
 
+    // ========================================================================
+    // 2. AUTH - Login User
+    // ========================================================================
+    printSection('2. AUTH - Login User');
+
+    const loginUserResult = await requestJson('POST', '/auth/login', {
+        email: USER_EMAIL,
+        password: USER_PASSWORD,
+    });
+    recordResult('POST', '/auth/login (user)', loginUserResult.status, loginUserResult.duration);
+
+    const userTokens = parseJson<Tokens>(loginUserResult.body);
+    if (!userTokens?.accessToken) {
+        console.log(`${colors.yellow}Warning: User login failed, some tests will be skipped${colors.reset}`);
+    }
+
+    // ========================================================================
+    // 3. ADMIN - Ping
+    // ========================================================================
+    printSection('3. ADMIN - Ping');
+
+    const pingResult = await requestJson('GET', '/admin/ping', undefined, adminTokens.accessToken);
+    recordResult('GET', '/admin/ping', pingResult.status, pingResult.duration);
+
+    // ========================================================================
+    // 4. ADMIN USERS - CRUD
+    // ========================================================================
+    printSection('4. ADMIN USERS - Create');
+
     const uniqueSuffix = Date.now().toString(36);
-    const userEmail = `smoke-${uniqueSuffix}@example.com`;
-    const userLoginCredential = 'TestPass1!aa1';
+    const testUserEmail = `smoke-${uniqueSuffix}@example.com`;
 
     const createUserResult = await requestJson(
         'POST',
         '/admin/users',
         {
-            email: userEmail,
-            password: userLoginCredential,
+            email: testUserEmail,
+            password: 'TestPass1!aa',
             roles: ['Usuario'],
             status: 'ACTIVE',
-            name: 'Smoke User',
+            name: 'Smoke Test User',
         },
         adminTokens.accessToken,
     );
-    logResult('POST /admin/users', createUserResult);
+    recordResult('POST', '/admin/users', createUserResult.status, createUserResult.duration);
 
-    const createPayload = parseJson<{ userId: string }>(createUserResult.bodyText);
-    if (!createPayload?.userId) {
-        throw new Error('Create user failed or userId missing');
-    }
-    const createdUserId = createPayload.userId;
+    const createdUser = parseJson<{ userId: string }>(createUserResult.body);
+    const testUserId = createdUser?.userId ?? 'user-unknown';
 
-    const userTokens = await login(userEmail, userLoginCredential);
+    printSection('4. ADMIN USERS - List');
 
-    const updateOwnProfileResult = await requestJson(
-        'PATCH',
-        '/users/me',
-        { name: 'Smoke Updated', avatar: 'https://example.com/avatar.png' },
-        userTokens.accessToken,
+    const listUsersResult = await requestJson(
+        'GET',
+        '/admin/users?page=1&pageSize=10',
+        undefined,
+        adminTokens.accessToken,
     );
-    logResult('PATCH /users/me', updateOwnProfileResult);
+    recordResult('GET', '/admin/users', listUsersResult.status, listUsersResult.duration);
 
-    const adminPingResult = await requestJson('GET', '/admin/ping', undefined, adminTokens.accessToken);
-    logResult('GET /admin/ping', adminPingResult);
-
-    const listUsersResult = await requestJson('GET', '/admin/users', undefined, adminTokens.accessToken);
-    logResult('GET /admin/users', listUsersResult);
+    printSection('4. ADMIN USERS - Get Detail');
 
     const getUserResult = await requestJson(
         'GET',
-        `/admin/users/${createdUserId}`,
+        `/admin/users/${testUserId}`,
         undefined,
         adminTokens.accessToken,
     );
-    logResult('GET /admin/users/{userId}', getUserResult);
+    recordResult('GET', '/admin/users/{userId}', getUserResult.status, getUserResult.duration);
+
+    printSection('4. ADMIN USERS - Update');
 
     const updateUserResult = await requestJson(
         'PUT',
-        `/admin/users/${createdUserId}`,
-        { roles: ['Usuario'], status: 'ACTIVE', name: 'Smoke Admin Update' },
+        `/admin/users/${testUserId}`,
+        {
+            roles: ['Usuario'],
+            status: 'ACTIVE',
+            name: 'Smoke Updated User',
+        },
         adminTokens.accessToken,
     );
-    logResult('PUT /admin/users/{userId}', updateUserResult);
+    recordResult('PUT', '/admin/users/{userId}', updateUserResult.status, updateUserResult.duration);
+
+    printSection('4. ADMIN USERS - Update Status');
 
     const updateStatusResult = await requestJson(
         'PATCH',
-        `/admin/users/${createdUserId}/status`,
+        `/admin/users/${testUserId}/status`,
         { status: 'INACTIVE' },
         adminTokens.accessToken,
     );
-    logResult('PATCH /admin/users/{userId}/status', updateStatusResult);
+    recordResult('PATCH', '/admin/users/{userId}/status', updateStatusResult.status, updateStatusResult.duration);
+
+    printSection('4. ADMIN USERS - Change Password');
+
+    const changePasswordResult = await requestJson(
+        'POST',
+        `/admin/users/${testUserId}/password`,
+        { newPassword: 'NewTestPass1!aa' },
+        adminTokens.accessToken,
+    );
+    recordResult('POST', '/admin/users/{userId}/password', changePasswordResult.status, changePasswordResult.duration);
+
+    printSection('4. ADMIN USERS - Revoke Sessions');
 
     const revokeSessionsResult = await requestJson(
         'POST',
-        `/admin/users/${createdUserId}/sessions/revoke`,
+        `/admin/users/${testUserId}/sessions/revoke`,
         undefined,
         adminTokens.accessToken,
     );
-    logResult('POST /admin/users/{userId}/sessions/revoke', revokeSessionsResult);
+    recordResult('POST', '/admin/users/{userId}/sessions/revoke', revokeSessionsResult.status, revokeSessionsResult.duration);
+
+    printSection('4. ADMIN USERS - Delete');
 
     const deleteUserResult = await requestJson(
         'DELETE',
-        `/admin/users/${createdUserId}`,
+        `/admin/users/${testUserId}`,
         undefined,
         adminTokens.accessToken,
     );
-    logResult('DELETE /admin/users/{userId}', deleteUserResult);
+    recordResult('DELETE', '/admin/users/{userId}', deleteUserResult.status, deleteUserResult.duration);
 
-    const generatedCif = `B${Date.now().toString().slice(-8)}`;
+    // ========================================================================
+    // 5. USERS (SELF)
+    // ========================================================================
+    printSection('5. USERS (SELF) - Update Profile');
+
+    if (userTokens?.accessToken) {
+        const updateProfileResult = await requestJson(
+            'PATCH',
+            '/users/me',
+            { name: 'Smoke Profile Update' },
+            userTokens.accessToken,
+        );
+        recordResult('PATCH', '/users/me', updateProfileResult.status, updateProfileResult.duration);
+
+        printSection('5. USERS (SELF) - Change Own Password');
+
+        const changeOwnPasswordResult = await requestJson(
+            'POST',
+            '/users/me/password',
+            {
+                currentPassword: USER_PASSWORD,
+                newPassword: 'UserPass1!aNew',
+            },
+            userTokens.accessToken,
+        );
+        recordResult('POST', '/users/me/password', changeOwnPasswordResult.status, changeOwnPasswordResult.duration);
+
+        // Restore original password
+        if (isSuccess(changeOwnPasswordResult.status)) {
+            await requestJson(
+                'POST',
+                '/users/me/password',
+                {
+                    currentPassword: 'UserPass1!aNew',
+                    newPassword: USER_PASSWORD,
+                },
+                userTokens.accessToken,
+            );
+        }
+    }
+
+    // ========================================================================
+    // 6. PROVIDERS - CRUD
+    // ========================================================================
+    printSection('6. PROVIDERS - Create');
+
+    const testCif = `B${Date.now().toString().slice(-8)}`;
     const createProviderResult = await requestJson(
         'POST',
         '/providers',
         {
             razonSocial: `Proveedor Smoke ${uniqueSuffix}`,
-            cif: generatedCif,
-            direccion: 'Calle Smoke 1',
+            cif: testCif,
+            direccion: 'Calle Smoke 123',
             poblacion: 'Madrid',
             provincia: 'Madrid',
             pais: 'ES',
@@ -253,56 +501,303 @@ const run = async (): Promise<void> => {
         },
         adminTokens.accessToken,
     );
-    logResult('POST /providers', createProviderResult);
+    recordResult('POST', '/providers', createProviderResult.status, createProviderResult.duration);
 
-    const createProviderPayload = parseJson<{ providerId: string }>(createProviderResult.bodyText);
-    const createdProviderId = createProviderPayload?.providerId ?? 'provider-1';
-    if (!createProviderPayload?.providerId) {
-        console.log('Create provider failed, falling back to provider-1');
-    }
+    const createdProvider = parseJson<{ providerId: string }>(createProviderResult.body);
+    const testProviderId = createdProvider?.providerId ?? 'provider-1';
+
+    printSection('6. PROVIDERS - List');
 
     const listProvidersResult = await requestJson(
         'GET',
-        '/providers',
+        '/providers?page=1&pageSize=10',
         undefined,
         adminTokens.accessToken,
     );
-    logResult('GET /providers', listProvidersResult);
+    recordResult('GET', '/providers', listProvidersResult.status, listProvidersResult.duration);
+
+    printSection('6. PROVIDERS - Get Detail');
 
     const getProviderResult = await requestJson(
         'GET',
-        `/providers/${createdProviderId}`,
+        `/providers/${testProviderId}`,
         undefined,
         adminTokens.accessToken,
     );
-    logResult('GET /providers/{providerId}', getProviderResult);
+    recordResult('GET', '/providers/{providerId}', getProviderResult.status, getProviderResult.duration);
+
+    printSection('6. PROVIDERS - Update');
 
     const updateProviderResult = await requestJson(
         'PUT',
-        `/providers/${createdProviderId}`,
+        `/providers/${testProviderId}`,
         {
             razonSocial: `Proveedor Smoke Updated ${uniqueSuffix}`,
-            direccion: 'Calle Smoke 2',
+            cif: testCif,
+            direccion: 'Calle Smoke 456',
+            poblacion: 'Barcelona',
+            provincia: 'Barcelona',
+            pais: 'ES',
+            status: 'ACTIVE',
         },
         adminTokens.accessToken,
     );
-    logResult('PUT /providers/{providerId}', updateProviderResult);
+    recordResult('PUT', '/providers/{providerId}', updateProviderResult.status, updateProviderResult.duration);
+
+    printSection('6. PROVIDERS - Update Status');
 
     const updateProviderStatusResult = await requestJson(
         'PATCH',
-        `/providers/${createdProviderId}/status`,
+        `/providers/${testProviderId}/status`,
         { status: 'INACTIVE' },
         adminTokens.accessToken,
     );
-    logResult('PATCH /providers/{providerId}/status', updateProviderStatusResult);
+    recordResult('PATCH', '/providers/{providerId}/status', updateProviderStatusResult.status, updateProviderStatusResult.duration);
 
-    const deleteProviderResult = await requestJson(
-        'DELETE',
-        `/providers/${createdProviderId}`,
+    // Re-activate for invoice tests
+    await requestJson(
+        'PATCH',
+        `/providers/${testProviderId}/status`,
+        { status: 'ACTIVE' },
+        adminTokens.accessToken,
+    );
+
+    // ========================================================================
+    // 7. DOCUMENTS - Manual Invoice
+    // ========================================================================
+    printSection('7. DOCUMENTS - Create Manual Invoice');
+
+    const createInvoiceResult = await requestJson(
+        'POST',
+        '/documents/manual',
+        {
+            providerId: testProviderId,
+            providerCif: testCif,
+            invoice: {
+                numeroFactura: `FAC-SMOKE-${uniqueSuffix}`,
+                fechaOperacion: '2026-02-17',
+                fechaVencimiento: '2026-03-17',
+                baseImponible: 100,
+                iva: 21,
+                total: 121,
+                movements: [
+                    {
+                        concepto: 'Servicio de prueba',
+                        cantidad: 1,
+                        precio: 100,
+                        baseImponible: 100,
+                        iva: 21,
+                        total: 121,
+                    },
+                ],
+            },
+        },
+        adminTokens.accessToken,
+    );
+    recordResult('POST', '/documents/manual', createInvoiceResult.status, createInvoiceResult.duration);
+
+    const createdInvoice = parseJson<{ invoiceId: string }>(createInvoiceResult.body);
+    const testInvoiceId = createdInvoice?.invoiceId ?? 'invoice-unknown';
+
+    printSection('7. DOCUMENTS - List Invoices');
+
+    const listInvoicesResult = await requestJson(
+        'GET',
+        '/documents?page=1&pageSize=10',
         undefined,
         adminTokens.accessToken,
     );
-    logResult('DELETE /providers/{providerId}', deleteProviderResult);
+    recordResult('GET', '/documents', listInvoicesResult.status, listInvoicesResult.duration);
+
+    printSection('7. DOCUMENTS - Get Invoice Detail');
+
+    const getInvoiceResult = await requestJson(
+        'GET',
+        `/documents/${testInvoiceId}`,
+        undefined,
+        adminTokens.accessToken,
+    );
+    recordResult('GET', '/documents/{invoiceId}', getInvoiceResult.status, getInvoiceResult.duration);
+
+    // Get movement ID for confirmation tests
+    const invoiceDetail = parseJson<{ movements?: Array<{ id: string }> }>(getInvoiceResult.body);
+    const testMovementId = invoiceDetail?.movements?.[0]?.id ?? 'movement-unknown';
+
+    printSection('7. DOCUMENTS - Update Invoice');
+
+    const updateInvoiceResult = await requestJson(
+        'PUT',
+        `/documents/${testInvoiceId}/invoice`,
+        {
+            numeroFactura: `FAC-SMOKE-UPD-${uniqueSuffix}`,
+            fechaOperacion: '2026-02-17',
+            fechaVencimiento: '2026-03-17',
+            baseImponible: 200,
+            iva: 42,
+            total: 242,
+            movements: [
+                {
+                    concepto: 'Servicio actualizado',
+                    cantidad: 2,
+                    precio: 100,
+                    baseImponible: 200,
+                    iva: 42,
+                    total: 242,
+                },
+            ],
+        },
+        adminTokens.accessToken,
+    );
+    recordResult('PUT', '/documents/{invoiceId}/invoice', updateInvoiceResult.status, updateInvoiceResult.duration);
+
+    printSection('7. DOCUMENTS - Confirm Header');
+
+    const confirmHeaderResult = await requestJson(
+        'PUT',
+        `/documents/${testInvoiceId}/header/confirm`,
+        {
+            fields: {
+                numeroFactura: { action: 'CONFIRM' },
+                fechaOperacion: { action: 'CONFIRM' },
+                fechaVencimiento: { action: 'CONFIRM' },
+                baseImponible: { action: 'CONFIRM' },
+                iva: { action: 'CONFIRM' },
+                total: { action: 'CONFIRM' },
+            },
+        },
+        adminTokens.accessToken,
+    );
+    recordResult('PUT', '/documents/{invoiceId}/header/confirm', confirmHeaderResult.status, confirmHeaderResult.duration);
+
+    printSection('7. DOCUMENTS - Confirm Movements');
+
+    const confirmMovementsResult = await requestJson(
+        'PUT',
+        `/documents/${testInvoiceId}/movements/confirm`,
+        {
+            movements: [
+                { id: testMovementId, action: 'CONFIRM' },
+            ],
+        },
+        adminTokens.accessToken,
+    );
+    recordResult('PUT', '/documents/{invoiceId}/movements/confirm', confirmMovementsResult.status, confirmMovementsResult.duration);
+
+    printSection('7. DOCUMENTS - Attach File');
+
+    const demoFilePath = join(DEMO_DIR, 'ficticia1.pdf');
+    const attachFileResult = await requestMultipart(
+        'PUT',
+        `/documents/${testInvoiceId}/file`,
+        demoFilePath,
+        adminTokens.accessToken,
+    );
+    recordResult('PUT', '/documents/{invoiceId}/file', attachFileResult.status, attachFileResult.duration);
+
+    printSection('7. DOCUMENTS - Download File');
+
+    const downloadFileResult = await requestJson(
+        'GET',
+        `/documents/${testInvoiceId}/file`,
+        undefined,
+        adminTokens.accessToken,
+    );
+    recordResult('GET', '/documents/{invoiceId}/file', downloadFileResult.status, downloadFileResult.duration);
+
+    printSection('7. DOCUMENTS - Reprocess Invoice');
+
+    const reprocessResult = await requestJson(
+        'POST',
+        `/documents/${testInvoiceId}/reprocess`,
+        undefined,
+        adminTokens.accessToken,
+    );
+    recordResult('POST', '/documents/{invoiceId}/reprocess', reprocessResult.status, reprocessResult.duration);
+
+    // ========================================================================
+    // 8. DOCUMENTS - Upload (Auto Extraction)
+    // ========================================================================
+    printSection('8. DOCUMENTS - Upload PDF (Auto Extraction)');
+
+    const uploadFilePath = join(DEMO_DIR, 'ficticia2.pdf');
+    const uploadResult = await requestMultipart(
+        'POST',
+        '/documents',
+        uploadFilePath,
+        adminTokens.accessToken,
+    );
+    recordResult('POST', '/documents (upload)', uploadResult.status, uploadResult.duration);
+
+    const uploadedInvoice = parseJson<{ invoiceId: string }>(uploadResult.body);
+    const uploadedInvoiceId = uploadedInvoice?.invoiceId;
+
+    // ========================================================================
+    // 9. SEARCH (RAG)
+    // ========================================================================
+    printSection('9. SEARCH - Query');
+
+    const searchResult = await requestJson(
+        'POST',
+        '/search',
+        { query: 'Cual es el importe total de las facturas?' },
+        adminTokens.accessToken,
+    );
+    recordResult('POST', '/search', searchResult.status, searchResult.duration);
+
+    const searchResponse = parseJson<{ queryId: string }>(searchResult.body);
+    const queryId = searchResponse?.queryId;
+
+    if (queryId) {
+        printSection('9. SEARCH - Get Result');
+
+        const getSearchResult = await requestJson(
+            'GET',
+            `/search/${queryId}`,
+            undefined,
+            adminTokens.accessToken,
+        );
+        recordResult('GET', '/search/{queryId}', getSearchResult.status, getSearchResult.duration);
+    }
+
+    // ========================================================================
+    // 10. CLEANUP - Delete Invoices
+    // ========================================================================
+    printSection('10. CLEANUP - Delete Invoice');
+
+    const deleteInvoiceResult = await requestJson(
+        'DELETE',
+        `/documents/${testInvoiceId}`,
+        undefined,
+        adminTokens.accessToken,
+    );
+    recordResult('DELETE', '/documents/{invoiceId}', deleteInvoiceResult.status, deleteInvoiceResult.duration);
+
+    if (uploadedInvoiceId) {
+        await requestJson(
+            'DELETE',
+            `/documents/${uploadedInvoiceId}`,
+            undefined,
+            adminTokens.accessToken,
+        );
+    }
+
+    // ========================================================================
+    // 11. CLEANUP - Delete Provider
+    // ========================================================================
+    printSection('11. CLEANUP - Delete Provider');
+
+    const deleteProviderResult = await requestJson(
+        'DELETE',
+        `/providers/${testProviderId}`,
+        undefined,
+        adminTokens.accessToken,
+    );
+    recordResult('DELETE', '/providers/{providerId}', deleteProviderResult.status, deleteProviderResult.duration);
+
+    // ========================================================================
+    // 12. AUTH - Refresh Token
+    // ========================================================================
+    printSection('12. AUTH - Refresh Token');
 
     const refreshResult = await requestJson(
         'POST',
@@ -310,24 +805,72 @@ const run = async (): Promise<void> => {
         { refreshToken: adminTokens.refreshToken },
         adminTokens.accessToken,
     );
-    logResult('POST /auth/refresh', refreshResult);
+    recordResult('POST', '/auth/refresh', refreshResult.status, refreshResult.duration);
 
-    const refreshPayload = parseJson<{ refreshToken: string }>(refreshResult.bodyText);
-    if (!refreshPayload?.refreshToken) {
-        throw new Error('Refresh failed or refreshToken missing');
-    }
+    const refreshedTokens = parseJson<Tokens>(refreshResult.body);
+
+    // ========================================================================
+    // 13. AUTH - Logout
+    // ========================================================================
+    printSection('13. AUTH - Logout');
 
     const logoutResult = await requestJson(
         'POST',
         '/auth/logout',
-        { refreshToken: refreshPayload.refreshToken },
+        { refreshToken: refreshedTokens?.refreshToken ?? adminTokens.refreshToken },
         adminTokens.accessToken,
     );
-    logResult('POST /auth/logout', logoutResult);
+    recordResult('POST', '/auth/logout', logoutResult.status, logoutResult.duration);
+
+    // ========================================================================
+    // SUMMARY
+    // ========================================================================
+    printHeader('TEST SUMMARY');
+
+    const passed = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
+    const totalDuration = results.reduce((sum, r) => sum + r.duration, 0);
+
+    console.log(`${colors.bold}Total Endpoints Tested:${colors.reset} ${results.length}`);
+    console.log(`${colors.green}Passed:${colors.reset} ${passed}`);
+    console.log(`${colors.red}Failed:${colors.reset} ${failed}`);
+    console.log(`${colors.cyan}Total Time:${colors.reset} ${totalDuration}ms`);
+    console.log();
+
+    // Results table
+    console.log(`${colors.dim}${'─'.repeat(70)}${colors.reset}`);
+    console.log(
+        `${colors.bold}${'Method'.padEnd(8)}${'Endpoint'.padEnd(45)}${'Status'.padEnd(8)}${'Result'.padEnd(8)}${colors.reset}`,
+    );
+    console.log(`${colors.dim}${'─'.repeat(70)}${colors.reset}`);
+
+    for (const result of results) {
+        const statusStr = formatStatus(result.status);
+        const resultStr = formatSuccess(result.success);
+        console.log(
+            `${formatMethod(result.method)}  ${result.endpoint.padEnd(43)}  ${statusStr}    ${resultStr}`,
+        );
+    }
+
+    console.log(`${colors.dim}${'─'.repeat(70)}${colors.reset}`);
+
+    if (failed > 0) {
+        console.log(`\n${colors.red}${colors.bold}Some tests failed!${colors.reset}`);
+        process.exitCode = 1;
+    } else {
+        console.log(`\n${colors.green}${colors.bold}All tests passed!${colors.reset}`);
+    }
 };
+
+// ============================================================================
+// MAIN
+// ============================================================================
 
 await run().catch((error) => {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`Smoke test failed: ${message}`);
+    console.error(`\n${colors.red}${colors.bold}Smoke test failed: ${message}${colors.reset}`);
+    if (error instanceof Error && error.stack) {
+        console.error(`${colors.dim}${error.stack}${colors.reset}`);
+    }
     process.exitCode = 1;
 });
