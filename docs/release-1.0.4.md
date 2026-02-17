@@ -27,6 +27,7 @@ Tipo: Patch release
 - `scripts/api-smoke.ts`: smoke test completo de 34 endpoints.
 - Fix en `requestJson()`: solo envia Content-Type cuando hay body.
 - Flujo admin reordenado: change password, login, revoke, update status, delete.
+- Seguridad: credenciales movidas a variables de entorno (sin hard-coded passwords).
 
 ### Infraestructura
 - `admin-users.schemas.ts`: respuestas 400 en `softDelete` y `revokeSessions`.
@@ -45,4 +46,4 @@ Tipo: Patch release
 ## Notas de despliegue
 - No hay cambios de esquema en base de datos.
 - Los videos estan alojados en YouTube (externos).
-- El smoke test requiere servidor corriendo en localhost:3000.
+- El smoke test requiere variables de entorno para credenciales (ver cabecera del script).

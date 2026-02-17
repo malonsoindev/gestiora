@@ -9,12 +9,16 @@
  * 2. User login -> proveedores, facturas, busqueda, perfil -> refresh -> logout
  *
  * @example
- * npx tsx scripts/api-smoke.ts
+ * # Configurar variables de entorno antes de ejecutar:
+ * ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=xxx USER_EMAIL=user@example.com USER_PASSWORD=xxx npx tsx scripts/api-smoke.ts
  *
- * Variables de entorno opcionales:
+ * Variables de entorno:
  * - BASE_URL: URL base del servidor (default: http://localhost:3000)
- * - ADMIN_EMAIL: Email del administrador (default: admin@example.com)
- * - ADMIN_PASSWORD: Password del administrador (default: AdminPass1!a)
+ * - ADMIN_EMAIL: Email del administrador (REQUERIDO)
+ * - ADMIN_PASSWORD: Password del administrador (REQUERIDO)
+ * - USER_EMAIL: Email del usuario (REQUERIDO)
+ * - USER_PASSWORD: Password del usuario (REQUERIDO)
+ * - TEST_USER_PASSWORD: Password para usuario de prueba creado (REQUERIDO)
  * - DELAY_MS: Delay entre peticiones en ms (default: 5000)
  */
 
@@ -53,12 +57,29 @@ type TestResult = {
 // CONFIGURACION
 // ============================================================================
 
+const requiredEnvVars = [
+    'ADMIN_EMAIL',
+    'ADMIN_PASSWORD',
+    'USER_EMAIL',
+    'USER_PASSWORD',
+    'TEST_USER_PASSWORD',
+] as const;
+
+const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
+if (missingVars.length > 0) {
+    console.error(`Error: Variables de entorno requeridas no configuradas: ${missingVars.join(', ')}`);
+    console.error('Consulta el encabezado del script para ver las variables necesarias.');
+    process.exit(1);
+}
+
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
-//const BASE_URL = process.env.BASE_URL ?? 'https://gestiora.onrender.com';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@example.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'AdminPass1!a';
-const USER_EMAIL = process.env.USER_EMAIL ?? 'user@example.com';
-const USER_PASSWORD = process.env.USER_PASSWORD ?? 'UserPass1!a01';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL!;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD!;
+const USER_EMAIL = process.env.USER_EMAIL!;
+const USER_PASSWORD = process.env.USER_PASSWORD!;
+const TEST_USER_PASSWORD = process.env.TEST_USER_PASSWORD!;
+const TEST_USER_PASSWORD_CHANGED = process.env.TEST_USER_PASSWORD_CHANGED ?? `${TEST_USER_PASSWORD}New`;
+const USER_PASSWORD_TEMP = process.env.USER_PASSWORD_TEMP ?? `${USER_PASSWORD}Tmp`;
 const DELAY_MS = Number(process.env.DELAY_MS) || 5000;
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -390,7 +411,7 @@ const run = async (): Promise<void> => {
         '/admin/users',
         {
             email: testUserEmail,
-            password: 'TestPass1!aa',
+            password: TEST_USER_PASSWORD,
             roles: ['Usuario'],
             status: 'ACTIVE',
             name: 'Smoke Test User',
@@ -473,7 +494,7 @@ const run = async (): Promise<void> => {
     const changePasswordResult = await requestJson(
         'POST',
         `/admin/users/${testUserId}/password`,
-        { newPassword: 'NewTestPass1!aa' },
+        { newPassword: TEST_USER_PASSWORD_CHANGED },
         adminTokens.accessToken,
     );
     recordResult('POST', '/admin/users/{userId}/password', changePasswordResult.status, changePasswordResult.duration);
@@ -491,7 +512,7 @@ const run = async (): Promise<void> => {
     const testUserLoginResult = await requestJson(
         'POST',
         '/auth/login',
-        { email: testUserEmail, password: 'NewTestPass1!aa' },
+        { email: testUserEmail, password: TEST_USER_PASSWORD_CHANGED },
     );
     recordResult('POST', '/auth/login (test user)', testUserLoginResult.status, testUserLoginResult.duration);
 
@@ -1047,7 +1068,7 @@ const run = async (): Promise<void> => {
         '/users/me/password',
         {
             currentPassword: USER_PASSWORD,
-            newPassword: 'UserPass1!aNew',
+            newPassword: USER_PASSWORD_TEMP,
         },
         userTokens.accessToken,
     );
@@ -1058,7 +1079,7 @@ const run = async (): Promise<void> => {
         await requestJson(
             'POST',
             '/users/me/password',
-            { currentPassword: 'UserPass1!aNew', newPassword: USER_PASSWORD },
+            { currentPassword: USER_PASSWORD_TEMP, newPassword: USER_PASSWORD },
             userTokens.accessToken,
         );
     }
