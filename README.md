@@ -86,3 +86,7 @@ La organizacion del codigo refleja Clean Architecture, separando responsabilidad
 |-----|-------|----------|
 | Administrador | admin@example.com | AdminPass1!a |
 | Usuario | user@example.com | UserPass1!a |
+
+### Plantilla de llamadas a la API
+
+En la carpeta `docs/` se encuentra el fichero [`curl.md`](docs/curl.md) con la plantilla completa de llamadas a todos los endpoints de la API (34 en total), incluyendo ejemplos para **Bash** y **PowerShell**.
