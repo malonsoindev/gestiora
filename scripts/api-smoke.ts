@@ -9,10 +9,12 @@
  * 2. User login -> proveedores, facturas, busqueda, perfil -> refresh -> logout
  *
  * @example
- * # Configurar variables de entorno antes de ejecutar:
- * ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=xxx USER_EMAIL=user@example.com USER_PASSWORD=xxx npx tsx scripts/api-smoke.ts
+ * # Copiar .env.smoke.example a .env.smoke y configurar valores:
+ * cp .env.smoke.example .env.smoke
+ * # Ejecutar:
+ * npm run api:smoke
  *
- * Variables de entorno:
+ * Variables de entorno (configurar en .env.smoke):
  * - BASE_URL: URL base del servidor (default: http://localhost:3000)
  * - ADMIN_EMAIL: Email del administrador (REQUERIDO)
  * - ADMIN_PASSWORD: Password del administrador (REQUERIDO)
@@ -21,6 +23,9 @@
  * - TEST_USER_PASSWORD: Password para usuario de prueba creado (REQUERIDO)
  * - DELAY_MS: Delay entre peticiones en ms (default: 5000)
  */
+
+import { config } from 'dotenv';
+config({ path: '.env.smoke' });
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -967,6 +972,30 @@ const run = async (): Promise<void> => {
     // ------------------------------------------------------------------------
     // 27. Upload Invoice (Auto Extraction)
     // ------------------------------------------------------------------------
+    // Activar proveedores DRAFT antes de subir factura
+    // El upload requiere que el proveedor del CIF extraído esté ACTIVE
+    const draftProvidersResult = await requestJson(
+        'GET',
+        '/providers?page=1&pageSize=100',
+        undefined,
+        userTokens.accessToken,
+    );
+    const draftProviders = parseJson<{ items: Array<{ providerId: string; status: string }> }>(
+        draftProvidersResult.body,
+    );
+    if (draftProviders?.items) {
+        for (const provider of draftProviders.items) {
+            if (provider.status === 'DRAFT') {
+                await requestJson(
+                    'PATCH',
+                    `/providers/${provider.providerId}/status`,
+                    { status: 'ACTIVE' },
+                    userTokens.accessToken,
+                );
+            }
+        }
+    }
+
     printSeparator();
     printEndpointInfo('POST', '/documents',
         'Sube un PDF y extrae automaticamente los datos usando IA. ' +
