@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { CreateManualInvoiceUseCase } from '@application/use-cases/create-manual-invoice.use-case.js';
 import type { AttachInvoiceFileUseCase } from '@application/use-cases/attach-invoice-file.use-case.js';
@@ -11,13 +10,11 @@ import type { UploadInvoiceDocumentUseCase } from '@application/use-cases/upload
 import type { ConfirmInvoiceMovementsUseCase } from '@application/use-cases/confirm-invoice-movements.use-case.js';
 import type { ConfirmInvoiceHeaderUseCase } from '@application/use-cases/confirm-invoice-header.use-case.js';
 import type { ReprocessInvoiceExtractionUseCase } from '@application/use-cases/reprocess-invoice-extraction.use-case.js';
-import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
-import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
-import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
-import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
-import { InvalidInvoiceTotalsError } from '@domain/errors/invalid-invoice-totals.error.js';
-import { PortError } from '@application/errors/port.error.js';
+import { respondError, type ErrorOverride } from '@infrastructure/delivery/http/errors/respond-error.js';
+import { getPaginationParams } from '@shared/pagination.js';
+import { parseMultipartFile } from '@infrastructure/delivery/http/helpers/parse-multipart-file.js';
+import { logUseCaseError } from '@infrastructure/delivery/http/helpers/log-use-case-error.js';
 
 export type CreateManualInvoiceBody = {
     providerId?: string;
@@ -63,6 +60,14 @@ export type InvoicesListQuery = {
     page?: number;
     pageSize?: number;
 };
+
+const invoiceErrorOverrides: ErrorOverride[] = [
+    {
+        error: InvalidProviderStatusError,
+        status: 400,
+        code: 'INVALID_PROVIDER_STATUS',
+    },
+];
 
 export type ConfirmInvoiceMovementsBody = {
     movements: Array<{
@@ -120,30 +125,9 @@ export class InvoicesController {
             return reply.code(201).send({ invoiceId: result.value.invoiceId });
         }
 
-        if (result.error instanceof ProviderNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
+        logUseCaseError(request.log, result.error, 'manual invoice creation');
 
-        if (result.error instanceof InvalidProviderStatusError) {
-            return reply.code(400).send({ error: 'INVALID_PROVIDER_STATUS' });
-        }
-
-
-        if (result.error instanceof InvalidCifError) {
-            return reply.code(400).send({ error: 'INVALID_CIF' });
-        }
-
-        if (result.error instanceof PortError) {
-            request.log.error({
-                err: result.error.cause ?? result.error,
-                message: result.error.message,
-                port: result.error.port,
-            }, 'Port error during invoice upload');
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
-        }
-
-        request.log.error({ err: result.error }, 'Unhandled invoice upload error');
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error, invoiceErrorOverrides);
     }
 
     async uploadInvoiceDocument(request: FastifyRequest, reply: FastifyReply) {
@@ -154,60 +138,26 @@ export class InvoicesController {
                 return reply.code(401).send({ error: 'UNAUTHORIZED' });
             }
 
-            const file = await request.file();
+            const file = await parseMultipartFile(request, reply);
             if (!file) {
-                return reply.code(400).send({ error: 'INVALID_FILE' });
+                return;
             }
-
-            const content = await file.toBuffer();
-            const checksum = createHash('sha256').update(content).digest('hex');
 
             const result = await this.uploadInvoiceDocumentUseCase.execute({
                 actorUserId,
-                file: {
-                    filename: file.filename,
-                    mimeType: file.mimetype,
-                    sizeBytes: content.length,
-                    checksum,
-                    content,
-                },
+                file,
             });
 
             if (result.success) {
                 return reply.code(201).send({ invoiceId: result.value.invoiceId });
             }
 
+            logUseCaseError(request.log, result.error, 'invoice upload');
 
-            if (result.error instanceof ProviderNotFoundError) {
-                return reply.code(404).send({ error: 'NOT_FOUND' });
-            }
-
-            if (result.error instanceof InvalidProviderStatusError) {
-                return reply.code(400).send({ error: 'INVALID_PROVIDER_STATUS' });
-            }
-
-            if (result.error instanceof InvalidInvoiceTotalsError) {
-                return reply.code(400).send({ error: 'INVALID_INVOICE_TOTALS' });
-            }
-
-            if (result.error instanceof InvalidCifError) {
-                return reply.code(400).send({ error: 'INVALID_CIF' });
-            }
-
-            if (result.error instanceof PortError) {
-                request.log.error({
-                    err: result.error.cause ?? result.error,
-                    message: result.error.message,
-                    port: result.error.port,
-                }, 'Port error during invoice upload');
-                return reply.code(500).send({ error: 'INTERNAL_ERROR' });
-            }
-
-            request.log.error({ err: result.error }, 'Unhandled invoice upload error');
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return respondError(reply, result.error, invoiceErrorOverrides);
         } catch (error) {
             request.log.error({ err: error }, 'Upload invoice failed');
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+            return respondError(reply, error, invoiceErrorOverrides);
         }
     }
 
@@ -220,48 +170,22 @@ export class InvoicesController {
             return reply.code(401).send({ error: 'UNAUTHORIZED' });
         }
 
-        const file = await request.file();
+        const file = await parseMultipartFile(request, reply);
         if (!file) {
-            return reply.code(400).send({ error: 'INVALID_FILE' });
+            return;
         }
-
-        const content = await file.toBuffer();
-        const checksum = createHash('sha256').update(content).digest('hex');
 
         const result = await this.attachInvoiceFileUseCase.execute({
             actorUserId,
             invoiceId: request.params.invoiceId,
-            file: {
-                filename: file.filename,
-                mimeType: file.mimetype,
-                sizeBytes: content.length,
-                checksum,
-                content,
-            },
+            file,
         });
 
         if (result.success) {
             return reply.code(200).send(result.value);
         }
 
-        if (result.error instanceof InvoiceNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof InvalidInvoiceStatusError) {
-            return reply.code(400).send({ error: 'INVALID_INVOICE_STATUS' });
-        }
-
-
-        if (result.error instanceof InvalidInvoiceTotalsError) {
-            return reply.code(400).send({ error: 'INVALID_INVOICE_TOTALS' });
-        }
-
-        if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error, invoiceErrorOverrides);
     }
 
     async updateManualInvoice(
@@ -283,27 +207,14 @@ export class InvoicesController {
             return reply.code(200).send(result.value);
         }
 
-        if (result.error instanceof InvoiceNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof InvalidInvoiceStatusError) {
-            return reply.code(400).send({ error: 'INVALID_INVOICE_STATUS' });
-        }
-
-        if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error, invoiceErrorOverrides);
     }
 
     async listInvoices(
         request: FastifyRequest<{ Querystring: InvoicesListQuery }>,
         reply: FastifyReply,
     ) {
-        const page = request.query.page ?? 1;
-        const pageSize = request.query.pageSize ?? 20;
+        const { page, pageSize } = getPaginationParams(request.query);
 
         const result = await this.listInvoicesUseCase.execute({
             page,
@@ -326,7 +237,7 @@ export class InvoicesController {
             });
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error, invoiceErrorOverrides);
     }
 
     async getInvoiceDetail(
@@ -341,15 +252,7 @@ export class InvoicesController {
             return reply.code(200).send(result.value);
         }
 
-        if (result.error instanceof InvoiceNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error, invoiceErrorOverrides);
     }
 
     async softDeleteInvoice(
@@ -370,15 +273,7 @@ export class InvoicesController {
             return reply.code(204).send();
         }
 
-        if (result.error instanceof InvoiceNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error, invoiceErrorOverrides);
     }
 
     async getInvoiceFile(
@@ -396,19 +291,7 @@ export class InvoicesController {
             return reply.code(200).send(result.value.content);
         }
 
-        if (result.error instanceof InvoiceNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof InvalidInvoiceStatusError) {
-            return reply.code(400).send({ error: 'INVALID_INVOICE_STATUS' });
-        }
-
-        if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error, invoiceErrorOverrides);
     }
 
     async confirmInvoiceMovements(
@@ -430,19 +313,7 @@ export class InvoicesController {
             return reply.code(200).send({ invoiceId: result.value.invoiceId });
         }
 
-        if (result.error instanceof InvoiceNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof InvalidInvoiceStatusError) {
-            return reply.code(400).send({ error: 'INVALID_INVOICE_STATUS' });
-        }
-
-        if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error, invoiceErrorOverrides);
     }
 
     async confirmInvoiceHeader(
@@ -464,19 +335,7 @@ export class InvoicesController {
             return reply.code(200).send({ invoiceId: result.value.invoiceId });
         }
 
-        if (result.error instanceof InvoiceNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof InvalidInvoiceStatusError) {
-            return reply.code(400).send({ error: 'INVALID_INVOICE_STATUS' });
-        }
-
-        if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error, invoiceErrorOverrides);
     }
 
     async reprocessInvoiceExtraction(
@@ -497,18 +356,6 @@ export class InvoicesController {
             return reply.code(200).send({ invoiceId: result.value.invoiceId });
         }
 
-        if (result.error instanceof InvoiceNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof InvalidInvoiceStatusError) {
-            return reply.code(400).send({ error: 'INVALID_INVOICE_STATUS' });
-        }
-
-        if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error, invoiceErrorOverrides);
     }
 }

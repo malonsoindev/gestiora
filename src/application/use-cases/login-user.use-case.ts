@@ -4,13 +4,14 @@ import type { LoginRateLimiter } from '@application/ports/login-rate-limiter.js'
 import type { LoginAttemptRepository } from '@application/ports/login-attempt.repository.js';
 import type { PasswordHasher } from '@application/ports/password-hasher.js';
 import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher.js';
-import type { SessionIdGenerator } from '@application/ports/session-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { SessionRepository } from '@application/ports/session.repository.js';
 import type { TokenService } from '@application/ports/token.service.js';
 import type { UserRepository } from '@application/ports/user.repository.js';
 import type { LoginUserRequest } from '@application/dto/login-user.request.js';
 import type { LoginUserResponse } from '@application/dto/login-user.response.js';
 import { fail, ok, type Result } from '@shared/result.js';
+import { addSeconds } from '@shared/date-utils.js';
 import type { PortError } from '@application/errors/port.error.js';
 import { Session, SessionStatus } from '@domain/entities/session.entity.js';
 import type { User } from '@domain/entities/user.entity.js';
@@ -25,7 +26,7 @@ export type LoginUserDependencies = {
     passwordHasher: PasswordHasher;
     tokenService: TokenService;
     refreshTokenHasher: RefreshTokenHasher;
-    sessionIdGenerator: SessionIdGenerator;
+    sessionIdGenerator: IdGenerator;
     auditLogger: AuditLogger;
     loginRateLimiter: LoginRateLimiter;
     loginAttemptRepository: LoginAttemptRepository;
@@ -294,9 +295,6 @@ export class LoginUserUseCase {
         return this.dependencies.auditLogger.log(event);
     }
 }
-
-const addSeconds = (date: Date, seconds: number): Date =>
-    new Date(date.getTime() + seconds * 1000);
 
 const buildMetadata = (request: LoginUserRequest): Record<string, string> => {
     const metadata: Record<string, string> = {};

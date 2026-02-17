@@ -1,10 +1,8 @@
 import type { InvoiceExtractionAgent, InvoiceExtractionResult } from '@application/ports/invoice-extraction-agent.js';
 import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
 import type { FileStorage } from '@application/ports/file-storage.js';
-import type { InvoiceIdGenerator } from '@application/ports/invoice-id-generator.js';
-import type { InvoiceMovementIdGenerator } from '@application/ports/invoice-movement-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { ProviderRepository } from '@application/ports/provider.repository.js';
-import type { ProviderIdGenerator } from '@application/ports/provider-id-generator.js';
 import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { PortError } from '@application/errors/port.error.js';
@@ -12,8 +10,10 @@ import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex
 import type { UploadInvoiceDocumentRequest } from '@application/dto/upload-invoice-document.request.js';
 import type { UploadInvoiceDocumentResponse } from '@application/dto/upload-invoice-document.response.js';
 import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
-import { Invoice, InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
-import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { Invoice, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import { InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
+import { createMovementsFromInput } from '@application/shared/movement-mappers.js';
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
@@ -22,6 +22,7 @@ import { Cif } from '@domain/value-objects/cif.value-object.js';
 import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { ok, fail, type Result } from '@shared/result.js';
+import { tryCif } from '@shared/cif-utils.js';
 
 
 export type UploadInvoiceDocumentError =
@@ -37,9 +38,9 @@ export type UploadInvoiceDocumentDependencies = {
     extractionAgent: InvoiceExtractionAgent;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
-    invoiceIdGenerator: InvoiceIdGenerator;
-    invoiceMovementIdGenerator: InvoiceMovementIdGenerator;
-    providerIdGenerator: ProviderIdGenerator;
+    invoiceIdGenerator: IdGenerator;
+    invoiceMovementIdGenerator: IdGenerator;
+    providerIdGenerator: IdGenerator;
     ragReindexInvoiceService: RagReindexInvoiceHandler;
 };
 
@@ -109,11 +110,14 @@ export class UploadInvoiceDocumentUseCase {
         extracted: InvoiceExtractionResult,
         now: Date,
     ): Promise<Result<Provider, UploadInvoiceDocumentError>> {
-        const cifResult = this.normalizeCif(extracted.providerCif);
+        const cifResult = tryCif(extracted.providerCif);
         if (!cifResult.success) {
             return fail(cifResult.error);
         }
-        const normalizedCif = cifResult.value;
+        if (!cifResult.value) {
+            return fail(new InvalidCifError());
+        }
+        const normalizedCif = cifResult.value.getValue();
 
         const providerResult = await this.dependencies.providerRepository.findByCif(normalizedCif);
         if (!providerResult.success) {
@@ -130,20 +134,6 @@ export class UploadInvoiceDocumentUseCase {
         }
 
         return ok(provider);
-    }
-
-    private normalizeCif(providerCif: string | undefined): Result<string, InvalidCifError> {
-        if (!providerCif) {
-            return fail(new InvalidCifError());
-        }
-        try {
-            return ok(Cif.create(providerCif).getValue());
-        } catch (error) {
-            if (error instanceof InvalidCifError) {
-                return fail(error);
-            }
-            throw error;
-        }
     }
 
     private async createDraftProvider(
@@ -190,25 +180,17 @@ export class UploadInvoiceDocumentUseCase {
         now: Date,
         status: InvoiceStatus,
     ): Invoice {
-        const movements = extracted.invoice.movements.map((movement) =>
-            InvoiceMovement.create({
-                id: this.dependencies.invoiceMovementIdGenerator.generate(),
-                concepto: movement.concepto,
-                cantidad: movement.cantidad,
-                precio: movement.precio,
-                ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
-                ...(movement.iva === undefined ? {} : { iva: movement.iva }),
-                total: movement.total,
-                source: InvoiceMovementSource.Ai,
-                status: InvoiceMovementStatus.Proposed,
-            }),
+        const movements = createMovementsFromInput(
+            extracted.invoice.movements,
+            () => this.dependencies.invoiceMovementIdGenerator.generate(),
+            { source: DataSource.Ai, status: InvoiceMovementStatus.Proposed },
         );
 
         return Invoice.create({
             id: this.dependencies.invoiceIdGenerator.generate(),
             providerId,
             status,
-            headerSource: InvoiceHeaderSource.Ai,
+            headerSource: DataSource.Ai,
             headerStatus: InvoiceHeaderStatus.Proposed,
             ...(extracted.invoice.numeroFactura ? { numeroFactura: extracted.invoice.numeroFactura } : {}),
             ...(extracted.invoice.fechaOperacion ? { fechaOperacion: InvoiceDate.create(extracted.invoice.fechaOperacion) } : {}),

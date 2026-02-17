@@ -1,6 +1,7 @@
-export class InvalidFileRefError extends Error {
+import { DomainError } from '@domain/errors/domain.error.js';
+
+export class InvalidFileRefError extends DomainError {
     constructor(message: string = 'Invalid file ref') {
-        super(message);
-        this.name = 'InvalidFileRefError';
+        super(message, 'InvalidFileRefError');
     }
 }

@@ -1,65 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { ConfirmInvoiceMovementsUseCase } from '@application/use-cases/confirm-invoice-movements.use-case.js';
-import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
-import type { DateProvider } from '@application/ports/date-provider.js';
-import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
-import type { PortError } from '@application/errors/port.error.js';
 import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
 import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
 import {
     InvoiceMovement,
-    InvoiceMovementSource,
     InvoiceMovementStatus,
     type InvoiceMovementProps,
 } from '@domain/entities/invoice-movement.entity.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
-import { ok, type Result } from '@shared/result.js';
-import { RagReindexInvoiceServiceStub } from '@tests/application/stubs/rag-reindex-invoice.service.stub.js';
+import { RagReindexInvoiceServiceStub } from '@tests/shared/stubs/rag-reindex-invoice.service.stub.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import { InvoiceRepositoryStub } from '@tests/shared/stubs/invoice-repository.stub.js';
+import { createTestInvoice } from '@tests/shared/fixtures/invoice.fixture.js';
 
 const fixedNow = new Date('2026-03-01T10:00:00.000Z');
-
-class DateProviderStub implements DateProvider {
-    now(): Result<Date, PortError> {
-        return ok(fixedNow);
-    }
-}
-
-class AuditLoggerSpy implements AuditLogger {
-    events: AuditEvent[] = [];
-
-    async log(event: AuditEvent) {
-        this.events.push(event);
-        return ok(undefined);
-    }
-}
-
-class InvoiceRepositoryStub implements InvoiceRepository {
-    updatedInvoice: Invoice | null = null;
-
-    constructor(private readonly invoice: Invoice | null) {}
-
-    async create() {
-        return ok(undefined);
-    }
-
-    async findById() {
-        return ok(this.invoice);
-    }
-
-    async update(invoice: Invoice) {
-        this.updatedInvoice = invoice;
-        return ok(undefined);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async getDetail() {
-        return ok(null);
-    }
-}
 
 const createMovement = (overrides: Partial<InvoiceMovementProps> = {}): InvoiceMovement =>
     InvoiceMovement.create({
@@ -70,25 +27,24 @@ const createMovement = (overrides: Partial<InvoiceMovementProps> = {}): InvoiceM
         baseImponible: 100,
         iva: 21,
         total: 121,
-        source: InvoiceMovementSource.Ai,
+        source: DataSource.Ai,
         status: InvoiceMovementStatus.Proposed,
         ...overrides,
     });
 
 const createInvoice = (overrides: Partial<InvoiceProps> = {}): Invoice =>
-    Invoice.create({
-        id: 'invoice-1',
-        providerId: 'provider-1',
-        status: InvoiceStatus.Active,
-        numeroFactura: 'FAC-2026-0101',
-        fechaOperacion: InvoiceDate.create('2026-02-28'),
-        baseImponible: Money.create(100),
-        iva: Money.create(21),
-        total: Money.create(121),
-        movements: [createMovement()],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        ...overrides,
+    createTestInvoice({
+        now: fixedNow,
+        overrides: {
+            status: InvoiceStatus.Active,
+            numeroFactura: 'FAC-2026-0101',
+            fechaOperacion: InvoiceDate.create('2026-02-28'),
+            baseImponible: Money.create(100),
+            iva: Money.create(21),
+            total: Money.create(121),
+            movements: [createMovement()],
+            ...overrides,
+        },
     });
 
 describe('ConfirmInvoiceMovementsUseCase', () => {
@@ -99,7 +55,7 @@ describe('ConfirmInvoiceMovementsUseCase', () => {
         const useCase = new ConfirmInvoiceMovementsUseCase({
             invoiceRepository,
             auditLogger,
-            dateProvider: new DateProviderStub(),
+            dateProvider: new DateProviderStub(fixedNow),
             ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
@@ -126,7 +82,7 @@ describe('ConfirmInvoiceMovementsUseCase', () => {
             return;
         }
         expect(movement.status).toBe(InvoiceMovementStatus.Confirmed);
-        expect(movement.source).toBe(InvoiceMovementSource.Ai);
+        expect(movement.source).toBe(DataSource.Ai);
         expect(auditLogger.events.some((event) => event.action === 'INVOICE_MOVEMENTS_CONFIRMED')).toBe(true);
     });
 
@@ -137,7 +93,7 @@ describe('ConfirmInvoiceMovementsUseCase', () => {
         const useCase = new ConfirmInvoiceMovementsUseCase({
             invoiceRepository,
             auditLogger,
-            dateProvider: new DateProviderStub(),
+            dateProvider: new DateProviderStub(fixedNow),
             ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
@@ -171,7 +127,7 @@ describe('ConfirmInvoiceMovementsUseCase', () => {
         }
         expect(movement.concepto).toBe('Servicio corregido');
         expect(movement.cantidad).toBe(2);
-        expect(movement.source).toBe(InvoiceMovementSource.Manual);
+        expect(movement.source).toBe(DataSource.Manual);
         expect(movement.status).toBe(InvoiceMovementStatus.Confirmed);
     });
 
@@ -179,7 +135,7 @@ describe('ConfirmInvoiceMovementsUseCase', () => {
         const manualMovement = createMovement({
             id: 'movement-manual',
             concepto: 'Manual',
-            source: InvoiceMovementSource.Manual,
+            source: DataSource.Manual,
             status: InvoiceMovementStatus.Confirmed,
         });
         const invoiceRepository = new InvoiceRepositoryStub(
@@ -192,7 +148,7 @@ describe('ConfirmInvoiceMovementsUseCase', () => {
         const useCase = new ConfirmInvoiceMovementsUseCase({
             invoiceRepository,
             auditLogger,
-            dateProvider: new DateProviderStub(),
+            dateProvider: new DateProviderStub(fixedNow),
             ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
         });
 
@@ -211,6 +167,6 @@ describe('ConfirmInvoiceMovementsUseCase', () => {
         const updated = invoiceRepository.updatedInvoice;
         const kept = updated?.movements.find((movement) => movement.id === 'movement-manual');
         expect(kept?.concepto).toBe('Manual');
-        expect(kept?.source).toBe(InvoiceMovementSource.Manual);
+        expect(kept?.source).toBe(DataSource.Manual);
     });
 });

@@ -24,9 +24,9 @@ export type RagReindexProviderInvoicesDependencies = {
 
 export type RagReindexProviderInvoicesError = ProviderNotFoundError | InvoiceNotFoundError | PortError;
 
-export type RagReindexProviderInvoicesHandler = {
+export interface RagReindexProviderInvoicesHandler {
     reindexByProviderId(providerId: string): Promise<Result<void, RagReindexProviderInvoicesError>>;
-};
+}
 
 export class RagReindexProviderInvoicesService implements RagReindexProviderInvoicesHandler {
     constructor(private readonly dependencies: RagReindexProviderInvoicesDependencies) {}

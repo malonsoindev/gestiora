@@ -1,6 +1,7 @@
-export class InvalidEmailError extends Error {
+import { DomainError } from '@domain/errors/domain.error.js';
+
+export class InvalidEmailError extends DomainError {
     constructor(message: string = 'Invalid email') {
-        super(message);
-        this.name = 'InvalidEmailError';
+        super(message, 'InvalidEmailError');
     }
 }

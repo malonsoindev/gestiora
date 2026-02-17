@@ -25,6 +25,10 @@ class SearchQueryRepositoryStub implements SearchQueryRepository {
     async save(): Promise<Result<void, PortError>> {
         return ok(undefined);
     }
+
+    async clearAll(): Promise<Result<void, PortError>> {
+        return ok(undefined);
+    }
 }
 
 describe('GetSearchResultUseCase', () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ProcessSearchQueryUseCase } from '@application/use-cases/process-search-query.use-case.js';
 import type { SearchQueryRepository, SearchQueryRecord } from '@application/ports/search-query.repository.js';
-import type { SearchQueryIdGenerator } from '@application/ports/search-query-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import { PortError } from '@application/errors/port.error.js';
 import { ok, type Result } from '@shared/result.js';
 import { QueryTooAmbiguousError } from '@application/errors/query-too-ambiguous.error.js';
@@ -48,7 +48,7 @@ class SearchQueryRepositoryStub implements SearchQueryRepository {
     }
 }
 
-class SearchQueryIdGeneratorStub implements SearchQueryIdGenerator {
+class SearchQueryIdGeneratorStub implements IdGenerator {
     constructor(private readonly id: string) {}
 
     generate(): string {

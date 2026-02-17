@@ -2,22 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import type { ProviderProps } from '@domain/entities/provider.entity.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
+import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
 
 const baseDate = new Date('2026-02-01T00:00:00.000Z');
 
 const createProvider = (overrides: Partial<ProviderProps> = {}): Provider =>
-    Provider.create({
-        id: 'provider-1',
-        razonSocial: 'Proveedor Uno',
-        cif: Cif.create('B12345678'),
-        direccion: 'Calle Falsa 123',
-        poblacion: 'Madrid',
-        provincia: 'Madrid',
-        pais: 'ES',
-        status: ProviderStatus.Active,
-        createdAt: baseDate,
-        updatedAt: baseDate,
-        ...overrides,
+    createTestProvider({
+        now: baseDate,
+        overrides: {
+            status: ProviderStatus.Active,
+            cif: Cif.create('B12345678'),
+            ...overrides,
+        },
     });
 
 describe('Provider', () => {
@@ -63,7 +59,7 @@ describe('Provider', () => {
 
     it('supports updating deletedAt', () => {
         const now = new Date('2026-02-03T00:00:00.000Z');
-        const provider = createProvider({ deletedAt: undefined });
+        const provider = createProvider();
 
         const updated = provider.updateInfo({
             deletedAt: now,

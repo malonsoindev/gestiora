@@ -1,7 +1,7 @@
 import type { CreateProviderRequest } from '@application/dto/create-provider.request.js';
 import type { CreateProviderResponse } from '@application/dto/create-provider.response.js';
 import type { ProviderRepository } from '@application/ports/provider.repository.js';
-import type { ProviderIdGenerator } from '@application/ports/provider-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { PortError } from '@application/errors/port.error.js';
@@ -11,10 +11,12 @@ import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
 import { ok, fail, type Result } from '@shared/result.js';
+import { normalizeText } from '@shared/text-utils.js';
+import { tryCif } from '@shared/cif-utils.js';
 
 export type CreateProviderDependencies = {
     providerRepository: ProviderRepository;
-    providerIdGenerator: ProviderIdGenerator;
+    providerIdGenerator: IdGenerator;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
 };
@@ -38,7 +40,7 @@ export class CreateProviderUseCase {
 
         const now = nowResult.value;
 
-        const cifResult = this.buildCif(request);
+        const cifResult = tryCif(request.cif);
         if (!cifResult.success) {
             return fail(cifResult.error);
         }
@@ -90,21 +92,6 @@ export class CreateProviderUseCase {
         return ok({ providerId: provider.id });
     }
 
-    private buildCif(request: CreateProviderRequest): Result<Cif | undefined, InvalidCifError> {
-        if (!request.cif) {
-            return ok(undefined);
-        }
-
-        try {
-            return ok(Cif.create(request.cif));
-        } catch (error) {
-            if (error instanceof InvalidCifError) {
-                return fail(error);
-            }
-            throw error;
-        }
-    }
-
     private async ensureProviderNotExists(
         cif: Cif | undefined,
         razonSocial: string,
@@ -120,7 +107,7 @@ export class CreateProviderUseCase {
             return ok(undefined);
         }
 
-        const normalized = this.normalizeRazonSocial(razonSocial);
+        const normalized = normalizeText(razonSocial);
         const existing = await this.dependencies.providerRepository.findByRazonSocialNormalized(normalized);
         if (!existing.success) {
             return fail(existing.error);
@@ -129,10 +116,6 @@ export class CreateProviderUseCase {
             return fail(new ProviderAlreadyExistsError());
         }
         return ok(undefined);
-    }
-
-    private normalizeRazonSocial(value: string): string {
-        return value.trim().toLowerCase().replaceAll(/\s+/g, ' ');
     }
 
     private validateStatus(status: ProviderStatus): Result<ProviderStatus, InvalidProviderStatusError> {

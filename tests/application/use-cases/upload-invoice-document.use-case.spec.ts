@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { UploadInvoiceDocumentUseCase } from '@application/use-cases/upload-invoice-document.use-case.js';
 import type { FileStorage } from '@application/ports/file-storage.js';
 import type { InvoiceExtractionAgent, InvoiceExtractionResult } from '@application/ports/invoice-extraction-agent.js';
-import type { ProviderIdGenerator } from '@application/ports/provider-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { PortError } from '@application/errors/port.error.js';
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import { ok, type Result } from '@shared/result.js';
-import { RagReindexInvoiceServiceStub } from '@tests/application/stubs/rag-reindex-invoice.service.stub.js';
+import { RagReindexInvoiceServiceStub } from '@tests/shared/stubs/rag-reindex-invoice.service.stub.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { InvoiceIdGeneratorStub } from '@tests/shared/stubs/invoice-id-generator.stub.js';
 import { InvoiceMovementIdGeneratorStub } from '@tests/shared/stubs/invoice-movement-id-generator.stub.js';
@@ -15,6 +15,7 @@ import { FileStorageStub } from '@tests/shared/stubs/file-storage.stub.js';
 import { InvoiceRepositorySpy } from '@tests/shared/spies/invoice-repository.spy.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
+import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
 
 class ExtractionAgentStub implements InvoiceExtractionAgent {
     async extract(): Promise<Result<InvoiceExtractionResult, PortError>> {
@@ -77,7 +78,7 @@ class ExtractionAgentErrorStub implements InvoiceExtractionAgent {
     }
 }
 
-class ProviderIdGeneratorStub implements ProviderIdGenerator {
+class ProviderIdGeneratorStub implements IdGenerator {
     constructor(private readonly id: string) {}
 
     generate(): string {
@@ -115,12 +116,12 @@ class ExtractionAgentTotalsMismatchStub implements InvoiceExtractionAgent {
 }
 
 const createProvider = (): Provider =>
-    Provider.create({
-        id: 'provider-1',
-        razonSocial: 'Proveedor Uno',
-        status: ProviderStatus.Active,
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
+    createTestProvider({
+        now: fixedNow,
+        overrides: {
+            razonSocial: 'Proveedor Uno',
+            status: ProviderStatus.Active,
+        },
     });
 
 const fileInput = {

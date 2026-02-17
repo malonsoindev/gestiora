@@ -1,6 +1,7 @@
-export class AuthUserDisabledError extends Error {
+import { DomainError } from '@domain/errors/domain.error.js';
+
+export class AuthUserDisabledError extends DomainError {
     constructor(message: string = 'User is disabled') {
-        super(message);
-        this.name = 'AuthUserDisabledError';
+        super(message, 'AuthUserDisabledError');
     }
 }

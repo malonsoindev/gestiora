@@ -32,4 +32,18 @@ describe('Password', () => {
     it('rejects passwords with spaces', () => {
         expect(() => Password.create('No Spaces1!')).toThrow(InvalidPasswordError);
     });
+
+    it('equals returns true for same value', () => {
+        const password1 = Password.create('StrongPass1!');
+        const password2 = Password.create('StrongPass1!');
+
+        expect(password1.equals(password2)).toBe(true);
+    });
+
+    it('equals returns false for different values', () => {
+        const password1 = Password.create('StrongPass1!');
+        const password2 = Password.create('DifferentPass2@');
+
+        expect(password1.equals(password2)).toBe(false);
+    });
 });

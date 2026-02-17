@@ -1,4 +1,5 @@
 import { ok, fail, type Result } from '@shared/result.js';
+import { normalizeText } from '@shared/text-utils.js';
 import type { PortError } from '@application/errors/port.error.js';
 import type { RagRetriever } from '@application/ports/rag-retriever.js';
 import type { RagAnswerGenerator } from '@application/ports/rag-answer-generator.js';
@@ -120,8 +121,8 @@ export class QueryInvoicesRagUseCase {
         if (!filters.providerName) {
             return true;
         }
-        const providerName = this.normalizeText(payload.providerName);
-        const expected = this.normalizeText(filters.providerName);
+        const providerName = normalizeText(payload.providerName);
+        const expected = normalizeText(filters.providerName);
         return providerName.includes(expected);
     }
 
@@ -187,8 +188,5 @@ export class QueryInvoicesRagUseCase {
             return null;
         }
     }
-
-    private normalizeText(value: string): string {
-        return value.trim().replaceAll(/\s+/g, ' ').toLowerCase();
-    }
 }
+

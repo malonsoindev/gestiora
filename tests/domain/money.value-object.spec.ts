@@ -13,4 +13,18 @@ describe('Money', () => {
         expect(() => Money.create(Number.NaN)).toThrow(InvalidMoneyError);
         expect(() => Money.create(Number.POSITIVE_INFINITY)).toThrow(InvalidMoneyError);
     });
+
+    it('equals returns true for same value', () => {
+        const money1 = Money.create(100.5);
+        const money2 = Money.create(100.5);
+
+        expect(money1.equals(money2)).toBe(true);
+    });
+
+    it('equals returns false for different values', () => {
+        const money1 = Money.create(100.5);
+        const money2 = Money.create(200);
+
+        expect(money1.equals(money2)).toBe(false);
+    });
 });

@@ -1,6 +1,7 @@
-export class InvalidMoneyError extends Error {
+import { DomainError } from '@domain/errors/domain.error.js';
+
+export class InvalidMoneyError extends DomainError {
     constructor(message: string = 'Invalid money amount') {
-        super(message);
-        this.name = 'InvalidMoneyError';
+        super(message, 'InvalidMoneyError');
     }
 }

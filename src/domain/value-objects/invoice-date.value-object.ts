@@ -14,6 +14,10 @@ export class InvoiceDate {
         return this.value;
     }
 
+    equals(other: InvoiceDate): boolean {
+        return this.value === other.value;
+    }
+
     private static isValid(value: string): boolean {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
             return false;

@@ -12,6 +12,8 @@ import { ok, fail, type Result } from '@shared/result.js';
 import { InvoiceRepositoryStub } from '@tests/shared/stubs/invoice-repository.stub.js';
 import { ProviderRepositoryStub } from '@tests/shared/stubs/provider-repository.stub.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
+import { createTestInvoice } from '@tests/shared/fixtures/invoice.fixture.js';
+import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
 
 class IndexInvoicesForRagUseCaseStub {
     private readonly shouldFail: boolean;
@@ -53,37 +55,36 @@ class SearchQueryRepositoryStub implements SearchQueryRepository {
 }
 
 const createInvoice = (): Invoice =>
-    Invoice.create({
-        id: 'invoice-1',
-        providerId: 'provider-1',
-        status: InvoiceStatus.Active,
-        numeroFactura: 'FAC-1',
-        fechaOperacion: InvoiceDate.create('2026-02-10'),
-        baseImponible: Money.create(100),
-        iva: Money.create(21),
-        total: Money.create(121),
-        movements: [
-            InvoiceMovement.create({
-                id: 'movement-1',
-                concepto: 'Servicio',
-                cantidad: 1,
-                precio: 100,
-                baseImponible: 100,
-                iva: 21,
-                total: 121,
-            }),
-        ],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
+    createTestInvoice({
+        now: fixedNow,
+        overrides: {
+            status: InvoiceStatus.Active,
+            numeroFactura: 'FAC-1',
+            fechaOperacion: InvoiceDate.create('2026-02-10'),
+            baseImponible: Money.create(100),
+            iva: Money.create(21),
+            total: Money.create(121),
+            movements: [
+                InvoiceMovement.create({
+                    id: 'movement-1',
+                    concepto: 'Servicio',
+                    cantidad: 1,
+                    precio: 100,
+                    baseImponible: 100,
+                    iva: 21,
+                    total: 121,
+                }),
+            ],
+        },
     });
 
 const createProvider = (): Provider =>
-    Provider.create({
-        id: 'provider-1',
-        razonSocial: 'Proveedor Demo SL',
-        status: ProviderStatus.Active,
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
+    createTestProvider({
+        now: fixedNow,
+        overrides: {
+            razonSocial: 'Proveedor Demo SL',
+            status: ProviderStatus.Active,
+        },
     });
 
 type SutOverrides = Partial<{

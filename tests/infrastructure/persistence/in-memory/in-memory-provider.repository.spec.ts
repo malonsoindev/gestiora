@@ -3,22 +3,18 @@ import { InMemoryProviderRepository } from '@infrastructure/persistence/in-memor
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import type { ProviderProps } from '@domain/entities/provider.entity.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
+import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
 
 const fixedNow = new Date('2026-02-07T12:00:00.000Z');
 
 const createProvider = (overrides: Partial<ProviderProps> = {}): Provider =>
-    Provider.create({
-        id: 'provider-1',
-        razonSocial: 'Proveedor Uno',
-        cif: Cif.create('B12345678'),
-        direccion: 'Calle Falsa 123',
-        poblacion: 'Madrid',
-        provincia: 'Madrid',
-        pais: 'ES',
-        status: ProviderStatus.Active,
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        ...overrides,
+    createTestProvider({
+        now: fixedNow,
+        overrides: {
+            status: ProviderStatus.Active,
+            cif: Cif.create('B12345678'),
+            ...overrides,
+        },
     });
 
 describe('InMemoryProviderRepository', () => {

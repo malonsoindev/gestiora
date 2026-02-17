@@ -1,3 +1,9 @@
+/**
+ * Normaliza un texto: trim, lowercase y colapsa espacios múltiples.
+ */
+export const normalizeText = (value: string): string =>
+    value.trim().toLowerCase().replaceAll(/\s+/g, ' ');
+
 export const toText = (value: unknown): string => {
     if (value === null || value === undefined) {
         return '';

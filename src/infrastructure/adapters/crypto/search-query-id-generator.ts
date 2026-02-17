@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { SearchQueryIdGenerator } from '@application/ports/search-query-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 
-export class SearchQueryIdGeneratorCrypto implements SearchQueryIdGenerator {
+export class SearchQueryIdGeneratorCrypto implements IdGenerator {
     generate(): string {
         return randomUUID();
     }

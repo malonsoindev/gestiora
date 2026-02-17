@@ -4,11 +4,12 @@ import type { InvoiceRepository } from '@application/ports/invoice.repository.js
 import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { PortError } from '@application/errors/port.error.js';
-import type { InvoiceMovementIdGenerator } from '@application/ports/invoice-movement-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
 import type { Invoice } from '@domain/entities/invoice.entity.js';
-import { InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
-import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import { createMovementsFromInput, mapMovementsToDto } from '@application/shared/movement-mappers.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
 import { InvalidInvoiceTotalsError } from '@domain/errors/invalid-invoice-totals.error.js';
@@ -18,7 +19,7 @@ import { ok, fail, type Result } from '@shared/result.js';
 
 export type UpdateManualInvoiceDependencies = {
     invoiceRepository: InvoiceRepository;
-    invoiceMovementIdGenerator: InvoiceMovementIdGenerator;
+    invoiceMovementIdGenerator: IdGenerator;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
     ragReindexInvoiceService: RagReindexInvoiceHandler;
@@ -50,16 +51,9 @@ export class UpdateManualInvoiceUseCase {
             return fail(new InvalidInvoiceStatusError());
         }
 
-        const movements = request.invoice.movements.map((movement) =>
-            InvoiceMovement.create({
-                id: this.dependencies.invoiceMovementIdGenerator.generate(),
-                concepto: movement.concepto,
-                cantidad: movement.cantidad,
-                precio: movement.precio,
-                ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
-                ...(movement.iva === undefined ? {} : { iva: movement.iva }),
-                total: movement.total,
-            }),
+        const movements = createMovementsFromInput(
+            request.invoice.movements,
+            () => this.dependencies.invoiceMovementIdGenerator.generate(),
         );
 
         const updated = invoice.updateDetails({
@@ -75,7 +69,7 @@ export class UpdateManualInvoiceUseCase {
                 : { baseImponible: Money.create(request.invoice.baseImponible) }),
             ...(request.invoice.iva === undefined ? {} : { iva: Money.create(request.invoice.iva) }),
             ...(request.invoice.total === undefined ? {} : { total: Money.create(request.invoice.total) }),
-            headerSource: InvoiceHeaderSource.Manual,
+            headerSource: DataSource.Manual,
             headerStatus: InvoiceHeaderStatus.Confirmed,
             movements,
             updatedAt: now,
@@ -139,17 +133,7 @@ export class UpdateManualInvoiceUseCase {
             createdAt: invoice.createdAt.toISOString(),
             updatedAt: invoice.updatedAt.toISOString(),
             ...(invoice.deletedAt === undefined ? {} : { deletedAt: invoice.deletedAt.toISOString() }),
-            movements: invoice.movements.map((movement) => ({
-                id: movement.id,
-                concepto: movement.concepto,
-                cantidad: movement.cantidad,
-                precio: movement.precio,
-                ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
-                ...(movement.iva === undefined ? {} : { iva: movement.iva }),
-                total: movement.total,
-                source: movement.source,
-                status: movement.status,
-            })),
+            movements: mapMovementsToDto(invoice.movements),
         };
     }
 }

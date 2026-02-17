@@ -2,22 +2,19 @@ import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { FileStorage } from '@application/ports/file-storage.js';
 import type { InvoiceExtractionAgent } from '@application/ports/invoice-extraction-agent.js';
-import type { InvoiceMovementIdGenerator } from '@application/ports/invoice-movement-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
 import type { PortError } from '@application/errors/port.error.js';
 import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
 import type { ReprocessInvoiceExtractionRequest } from '@application/dto/reprocess-invoice-extraction.request.js';
 import type { ReprocessInvoiceExtractionResponse } from '@application/dto/reprocess-invoice-extraction.response.js';
 import {
-    InvoiceHeaderSource,
     InvoiceHeaderStatus,
     InvoiceStatus,
 } from '@domain/entities/invoice.entity.js';
-import {
-    InvoiceMovement,
-    InvoiceMovementSource,
-    InvoiceMovementStatus,
-} from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
+import { createMovementsFromInput } from '@application/shared/movement-mappers.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
@@ -31,7 +28,7 @@ export type ReprocessInvoiceExtractionDependencies = {
     extractionAgent: InvoiceExtractionAgent;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
-    invoiceMovementIdGenerator: InvoiceMovementIdGenerator;
+    invoiceMovementIdGenerator: IdGenerator;
     ragReindexInvoiceService: RagReindexInvoiceHandler;
 };
 
@@ -86,8 +83,12 @@ export class ReprocessInvoiceExtractionUseCase {
 
         const headerUpdates = this.buildHeaderUpdates(invoice, extracted);
 
-        const manualMovements = invoice.movements.filter((movement) => movement.source === InvoiceMovementSource.Manual);
-        const aiMovements = this.createAiMovements(extracted.invoice.movements);
+        const manualMovements = invoice.movements.filter((movement) => movement.source === DataSource.Manual);
+        const aiMovements = createMovementsFromInput(
+            extracted.invoice.movements,
+            () => this.dependencies.invoiceMovementIdGenerator.generate(),
+            { source: DataSource.Ai, status: InvoiceMovementStatus.Proposed },
+        );
 
         const updated = invoice.updateDetails({
             ...headerUpdates,
@@ -123,7 +124,7 @@ export class ReprocessInvoiceExtractionUseCase {
     }
 
     private buildHeaderUpdates(
-        invoice: { headerSource: InvoiceHeaderSource; headerStatus: InvoiceHeaderStatus },
+        invoice: { headerSource: DataSource; headerStatus: InvoiceHeaderStatus },
         extracted: { invoice: {
             numeroFactura?: string;
             fechaOperacion?: string;
@@ -139,11 +140,11 @@ export class ReprocessInvoiceExtractionUseCase {
         baseImponible: Money;
         iva: Money;
         total: Money;
-        headerSource: InvoiceHeaderSource;
+        headerSource: DataSource;
         headerStatus: InvoiceHeaderStatus;
     }> {
         const isManuallyConfirmed =
-            invoice.headerSource === InvoiceHeaderSource.Manual &&
+            invoice.headerSource === DataSource.Manual &&
             invoice.headerStatus === InvoiceHeaderStatus.Confirmed;
 
         if (isManuallyConfirmed) {
@@ -158,33 +159,8 @@ export class ReprocessInvoiceExtractionUseCase {
             ...(ext.baseImponible !== undefined && { baseImponible: Money.create(ext.baseImponible) }),
             ...(ext.iva !== undefined && { iva: Money.create(ext.iva) }),
             ...(ext.total !== undefined && { total: Money.create(ext.total) }),
-            headerSource: InvoiceHeaderSource.Ai,
+            headerSource: DataSource.Ai,
             headerStatus: InvoiceHeaderStatus.Proposed,
         };
-    }
-
-    private createAiMovements(
-        movements: Array<{
-            concepto: string;
-            cantidad: number;
-            precio: number;
-            baseImponible?: number;
-            iva?: number;
-            total: number;
-        }>,
-    ): InvoiceMovement[] {
-        return movements.map((movement) =>
-            InvoiceMovement.create({
-                id: this.dependencies.invoiceMovementIdGenerator.generate(),
-                concepto: movement.concepto,
-                cantidad: movement.cantidad,
-                precio: movement.precio,
-                ...(movement.baseImponible !== undefined && { baseImponible: movement.baseImponible }),
-                ...(movement.iva !== undefined && { iva: movement.iva }),
-                total: movement.total,
-                source: InvoiceMovementSource.Ai,
-                status: InvoiceMovementStatus.Proposed,
-            }),
-        );
     }
 }

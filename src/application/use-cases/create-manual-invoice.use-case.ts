@@ -2,14 +2,13 @@ import type { CreateManualInvoiceRequest } from '@application/dto/create-manual-
 import type { CreateManualInvoiceResponse } from '@application/dto/create-manual-invoice.response.js';
 import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
-import type { InvoiceIdGenerator } from '@application/ports/invoice-id-generator.js';
-import type { InvoiceMovementIdGenerator } from '@application/ports/invoice-movement-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
 import type { ProviderRepository } from '@application/ports/provider.repository.js';
 import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
 import type { PortError } from '@application/errors/port.error.js';
 import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
-import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
+import { createMovementsFromInput } from '@application/shared/movement-mappers.js';
 import type { Provider } from '@domain/entities/provider.entity.js';
 import { ProviderStatus } from '@domain/entities/provider.entity.js';
 import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
@@ -21,14 +20,15 @@ import { Cif } from '@domain/value-objects/cif.value-object.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
 import { ok, fail, type Result } from '@shared/result.js';
+import { tryCif } from '@shared/cif-utils.js';
 
 export type CreateManualInvoiceDependencies = {
     providerRepository: ProviderRepository;
     invoiceRepository: InvoiceRepository;
     auditLogger: AuditLogger;
     dateProvider: DateProvider;
-    invoiceIdGenerator: InvoiceIdGenerator;
-    invoiceMovementIdGenerator: InvoiceMovementIdGenerator;
+    invoiceIdGenerator: IdGenerator;
+    invoiceMovementIdGenerator: IdGenerator;
     ragReindexInvoiceService: RagReindexInvoiceHandler;
 };
 
@@ -64,16 +64,9 @@ export class CreateManualInvoiceUseCase {
             return fail(new InvalidProviderStatusError());
         }
 
-        const movements = request.invoice.movements.map((movement) =>
-            InvoiceMovement.create({
-                id: this.dependencies.invoiceMovementIdGenerator.generate(),
-                concepto: movement.concepto,
-                cantidad: movement.cantidad,
-                precio: movement.precio,
-                ...(movement.baseImponible === undefined ? {} : { baseImponible: movement.baseImponible }),
-                ...(movement.iva === undefined ? {} : { iva: movement.iva }),
-                total: movement.total,
-            }),
+        const movements = createMovementsFromInput(
+            request.invoice.movements,
+            () => this.dependencies.invoiceMovementIdGenerator.generate(),
         );
 
         const invoice = Invoice.create({
@@ -90,10 +83,6 @@ export class CreateManualInvoiceUseCase {
             createdAt: now,
             updatedAt: now,
         });
-
-        if (!invoice.isTotalsConsistent()) {
-            return fail(new InvalidInvoiceTotalsError());
-        }
 
         if (!invoice.isTotalsConsistent()) {
             return fail(new InvalidInvoiceTotalsError());
@@ -134,16 +123,14 @@ export class CreateManualInvoiceUseCase {
             return this.dependencies.providerRepository.findById(request.providerId);
         }
         if (request.providerCif) {
-            let cif: Cif;
-            try {
-                cif = Cif.create(request.providerCif);
-            } catch (error) {
-                if (error instanceof InvalidCifError) {
-                    return fail(error);
-                }
-                throw error;
+            const cifResult = tryCif(request.providerCif);
+            if (!cifResult.success) {
+                return fail(cifResult.error);
             }
-            return this.dependencies.providerRepository.findByCif(cif.getValue());
+            if (!cifResult.value) {
+                return fail(new InvalidCifError());
+            }
+            return this.dependencies.providerRepository.findByCif(cifResult.value.getValue());
         }
         return ok(null);
     }

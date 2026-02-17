@@ -5,25 +5,21 @@ import type { ProviderProps } from '@domain/entities/provider.entity.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
 import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
 import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
-import { RagReindexProviderInvoicesServiceStub } from '@tests/application/stubs/rag-reindex-provider-invoices.service.stub.js';
+import { RagReindexProviderInvoicesServiceStub } from '@tests/shared/stubs/rag-reindex-provider-invoices.service.stub.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { ProviderRepositorySpy } from '@tests/shared/spies/provider-repository.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
+import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
 
 const createProvider = (overrides: Partial<ProviderProps> = {}): Provider =>
-    Provider.create({
-        id: 'provider-1',
-        razonSocial: 'Proveedor Uno',
-        cif: Cif.create('B12345678'),
-        direccion: 'Calle Falsa 123',
-        poblacion: 'Madrid',
-        provincia: 'Madrid',
-        pais: 'ES',
-        status: ProviderStatus.Active,
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        ...overrides,
+    createTestProvider({
+        now: fixedNow,
+        overrides: {
+            status: ProviderStatus.Active,
+            cif: Cif.create('B12345678'),
+            ...overrides,
+        },
     });
 
 type SutOverrides = Partial<{

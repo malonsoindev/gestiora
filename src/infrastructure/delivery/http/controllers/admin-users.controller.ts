@@ -7,16 +7,10 @@ import type { UpdateUserStatusUseCase } from '@application/use-cases/update-user
 import type { SoftDeleteUserUseCase } from '@application/use-cases/soft-delete-user.use-case.js';
 import type { RevokeUserSessionsUseCase } from '@application/use-cases/revoke-user-sessions.use-case.js';
 import type { ChangeUserPasswordUseCase } from '@application/use-cases/change-user-password.use-case.js';
-import { InvalidEmailError } from '@domain/errors/invalid-email.error.js';
-import { InvalidPasswordError } from '@domain/errors/invalid-password.error.js';
-import { InvalidUserRolesError } from '@domain/errors/invalid-user-roles.error.js';
-import { InvalidUserStatusError } from '@domain/errors/invalid-user-status.error.js';
-import { UserAlreadyExistsError } from '@domain/errors/user-already-exists.error.js';
-import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
-import { SelfDeletionNotAllowedError } from '@domain/errors/self-deletion-not-allowed.error.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { UserStatus } from '@domain/entities/user.entity.js';
-import { PortError } from '@application/errors/port.error.js';
+import { respondError } from '@infrastructure/delivery/http/errors/respond-error.js';
+import { getPaginationParams } from '@shared/pagination.js';
 
 export type AdminCreateUserBody = {
     email: string;
@@ -92,24 +86,7 @@ export class AdminUsersController {
             return reply.code(201).send(result.value);
         }
 
-        if (result.error instanceof UserAlreadyExistsError) {
-            return reply.code(400).send({ error: 'USER_ALREADY_EXISTS' });
-        }
-
-        if (
-            result.error instanceof InvalidEmailError ||
-            result.error instanceof InvalidPasswordError ||
-            result.error instanceof InvalidUserRolesError ||
-            result.error instanceof InvalidUserStatusError
-        ) {
-            return reply.code(400).send({ error: 'VALIDATION_ERROR' });
-        }
-
-        if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error);
     }
 
     async listUsers(
@@ -126,8 +103,7 @@ export class AdminUsersController {
             return reply.code(400).send({ error: 'INVALID_STATUS' });
         }
 
-        const page = request.query.page ?? 1;
-        const pageSize = request.query.pageSize ?? 20;
+        const { page, pageSize } = getPaginationParams(request.query);
 
         const result = await this.listUsersUseCase.execute({
             page,
@@ -138,22 +114,14 @@ export class AdminUsersController {
 
         if (result.success) {
             return reply.code(200).send({
-                items: result.value.items.map((item) => ({
-                    userId: item.userId,
-                    email: item.email,
-                    ...(item.name ? { name: item.name } : {}),
-                    ...(item.avatar ? { avatar: item.avatar } : {}),
-                    status: this.mapStatusToApi(item.status),
-                    roles: item.roles.map((r) => this.mapRoleToApi(r)),
-                    createdAt: item.createdAt.toISOString(),
-                })),
+                items: result.value.items.map((item) => this.mapUserToListItem(item)),
                 page: result.value.page,
                 pageSize: result.value.pageSize,
                 total: result.value.total,
             });
         }
 
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error);
     }
 
     async getUserDetail(
@@ -163,24 +131,10 @@ export class AdminUsersController {
         const result = await this.getUserDetailUseCase.execute({ userId: request.params.userId });
 
         if (result.success) {
-            return reply.code(200).send({
-                userId: result.value.userId,
-                email: result.value.email,
-                ...(result.value.name ? { name: result.value.name } : {}),
-                ...(result.value.avatar ? { avatar: result.value.avatar } : {}),
-                status: this.mapStatusToApi(result.value.status),
-                roles: result.value.roles.map((role) => this.mapRoleToApi(role)),
-                createdAt: result.value.createdAt.toISOString(),
-                updatedAt: result.value.updatedAt.toISOString(),
-                deletedAt: result.value.deletedAt ? result.value.deletedAt.toISOString() : null,
-            });
+            return reply.code(200).send(this.mapUserToDetail(result.value));
         }
 
-        if (result.error instanceof UserNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error);
     }
 
     async updateUser(
@@ -209,18 +163,7 @@ export class AdminUsersController {
             return this.respondWithUserDetail(reply, request.params.userId);
         }
 
-        if (result.error instanceof UserNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (
-            result.error instanceof InvalidUserRolesError ||
-            result.error instanceof InvalidUserStatusError
-        ) {
-            return reply.code(400).send({ error: 'VALIDATION_ERROR' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error);
     }
 
     async updateUserStatus(
@@ -241,15 +184,7 @@ export class AdminUsersController {
             return this.respondWithUserDetail(reply, request.params.userId);
         }
 
-        if (result.error instanceof UserNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof InvalidUserStatusError) {
-            return reply.code(400).send({ error: 'VALIDATION_ERROR' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error);
     }
 
     async softDeleteUser(
@@ -270,15 +205,7 @@ export class AdminUsersController {
             return reply.code(204).send();
         }
 
-        if (result.error instanceof UserNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof SelfDeletionNotAllowedError) {
-            return reply.code(400).send({ error: 'SELF_DELETE_NOT_ALLOWED' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error);
     }
 
     async revokeUserSessions(
@@ -293,11 +220,7 @@ export class AdminUsersController {
             return reply.code(204).send();
         }
 
-        if (result.error instanceof UserNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error);
     }
 
     async changeUserPassword(
@@ -319,19 +242,7 @@ export class AdminUsersController {
             return reply.code(204).send();
         }
 
-        if (result.error instanceof UserNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        if (result.error instanceof InvalidPasswordError) {
-            return reply.code(400).send({ error: 'VALIDATION_ERROR' });
-        }
-
-        if (result.error instanceof PortError) {
-            return reply.code(500).send({ error: 'INTERNAL_ERROR' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, result.error);
     }
 
     private mapRoles(values: Array<'Usuario' | 'Administrador'>): UserRole[] | null {
@@ -357,24 +268,10 @@ export class AdminUsersController {
         const detail = await this.getUserDetailUseCase.execute({ userId });
 
         if (detail.success) {
-            return reply.code(200).send({
-                userId: detail.value.userId,
-                email: detail.value.email,
-                ...(detail.value.name ? { name: detail.value.name } : {}),
-                ...(detail.value.avatar ? { avatar: detail.value.avatar } : {}),
-                status: this.mapStatusToApi(detail.value.status),
-                roles: detail.value.roles.map((role) => this.mapRoleToApi(role)),
-                createdAt: detail.value.createdAt.toISOString(),
-                updatedAt: detail.value.updatedAt.toISOString(),
-                deletedAt: detail.value.deletedAt ? detail.value.deletedAt.toISOString() : null,
-            });
+            return reply.code(200).send(this.mapUserToDetail(detail.value));
         }
 
-        if (detail.error instanceof UserNotFoundError) {
-            return reply.code(404).send({ error: 'NOT_FOUND' });
-        }
-
-        return reply.code(500).send({ error: 'INTERNAL_ERROR' });
+        return respondError(reply, detail.error);
     }
 
     private mapRole(value: 'Usuario' | 'Administrador'): UserRole | null {
@@ -416,5 +313,67 @@ export class AdminUsersController {
 
     private mapRoleToApi(role: UserRole): 'Usuario' | 'Administrador' {
         return role.getValue() === 'ADMIN' ? 'Administrador' : 'Usuario';
+    }
+
+    private mapUserToListItem(user: {
+        userId: string;
+        email: string;
+        name?: string;
+        avatar?: string;
+        status: UserStatus;
+        roles: UserRole[];
+        createdAt: Date;
+    }): {
+        userId: string;
+        email: string;
+        name?: string;
+        avatar?: string;
+        status: 'ACTIVE' | 'INACTIVE' | 'DELETED';
+        roles: Array<'Usuario' | 'Administrador'>;
+        createdAt: string;
+    } {
+        return {
+            userId: user.userId,
+            email: user.email,
+            ...(user.name ? { name: user.name } : {}),
+            ...(user.avatar ? { avatar: user.avatar } : {}),
+            status: this.mapStatusToApi(user.status),
+            roles: user.roles.map((r) => this.mapRoleToApi(r)),
+            createdAt: user.createdAt.toISOString(),
+        };
+    }
+
+    private mapUserToDetail(user: {
+        userId: string;
+        email: string;
+        name?: string;
+        avatar?: string;
+        status: UserStatus;
+        roles: UserRole[];
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt?: Date;
+    }): {
+        userId: string;
+        email: string;
+        name?: string;
+        avatar?: string;
+        status: 'ACTIVE' | 'INACTIVE' | 'DELETED';
+        roles: Array<'Usuario' | 'Administrador'>;
+        createdAt: string;
+        updatedAt: string;
+        deletedAt: string | null;
+    } {
+        return {
+            userId: user.userId,
+            email: user.email,
+            ...(user.name ? { name: user.name } : {}),
+            ...(user.avatar ? { avatar: user.avatar } : {}),
+            status: this.mapStatusToApi(user.status),
+            roles: user.roles.map((r) => this.mapRoleToApi(r)),
+            createdAt: user.createdAt.toISOString(),
+            updatedAt: user.updatedAt.toISOString(),
+            deletedAt: user.deletedAt ? user.deletedAt.toISOString() : null,
+        };
     }
 }

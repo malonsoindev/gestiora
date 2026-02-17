@@ -6,9 +6,13 @@ import { ok } from '@shared/result.js';
 export class InvoiceRepositoryStub implements InvoiceRepository {
     updatedInvoice: Invoice | null = null;
     private readonly invoice: Invoice | null;
+    private readonly listResult: InvoiceListResult;
 
-    constructor(invoice: Invoice | null) {
+    private static readonly defaultListResult: InvoiceListResult = { items: [], total: 0 };
+
+    constructor(invoice: Invoice | null, listResult: InvoiceListResult = InvoiceRepositoryStub.defaultListResult) {
         this.invoice = invoice;
+        this.listResult = listResult;
     }
 
     async create(_invoice: Invoice) {
@@ -27,7 +31,7 @@ export class InvoiceRepositoryStub implements InvoiceRepository {
     async list(_filters: InvoiceListFilters): Promise<
         { success: true; value: InvoiceListResult } | { success: false; error: PortError }
     > {
-        return ok({ items: [], total: 0 });
+        return ok(this.listResult);
     }
 
     async getDetail(_invoiceId: string) {

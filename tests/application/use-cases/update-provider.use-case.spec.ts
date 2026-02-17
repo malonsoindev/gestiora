@@ -6,25 +6,21 @@ import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.j
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import type { ProviderProps } from '@domain/entities/provider.entity.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
-import { RagReindexProviderInvoicesServiceStub } from '@tests/application/stubs/rag-reindex-provider-invoices.service.stub.js';
+import { RagReindexProviderInvoicesServiceStub } from '@tests/shared/stubs/rag-reindex-provider-invoices.service.stub.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { ProviderRepositorySpy } from '@tests/shared/spies/provider-repository.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
+import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
 
 const createProvider = (overrides: Partial<ProviderProps> = {}): Provider =>
-    Provider.create({
-        id: 'provider-1',
-        razonSocial: 'Proveedor Uno',
-        cif: Cif.create('B12345678'),
-        direccion: 'Calle Falsa 123',
-        poblacion: 'Madrid',
-        provincia: 'Madrid',
-        pais: 'ES',
-        status: ProviderStatus.Active,
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        ...overrides,
+    createTestProvider({
+        now: fixedNow,
+        overrides: {
+            status: ProviderStatus.Active,
+            cif: Cif.create('B12345678'),
+            ...overrides,
+        },
     });
 
 type SutOverrides = Partial<{
@@ -147,16 +143,13 @@ describe('UpdateProviderUseCase', () => {
     });
 
     it('rejects duplicate provider by razonSocial when cif is missing and razonSocial changes', async () => {
-        const providerWithoutCif = Provider.create({
-            id: 'provider-1',
-            razonSocial: 'Proveedor Uno',
-            direccion: 'Calle Falsa 123',
-            poblacion: 'Madrid',
-            provincia: 'Madrid',
-            pais: 'ES',
-            status: ProviderStatus.Active,
-            createdAt: fixedNow,
-            updatedAt: fixedNow,
+        const providerWithoutCif = createTestProvider({
+            now: fixedNow,
+            omitCif: true,
+            overrides: {
+                razonSocial: 'Proveedor Uno',
+                status: ProviderStatus.Active,
+            },
         });
         const { useCase, providerRepository } = makeSut({
             existingProvider: providerWithoutCif,

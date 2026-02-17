@@ -1,6 +1,8 @@
 import type { Sql } from 'postgres';
 import { fail, ok, type Result } from '@shared/result.js';
 import { toDate } from '@shared/date-utils.js';
+import { mapEnumValue } from '@shared/enum-utils.js';
+import { normalizeText } from '@shared/text-utils.js';
 import { PortError } from '@application/errors/port.error.js';
 import type {
     ProviderListFilters,
@@ -226,7 +228,7 @@ export class PostgresProviderRepository implements ProviderRepository {
         const toOptionalString = (value: unknown): string | undefined =>
             typeof value === 'string' || typeof value === 'number' ? String(value) : undefined;
         const statusValue = String(row.status);
-        const status = this.mapStatus(statusValue);
+        const status = mapEnumValue(ProviderStatus, statusValue, ProviderStatus.Active);
         const cifValue = toOptionalString(row.cif);
         const cif = cifValue ? Cif.create(cifValue) : undefined;
         const direccion = toOptionalString(row.direccion);
@@ -248,21 +250,5 @@ export class PostgresProviderRepository implements ProviderRepository {
             ...(row.deleted_at ? { deletedAt: toDate(row.deleted_at) } : {}),
         });
     }
-
-    private mapStatus(value: string): ProviderStatus {
-        switch (value) {
-            case ProviderStatus.Active:
-                return ProviderStatus.Active;
-            case ProviderStatus.Inactive:
-                return ProviderStatus.Inactive;
-            case ProviderStatus.Deleted:
-                return ProviderStatus.Deleted;
-            case ProviderStatus.Draft:
-                return ProviderStatus.Draft;
-            default:
-                return ProviderStatus.Active;
-        }
-    }
 }
 
-const normalizeText = (value: string): string => value.trim().toLowerCase().replaceAll(/\s+/g, ' ');

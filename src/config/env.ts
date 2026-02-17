@@ -86,3 +86,5 @@ export const config = validateConfig();
 export const isDevelopment = (cfg: Config = config): boolean => cfg.NODE_ENV === 'development';
 export const isProduction = (cfg: Config = config): boolean => cfg.NODE_ENV === 'production';
 export const isTest = (cfg: Config = config): boolean => cfg.NODE_ENV === 'test';
+export const useInMemoryDatabase = (cfg: Config = config): boolean => cfg.DATABASE_TYPE === 'in-memory';
+export const usePostgresDatabase = (cfg: Config = config): boolean => cfg.DATABASE_TYPE === 'postgres';

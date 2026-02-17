@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CreateUserUseCase } from '@application/use-cases/create-user.use-case.js';
-import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
-import type { DateProvider } from '@application/ports/date-provider.js';
 import type { PasswordHasher } from '@application/ports/password-hasher.js';
-import type { UserIdGenerator } from '@application/ports/user-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import { InvalidPasswordError } from '@domain/errors/invalid-password.error.js';
 import { InvalidUserRolesError } from '@domain/errors/invalid-user-roles.error.js';
 import { InvalidUserStatusError } from '@domain/errors/invalid-user-status.error.js';
@@ -12,10 +10,11 @@ import { InvalidEmailError } from '@domain/errors/invalid-email.error.js';
 import { User, UserStatus } from '@domain/entities/user.entity.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { Email } from '@domain/value-objects/email.value-object.js';
-import { ok, type Result } from '@shared/result.js';
-import type { PortError } from '@application/errors/port.error.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 import { UserRepositorySpy } from '@tests/shared/spies/user-repository.spy.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { PasswordHasherStub } from '@tests/shared/stubs/password-hasher.stub.js';
+import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 
 const fixedNow = new Date('2026-02-02T10:00:00.000Z');
 
@@ -30,36 +29,11 @@ const createUserEntity = (): User =>
         },
     });
 
-class DateProviderStub implements DateProvider {
-    now(): Result<Date, PortError> {
-        return ok(fixedNow);
-    }
-}
-
-class AuditLoggerSpy implements AuditLogger {
-    events: AuditEvent[] = [];
-
-    async log(event: AuditEvent) {
-        this.events.push(event);
-        return ok(undefined);
-    }
-}
-
-class UserIdGeneratorStub implements UserIdGenerator {
+class UserIdGeneratorStub implements IdGenerator {
     constructor(private readonly id: string) {}
 
     generate(): string {
         return this.id;
-    }
-}
-
-class PasswordHasherStub implements PasswordHasher {
-    async verify() {
-        return ok(false);
-    }
-
-    async hash(value: string) {
-        return ok(`hashed:${value}`);
     }
 }
 
@@ -77,7 +51,7 @@ const makeSut = (overrides: SutOverrides = {}) => {
         userRepository,
         passwordHasher: overrides.passwordHasher ?? new PasswordHasherStub(),
         auditLogger,
-        dateProvider: new DateProviderStub(),
+        dateProvider: new DateProviderStub(fixedNow),
         userIdGenerator,
     });
 

@@ -3,14 +3,16 @@ import { UpdateOwnProfileUseCase } from '@application/use-cases/update-own-profi
 import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 import { buildUserUseCaseSut } from '@tests/shared/helpers/user-use-case-sut.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 
 const fixedNow = new Date('2026-02-03T16:00:00.000Z');
+const dateProvider = new DateProviderStub(fixedNow);
 
 describe('UpdateOwnProfileUseCase', () => {
     it('updates name and avatar for current user', async () => {
         const { useCase, userRepository } = buildUserUseCaseSut(
             createTestUser({ now: fixedNow, overrides: { id: 'user-1' } }),
-            (userRepository) => new UpdateOwnProfileUseCase({ userRepository, now: () => fixedNow }),
+            (userRepository) => new UpdateOwnProfileUseCase({ userRepository, dateProvider }),
         );
 
         const result = await useCase.execute({
@@ -28,7 +30,7 @@ describe('UpdateOwnProfileUseCase', () => {
     it('returns not found when user does not exist', async () => {
         const { useCase } = buildUserUseCaseSut(
             null,
-            (userRepository) => new UpdateOwnProfileUseCase({ userRepository, now: () => fixedNow }),
+            (userRepository) => new UpdateOwnProfileUseCase({ userRepository, dateProvider }),
         );
 
         const result = await useCase.execute({

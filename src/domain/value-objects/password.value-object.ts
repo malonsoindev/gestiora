@@ -15,6 +15,10 @@ export class Password {
         return this.value;
     }
 
+    equals(other: Password): boolean {
+        return this.value === other.value;
+    }
+
     private static isValid(value: string): boolean {
         if (value.length < 12) {
             return false;

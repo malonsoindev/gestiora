@@ -1,38 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { CreateProviderUseCase } from '@application/use-cases/create-provider.use-case.js';
-import type { AuditEvent, AuditLogger } from '@application/ports/audit-logger.js';
-import type { DateProvider } from '@application/ports/date-provider.js';
-import type { ProviderIdGenerator } from '@application/ports/provider-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { ProviderRepository } from '@application/ports/provider.repository.js';
-import type { PortError } from '@application/errors/port.error.js';
 import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
 import { ProviderAlreadyExistsError } from '@domain/errors/provider-already-exists.error.js';
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
-import { ok, type Result } from '@shared/result.js';
+import { ok } from '@shared/result.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
 
 const fixedNow = new Date('2026-02-03T10:00:00.000Z');
 
-class DateProviderStub implements DateProvider {
-    now(): Result<Date, PortError> {
-        return ok(fixedNow);
-    }
-}
-
-class ProviderIdGeneratorStub implements ProviderIdGenerator {
+class ProviderIdGeneratorStub implements IdGenerator {
     constructor(private readonly id: string) {}
 
     generate(): string {
         return this.id;
-    }
-}
-
-class AuditLoggerSpy implements AuditLogger {
-    events: AuditEvent[] = [];
-
-    async log(event: AuditEvent) {
-        this.events.push(event);
-        return ok(undefined);
     }
 }
 
@@ -73,17 +58,12 @@ class ProviderRepositorySpy implements ProviderRepository {
 }
 
 const createProviderEntity = (): Provider =>
-    Provider.create({
-        id: 'provider-1',
-        razonSocial: 'Proveedor Uno',
-        cif: Cif.create('B12345678'),
-        direccion: 'Calle Falsa 123',
-        poblacion: 'Madrid',
-        provincia: 'Madrid',
-        pais: 'ES',
-        status: ProviderStatus.Active,
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
+    createTestProvider({
+        now: fixedNow,
+        overrides: {
+            cif: Cif.create('B12345678'),
+            status: ProviderStatus.Active,
+        },
     });
 
 describe('CreateProviderUseCase', () => {
@@ -95,7 +75,7 @@ describe('CreateProviderUseCase', () => {
         const useCase = new CreateProviderUseCase({
             providerRepository,
             auditLogger,
-            dateProvider: new DateProviderStub(),
+            dateProvider: new DateProviderStub(fixedNow),
             providerIdGenerator,
         });
 
@@ -128,7 +108,7 @@ describe('CreateProviderUseCase', () => {
         const useCase = new CreateProviderUseCase({
             providerRepository,
             auditLogger,
-            dateProvider: new DateProviderStub(),
+            dateProvider: new DateProviderStub(fixedNow),
             providerIdGenerator,
         });
 
@@ -154,7 +134,7 @@ describe('CreateProviderUseCase', () => {
         const useCase = new CreateProviderUseCase({
             providerRepository,
             auditLogger,
-            dateProvider: new DateProviderStub(),
+            dateProvider: new DateProviderStub(fixedNow),
             providerIdGenerator,
         });
 
@@ -180,7 +160,7 @@ describe('CreateProviderUseCase', () => {
         const useCase = new CreateProviderUseCase({
             providerRepository,
             auditLogger,
-            dateProvider: new DateProviderStub(),
+            dateProvider: new DateProviderStub(fixedNow),
             providerIdGenerator,
         });
 

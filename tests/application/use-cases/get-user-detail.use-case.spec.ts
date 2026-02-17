@@ -4,27 +4,25 @@ import type { UserRepository } from '@application/ports/user.repository.js';
 import { User, UserStatus } from '@domain/entities/user.entity.js';
 import type { UserProps } from '@domain/entities/user.entity.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
-import { Email } from '@domain/value-objects/email.value-object.js';
 import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
 import { ok } from '@shared/result.js';
+import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 
 const fixedNow = new Date('2026-02-03T12:00:00.000Z');
 
 const testCredentialHashValue = 'hash';
 
 const createUser = (overrides: Partial<UserProps> = {}): User =>
-    User.create({
-        id: 'user-1',
-        email: Email.create('user@example.com'),
-        passwordHash: testCredentialHashValue,
-        name: 'Test User',
-        avatar: 'avatar.png',
-        status: UserStatus.Active,
-        roles: [UserRole.user()],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        deletedAt: undefined,
-        ...overrides,
+    createTestUser({
+        now: fixedNow,
+        overrides: {
+            passwordHash: testCredentialHashValue,
+            name: 'Test User',
+            avatar: 'avatar.png',
+            status: UserStatus.Active,
+            roles: [UserRole.user()],
+            ...overrides,
+        },
     });
 
 class UserRepositoryStub implements UserRepository {

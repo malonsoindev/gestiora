@@ -1,28 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { User, UserStatus } from '@domain/entities/user.entity.js';
-import { Email } from '@domain/value-objects/email.value-object.js';
 import type { UserProps } from '@domain/entities/user.entity.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 
 const baseDate = new Date('2026-01-01T00:00:00.000Z');
 
 const testCredentialHashValue = 'hash';
 
-const createUser = (overrides: Partial<UserProps> = {}): User => {
-    const user = User.create({
-        id: 'user-1',
-        email: Email.create('user@example.com'),
-        passwordHash: testCredentialHashValue,
-        status: UserStatus.Active,
-        lockedUntil: undefined,
-        roles: [UserRole.user()],
-        createdAt: baseDate,
-        updatedAt: baseDate,
-        ...overrides,
+const createUser = (overrides: Partial<UserProps> = {}): User =>
+    createTestUser({
+        now: baseDate,
+        overrides: {
+            passwordHash: testCredentialHashValue,
+            status: UserStatus.Active,
+            roles: [UserRole.user()],
+            ...overrides,
+        },
     });
-
-    return user;
-};
 
 describe('User', () => {
     it('reports active status correctly', () => {
@@ -63,7 +58,7 @@ describe('User', () => {
 
     it('does not treat a user as locked when no lock is set', () => {
         const now = new Date('2026-01-01T00:00:00.000Z');
-        const unlockedUser = createUser({ lockedUntil: undefined });
+        const unlockedUser = createUser();
 
         expect(unlockedUser.isLocked(now)).toBe(false);
     });
@@ -111,7 +106,7 @@ describe('User', () => {
 
     it('supports updating deletedAt', () => {
         const now = new Date('2026-01-03T00:00:00.000Z');
-        const user = createUser({ deletedAt: undefined });
+        const user = createUser();
 
         const updated = user.updateInfo({
             deletedAt: now,

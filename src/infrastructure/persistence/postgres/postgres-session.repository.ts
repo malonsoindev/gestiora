@@ -1,6 +1,7 @@
 import type { Sql } from 'postgres';
 import { fail, ok, type Result } from '@shared/result.js';
 import { toDate } from '@shared/date-utils.js';
+import { mapEnumValue } from '@shared/enum-utils.js';
 import { toText } from '@shared/text-utils.js';
 import { PortError } from '@application/errors/port.error.js';
 import type { SessionRepository } from '@application/ports/session.repository.js';
@@ -99,7 +100,7 @@ export class PostgresSessionRepository implements SessionRepository {
 
     private mapRowToSession(row: Record<string, unknown>): Session {
         const statusValue = String(row.status);
-        const status = this.mapStatus(statusValue);
+        const status = mapEnumValue(SessionStatus, statusValue, SessionStatus.Expired);
         return Session.create({
             id: String(row.id),
             userId: String(row.user_id),
@@ -114,17 +115,5 @@ export class PostgresSessionRepository implements SessionRepository {
             ...(row.user_agent ? { userAgent: toText(row.user_agent) } : {}),
         });
     }
-
-    private mapStatus(value: string): SessionStatus {
-        switch (value) {
-            case SessionStatus.Active:
-                return SessionStatus.Active;
-            case SessionStatus.Revoked:
-                return SessionStatus.Revoked;
-            case SessionStatus.Expired:
-                return SessionStatus.Expired;
-            default:
-                return SessionStatus.Expired;
-        }
-    }
 }
+

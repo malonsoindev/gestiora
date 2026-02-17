@@ -49,4 +49,14 @@ export class FileRef {
     get checksum(): string {
         return this.props.checksum;
     }
+
+    equals(other: FileRef): boolean {
+        return (
+            this.props.storageKey === other.props.storageKey &&
+            this.props.filename === other.props.filename &&
+            this.props.mimeType === other.props.mimeType &&
+            this.props.sizeBytes === other.props.sizeBytes &&
+            this.props.checksum === other.props.checksum
+        );
+    }
 }

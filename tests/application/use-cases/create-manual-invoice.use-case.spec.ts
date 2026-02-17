@@ -5,7 +5,7 @@ import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
 import { InvalidInvoiceTotalsError } from '@domain/errors/invalid-invoice-totals.error.js';
 import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
-import { RagReindexInvoiceServiceStub } from '@tests/application/stubs/rag-reindex-invoice.service.stub.js';
+import { RagReindexInvoiceServiceStub } from '@tests/shared/stubs/rag-reindex-invoice.service.stub.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { InvoiceIdGeneratorStub } from '@tests/shared/stubs/invoice-id-generator.stub.js';
 import { InvoiceMovementIdGeneratorStub } from '@tests/shared/stubs/invoice-movement-id-generator.stub.js';
@@ -13,14 +13,15 @@ import { ProviderRepositoryStub } from '@tests/shared/stubs/provider-repository.
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { InvoiceRepositorySpy } from '@tests/shared/spies/invoice-repository.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
+import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
 
 const createProvider = (status: ProviderStatus = ProviderStatus.Active): Provider =>
-    Provider.create({
-        id: 'provider-1',
-        razonSocial: 'Proveedor Uno',
-        status,
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
+    createTestProvider({
+        now: fixedNow,
+        overrides: {
+            razonSocial: 'Proveedor Uno',
+            status,
+        },
     });
 
 type SutOverrides = Partial<{

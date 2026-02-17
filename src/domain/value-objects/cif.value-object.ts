@@ -15,6 +15,10 @@ export class Cif {
         return this.value;
     }
 
+    equals(other: Cif): boolean {
+        return this.value === other.value;
+    }
+
     private static normalize(raw: string): string {
         return raw.trim().toUpperCase().replaceAll('-', '').replaceAll(' ', '');
     }

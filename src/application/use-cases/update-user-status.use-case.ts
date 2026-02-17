@@ -1,5 +1,6 @@
 import type { UpdateUserStatusRequest } from '@application/dto/update-user-status.request.js';
 import type { UserRepository } from '@application/ports/user.repository.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
 import type { PortError } from '@application/errors/port.error.js';
 import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
 import { InvalidUserStatusError } from '@domain/errors/invalid-user-status.error.js';
@@ -8,7 +9,7 @@ import { fail, ok, type Result } from '@shared/result.js';
 
 export type UpdateUserStatusDependencies = {
     userRepository: UserRepository;
-    now: () => Date;
+    dateProvider: DateProvider;
 };
 
 export type UpdateUserStatusError = UserNotFoundError | InvalidUserStatusError | PortError;
@@ -23,6 +24,12 @@ export class UpdateUserStatusUseCase {
             return fail(new InvalidUserStatusError());
         }
 
+        const nowResult = this.dependencies.dateProvider.now();
+        if (!nowResult.success) {
+            return fail(nowResult.error);
+        }
+        const now = nowResult.value;
+
         const userResult = await this.dependencies.userRepository.findById(request.userId);
         if (!userResult.success) {
             return fail(userResult.error);
@@ -35,7 +42,7 @@ export class UpdateUserStatusUseCase {
 
         const updatedUser = existingUser.updateInfo({
             status: request.status,
-            updatedAt: this.dependencies.now(),
+            updatedAt: now,
         });
 
         const updateResult = await this.dependencies.userRepository.update(updatedUser);

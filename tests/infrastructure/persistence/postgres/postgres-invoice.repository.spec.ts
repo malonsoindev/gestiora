@@ -1,13 +1,15 @@
 import postgres from 'postgres';
 import { describe, expect, it, beforeAll, afterAll, beforeEach } from 'vitest';
 import { PostgresInvoiceRepository } from '@infrastructure/persistence/postgres/postgres-invoice.repository.js';
-import { Invoice, InvoiceHeaderSource, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import { Invoice, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
 import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
-import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceMovement, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
 import type { InvoiceMovementProps } from '@domain/entities/invoice-movement.entity.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
 import { FileRef } from '@domain/value-objects/file-ref.value-object.js';
+import { createTestInvoice } from '@tests/shared/fixtures/invoice.fixture.js';
 
 const describeIf = process.env.DATABASE_URL ? describe : describe.skip;
 const fixedNow = new Date('2026-03-10T10:00:00.000Z');
@@ -21,35 +23,34 @@ const createMovement = (overrides: Partial<InvoiceMovementProps> = {}): InvoiceM
         baseImponible: 100,
         iva: 21,
         total: 121,
-        source: InvoiceMovementSource.Ai,
+        source: DataSource.Ai,
         status: InvoiceMovementStatus.Proposed,
         ...overrides,
     });
 
 const createInvoice = (overrides: Partial<InvoiceProps> = {}): Invoice =>
-    Invoice.create({
-        id: 'invoice-1',
-        providerId: 'provider-1',
-        status: InvoiceStatus.Active,
-        headerSource: InvoiceHeaderSource.Ai,
-        headerStatus: InvoiceHeaderStatus.Proposed,
-        numeroFactura: 'FAC-2026-0010',
-        fechaOperacion: InvoiceDate.create('2026-03-01'),
-        fechaVencimiento: InvoiceDate.create('2026-03-31'),
-        baseImponible: Money.create(100),
-        iva: Money.create(21),
-        total: Money.create(121),
-        fileRef: FileRef.create({
-            storageKey: 'storage/invoice-1.pdf',
-            filename: 'invoice-1.pdf',
-            mimeType: 'application/pdf',
-            sizeBytes: 10,
-            checksum: 'checksum-1',
-        }),
-        movements: [createMovement()],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        ...overrides,
+    createTestInvoice({
+        now: fixedNow,
+        overrides: {
+            status: InvoiceStatus.Active,
+            headerSource: DataSource.Ai,
+            headerStatus: InvoiceHeaderStatus.Proposed,
+            numeroFactura: 'FAC-2026-0010',
+            fechaOperacion: InvoiceDate.create('2026-03-01'),
+            fechaVencimiento: InvoiceDate.create('2026-03-31'),
+            baseImponible: Money.create(100),
+            iva: Money.create(21),
+            total: Money.create(121),
+            fileRef: FileRef.create({
+                storageKey: 'storage/invoice-1.pdf',
+                filename: 'invoice-1.pdf',
+                mimeType: 'application/pdf',
+                sizeBytes: 10,
+                checksum: 'checksum-1',
+            }),
+            movements: [createMovement()],
+            ...overrides,
+        },
     });
 
 describeIf('PostgresInvoiceRepository', () => {
@@ -152,7 +153,7 @@ describeIf('PostgresInvoiceRepository', () => {
         if (findResult.success) {
             expect(findResult.value?.id).toBe('invoice-1');
             expect(findResult.value?.movements).toHaveLength(1);
-            expect(findResult.value?.headerSource).toBe(InvoiceHeaderSource.Ai);
+            expect(findResult.value?.headerSource).toBe(DataSource.Ai);
         }
     });
 
@@ -171,9 +172,11 @@ describeIf('PostgresInvoiceRepository', () => {
 
         expect(updateResult.success).toBe(true);
         expect(findResult.success).toBe(true);
-        if (findResult.success) {
-            expect(findResult.value?.movements).toHaveLength(1);
-            expect(findResult.value?.movements[0].id).toBe('movement-2');
+        if (findResult.success && findResult.value) {
+            expect(findResult.value.movements).toHaveLength(1);
+            const firstMovement = findResult.value.movements[0];
+            expect(firstMovement).toBeDefined();
+            expect(firstMovement!.id).toBe('movement-2');
         }
     });
 
@@ -191,7 +194,9 @@ describeIf('PostgresInvoiceRepository', () => {
         expect(listResult.success).toBe(true);
         if (listResult.success) {
             expect(listResult.value.items).toHaveLength(1);
-            expect(listResult.value.items[0].id).toBe('invoice-1');
+            const firstItem = listResult.value.items[0];
+            expect(firstItem).toBeDefined();
+            expect(firstItem!.id).toBe('invoice-1');
         }
     });
 });

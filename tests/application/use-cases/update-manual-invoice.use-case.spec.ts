@@ -8,12 +8,13 @@ import { Money } from '@domain/value-objects/money.value-object.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
 import { InvalidInvoiceTotalsError } from '@domain/errors/invalid-invoice-totals.error.js';
-import { RagReindexInvoiceServiceStub } from '@tests/application/stubs/rag-reindex-invoice.service.stub.js';
+import { RagReindexInvoiceServiceStub } from '@tests/shared/stubs/rag-reindex-invoice.service.stub.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { InvoiceMovementIdGeneratorStub } from '@tests/shared/stubs/invoice-movement-id-generator.stub.js';
 import { InvoiceRepositoryStub } from '@tests/shared/stubs/invoice-repository.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
+import { createTestInvoice } from '@tests/shared/fixtures/invoice.fixture.js';
 
 const createMovement = (id: string, total: number): InvoiceMovement =>
     InvoiceMovement.create({
@@ -27,20 +28,19 @@ const createMovement = (id: string, total: number): InvoiceMovement =>
     });
 
 const createInvoice = (overrides: Partial<InvoiceProps> = {}): Invoice =>
-    Invoice.create({
-        id: 'invoice-1',
-        providerId: 'provider-1',
-        status: InvoiceStatus.Draft,
-        numeroFactura: 'FAC-2026-0001',
-        fechaOperacion: InvoiceDate.create('2026-02-10'),
-        fechaVencimiento: InvoiceDate.create('2026-03-10'),
-        baseImponible: Money.create(100),
-        iva: Money.create(21),
-        total: Money.create(121),
-        movements: [createMovement('movement-1', 100)],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        ...overrides,
+    createTestInvoice({
+        now: fixedNow,
+        overrides: {
+            status: InvoiceStatus.Draft,
+            numeroFactura: 'FAC-2026-0001',
+            fechaOperacion: InvoiceDate.create('2026-02-10'),
+            fechaVencimiento: InvoiceDate.create('2026-03-10'),
+            baseImponible: Money.create(100),
+            iva: Money.create(21),
+            total: Money.create(121),
+            movements: [createMovement('movement-1', 100)],
+            ...overrides,
+        },
     });
 
 const simpleMovementInput = {

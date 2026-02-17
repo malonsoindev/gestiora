@@ -1,3 +1,5 @@
+import { normalizeText } from '@shared/text-utils.js';
+
 export type SearchFilters = {
     providerName?: string;
     dateFrom?: string;
@@ -17,16 +19,12 @@ export class SearchFilterDetector {
      * Soporta fechas ISO, rangos basicos y expresiones de importe.
      */
     detect(query: string): SearchFilters {
-        const normalized = this.normalize(query);
+        const normalized = normalizeText(query);
         const providerName = this.extractProviderName(normalized);
         const dateRange = this.extractDateRange(normalized);
         const amountRange = this.extractAmountRange(normalized);
 
         return this.buildFilters(providerName, dateRange, amountRange);
-    }
-
-    private normalize(value: string): string {
-        return value.trim().replaceAll(/\s+/g, ' ').toLowerCase();
     }
 
     private extractProviderName(query: string): string | undefined {

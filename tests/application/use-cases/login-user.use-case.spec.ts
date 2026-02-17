@@ -5,9 +5,9 @@ import type { LoginRateLimiter } from '@application/ports/login-rate-limiter.js'
 import type { LoginAttemptRepository } from '@application/ports/login-attempt.repository.js';
 import type { PasswordHasher } from '@application/ports/password-hasher.js';
 import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher.js';
-import type { SessionIdGenerator } from '@application/ports/session-id-generator.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { SessionRepository } from '@application/ports/session.repository.js';
-import type { AccessTokenPayload, RefreshTokenPayload, TokenService } from '@application/ports/token.service.js';
+import type { TokenService } from '@application/ports/token.service.js';
 import type { UserRepository } from '@application/ports/user.repository.js';
 import { AuthInvalidCredentialsError } from '@domain/errors/auth-invalid-credentials.error.js';
 import { AuthRateLimitedError } from '@domain/errors/auth-rate-limited.error.js';
@@ -17,26 +17,27 @@ import { Session } from '@domain/entities/session.entity.js';
 import { User, UserStatus } from '@domain/entities/user.entity.js';
 import type { UserProps } from '@domain/entities/user.entity.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
-import { Email } from '@domain/value-objects/email.value-object.js';
 import { fail, ok } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { PasswordHasherStub } from '@tests/shared/stubs/password-hasher.stub.js';
+import { TokenServiceStub } from '@tests/shared/stubs/token-service.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
+import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 
 const testCredentialHashValue = 'hashed-password';
 const validLoginCredential = 'valid-password';
 const invalidLoginCredential = 'wrong-password';
 
 const createUser = (overrides: Partial<UserProps> = {}): User =>
-    User.create({
-        id: 'user-1',
-        email: Email.create('user@example.com'),
-        passwordHash: testCredentialHashValue,
-        status: UserStatus.Active,
-        roles: [UserRole.user()],
-        createdAt: fixedNow,
-        updatedAt: fixedNow,
-        ...overrides,
+    createTestUser({
+        now: fixedNow,
+        overrides: {
+            passwordHash: testCredentialHashValue,
+            status: UserStatus.Active,
+            roles: [UserRole.user()],
+            ...overrides,
+        },
     });
 
 const buildUserRepository = (user: User | null): UserRepository => ({
@@ -70,36 +71,7 @@ class SessionRepositorySpy implements SessionRepository {
     }
 }
 
-class TokenServiceStub implements TokenService {
-    accessPayloads: AccessTokenPayload[] = [];
-    refreshPayloads: RefreshTokenPayload[] = [];
 
-    createAccessToken(payload: AccessTokenPayload) {
-        this.accessPayloads.push(payload);
-        return ok('access-token');
-    }
-
-    createRefreshToken(payload: RefreshTokenPayload) {
-        this.refreshPayloads.push(payload);
-        return ok('refresh-token');
-    }
-
-    verifyAccessToken() {
-        return ok({ userId: 'user-1', roles: [UserRole.user()] });
-    }
-}
-
-class PasswordHasherStub implements PasswordHasher {
-    constructor(private readonly valid: boolean) {}
-
-    async verify(_plainText: string, _hash: string) {
-        return ok(this.valid);
-    }
-
-    async hash(value: string) {
-        return ok(`hashed:${value}`);
-    }
-}
 
 class RefreshTokenHasherStub implements RefreshTokenHasher {
     hash(value: string) {
@@ -119,7 +91,7 @@ class BlockingRateLimiter implements LoginRateLimiter {
     }
 }
 
-class SessionIdGeneratorStub implements SessionIdGenerator {
+class SessionIdGeneratorStub implements IdGenerator {
     constructor(private readonly id: string) {}
 
     generate(): string {
@@ -159,7 +131,7 @@ type UseCaseDependencies = {
     loginRateLimiter: LoginRateLimiter;
     loginAttemptRepository: LoginAttemptRepository;
     dateProvider: DateProvider;
-    sessionIdGenerator: SessionIdGenerator;
+    sessionIdGenerator: IdGenerator;
     accessTokenTtlSeconds: number;
     refreshTokenTtlSeconds: number;
 };

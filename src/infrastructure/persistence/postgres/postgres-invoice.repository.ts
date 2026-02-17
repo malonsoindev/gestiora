@@ -1,15 +1,16 @@
 import type { Sql } from 'postgres';
 import { fail, ok, type Result } from '@shared/result.js';
 import { toDate } from '@shared/date-utils.js';
+import { mapEnumValue } from '@shared/enum-utils.js';
 import { PortError } from '@application/errors/port.error.js';
 import type { InvoiceListFilters, InvoiceListResult, InvoiceRepository } from '@application/ports/invoice.repository.js';
 import {
     Invoice,
-    InvoiceHeaderSource,
     InvoiceHeaderStatus,
     InvoiceStatus,
 } from '@domain/entities/invoice.entity.js';
-import { InvoiceMovement, InvoiceMovementSource, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { InvoiceMovement, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
+import { DataSource } from '@domain/enums/data-source.enum.js';
 import { FileRef } from '@domain/value-objects/file-ref.value-object.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
@@ -100,33 +101,7 @@ export class PostgresInvoiceRepository implements InvoiceRepository {
                 )
             `;
 
-            for (const movement of invoice.movements) {
-                await this.sql`
-                    insert into invoice_movements (
-                        id,
-                        invoice_id,
-                        concepto,
-                        cantidad,
-                        precio,
-                        base_imponible,
-                        iva,
-                        total,
-                        source,
-                        status
-                    ) values (
-                        ${movement.id},
-                        ${invoice.id},
-                        ${movement.concepto},
-                        ${movement.cantidad},
-                        ${movement.precio},
-                        ${movement.baseImponible ?? null},
-                        ${movement.iva ?? null},
-                        ${movement.total},
-                        ${movement.source},
-                        ${movement.status}
-                    )
-                `;
-            }
+            await this.insertMovements(invoice.id, invoice.movements);
 
             return ok(undefined);
         } catch (error) {
@@ -186,33 +161,7 @@ export class PostgresInvoiceRepository implements InvoiceRepository {
                 where invoice_id = ${invoice.id}
             `;
 
-            for (const movement of invoice.movements) {
-                await this.sql`
-                    insert into invoice_movements (
-                        id,
-                        invoice_id,
-                        concepto,
-                        cantidad,
-                        precio,
-                        base_imponible,
-                        iva,
-                        total,
-                        source,
-                        status
-                    ) values (
-                        ${movement.id},
-                        ${invoice.id},
-                        ${movement.concepto},
-                        ${movement.cantidad},
-                        ${movement.precio},
-                        ${movement.baseImponible ?? null},
-                        ${movement.iva ?? null},
-                        ${movement.total},
-                        ${movement.source},
-                        ${movement.status}
-                    )
-                `;
-            }
+            await this.insertMovements(invoice.id, invoice.movements);
 
             return ok(undefined);
         } catch (error) {
@@ -267,6 +216,36 @@ export class PostgresInvoiceRepository implements InvoiceRepository {
         return rows;
     }
 
+    private async insertMovements(invoiceId: string, movements: InvoiceMovement[]): Promise<void> {
+        for (const movement of movements) {
+            await this.sql`
+                insert into invoice_movements (
+                    id,
+                    invoice_id,
+                    concepto,
+                    cantidad,
+                    precio,
+                    base_imponible,
+                    iva,
+                    total,
+                    source,
+                    status
+                ) values (
+                    ${movement.id},
+                    ${invoiceId},
+                    ${movement.concepto},
+                    ${movement.cantidad},
+                    ${movement.precio},
+                    ${movement.baseImponible ?? null},
+                    ${movement.iva ?? null},
+                    ${movement.total},
+                    ${movement.source},
+                    ${movement.status}
+                )
+            `;
+        }
+    }
+
     private mapRowToInvoice(row: InvoiceRow, movements: MovementRow[]): Invoice {
         const mappedMovements = movements.map((movement) =>
             InvoiceMovement.create({
@@ -279,17 +258,17 @@ export class PostgresInvoiceRepository implements InvoiceRepository {
                     : { baseImponible: Number(movement.base_imponible) }),
                 ...(movement.iva === null ? {} : { iva: Number(movement.iva) }),
                 total: Number(movement.total),
-                source: this.mapMovementSource(movement.source),
-                status: this.mapMovementStatus(movement.status),
+                source: mapEnumValue(DataSource, movement.source, DataSource.Manual),
+                status: mapEnumValue(InvoiceMovementStatus, movement.status, InvoiceMovementStatus.Confirmed),
             }),
         );
 
         return Invoice.create({
             id: row.id,
             providerId: row.provider_id,
-            status: this.mapInvoiceStatus(row.status),
-            headerSource: this.mapHeaderSource(row.header_source),
-            headerStatus: this.mapHeaderStatus(row.header_status),
+            status: mapEnumValue(InvoiceStatus, row.status, InvoiceStatus.Draft),
+            headerSource: mapEnumValue(DataSource, row.header_source, DataSource.Manual),
+            headerStatus: mapEnumValue(InvoiceHeaderStatus, row.header_status, InvoiceHeaderStatus.Confirmed),
             ...(row.numero_factura ? { numeroFactura: row.numero_factura } : {}),
             ...(row.fecha_operacion
                 ? { fechaOperacion: InvoiceDate.create(this.normalizeInvoiceDate(row.fecha_operacion)) }
@@ -316,48 +295,6 @@ export class PostgresInvoiceRepository implements InvoiceRepository {
             updatedAt: toDate(row.updated_at),
             ...(row.deleted_at ? { deletedAt: toDate(row.deleted_at) } : {}),
         });
-    }
-
-    private mapInvoiceStatus(value: string): InvoiceStatus {
-        switch (value) {
-            case InvoiceStatus.Draft:
-                return InvoiceStatus.Draft;
-            case InvoiceStatus.Active:
-                return InvoiceStatus.Active;
-            case InvoiceStatus.Inconsistent:
-                return InvoiceStatus.Inconsistent;
-            case InvoiceStatus.Deleted:
-                return InvoiceStatus.Deleted;
-            default:
-                return InvoiceStatus.Draft;
-        }
-    }
-
-    private mapHeaderSource(value: string): InvoiceHeaderSource {
-        return value === InvoiceHeaderSource.Ai ? InvoiceHeaderSource.Ai : InvoiceHeaderSource.Manual;
-    }
-
-    private mapHeaderStatus(value: string): InvoiceHeaderStatus {
-        return value === InvoiceHeaderStatus.Proposed
-            ? InvoiceHeaderStatus.Proposed
-            : InvoiceHeaderStatus.Confirmed;
-    }
-
-    private mapMovementSource(value: string): InvoiceMovementSource {
-        return value === InvoiceMovementSource.Ai ? InvoiceMovementSource.Ai : InvoiceMovementSource.Manual;
-    }
-
-    private mapMovementStatus(value: string): InvoiceMovementStatus {
-        switch (value) {
-            case InvoiceMovementStatus.Proposed:
-                return InvoiceMovementStatus.Proposed;
-            case InvoiceMovementStatus.Rejected:
-                return InvoiceMovementStatus.Rejected;
-            case InvoiceMovementStatus.Confirmed:
-                return InvoiceMovementStatus.Confirmed;
-            default:
-                return InvoiceMovementStatus.Confirmed;
-        }
     }
 
     /**

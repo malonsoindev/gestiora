@@ -7,14 +7,16 @@ import { InvalidUserRolesError } from '@domain/errors/invalid-user-roles.error.j
 import { InvalidUserStatusError } from '@domain/errors/invalid-user-status.error.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 import { buildUserUseCaseSut } from '@tests/shared/helpers/user-use-case-sut.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 
 const fixedNow = new Date('2026-02-03T13:00:00.000Z');
+const dateProvider = new DateProviderStub(fixedNow);
 
 describe('UpdateUserUseCase', () => {
     it('updates name, avatar, roles and status', async () => {
         const { useCase, userRepository } = buildUserUseCaseSut(
             createTestUser({ now: fixedNow }),
-            (userRepository) => new UpdateUserUseCase({ userRepository, now: () => fixedNow }),
+            (userRepository) => new UpdateUserUseCase({ userRepository, dateProvider }),
         );
 
         const result = await useCase.execute({
@@ -36,7 +38,7 @@ describe('UpdateUserUseCase', () => {
     it('rejects empty roles', async () => {
         const { useCase } = buildUserUseCaseSut(
             createTestUser({ now: fixedNow }),
-            (userRepository) => new UpdateUserUseCase({ userRepository, now: () => fixedNow }),
+            (userRepository) => new UpdateUserUseCase({ userRepository, dateProvider }),
         );
 
         const result = await useCase.execute({
@@ -53,7 +55,7 @@ describe('UpdateUserUseCase', () => {
     it('rejects deleted status update', async () => {
         const { useCase } = buildUserUseCaseSut(
             createTestUser({ now: fixedNow }),
-            (userRepository) => new UpdateUserUseCase({ userRepository, now: () => fixedNow }),
+            (userRepository) => new UpdateUserUseCase({ userRepository, dateProvider }),
         );
 
         const result = await useCase.execute({
@@ -70,7 +72,7 @@ describe('UpdateUserUseCase', () => {
     it('returns not found when user does not exist', async () => {
         const { useCase } = buildUserUseCaseSut(
             null,
-            (userRepository) => new UpdateUserUseCase({ userRepository, now: () => fixedNow }),
+            (userRepository) => new UpdateUserUseCase({ userRepository, dateProvider }),
         );
 
         const result = await useCase.execute({ userId: 'missing-user' });

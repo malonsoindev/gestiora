@@ -17,4 +17,18 @@ describe('InvoiceDate', () => {
     it('rejects invalid calendar dates', () => {
         expect(() => InvoiceDate.create('2026-02-30')).toThrow(InvalidInvoiceDateError);
     });
+
+    it('equals returns true for same value', () => {
+        const date1 = InvoiceDate.create('2026-02-05');
+        const date2 = InvoiceDate.create('2026-02-05');
+
+        expect(date1.equals(date2)).toBe(true);
+    });
+
+    it('equals returns false for different values', () => {
+        const date1 = InvoiceDate.create('2026-02-05');
+        const date2 = InvoiceDate.create('2026-03-10');
+
+        expect(date1.equals(date2)).toBe(false);
+    });
 });

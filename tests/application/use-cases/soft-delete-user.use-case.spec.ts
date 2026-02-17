@@ -6,8 +6,10 @@ import { UserNotFoundError } from '@domain/errors/user-not-found.error.js';
 import { SelfDeletionNotAllowedError } from '@domain/errors/self-deletion-not-allowed.error.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 import { buildUserSessionUseCaseSut } from '@tests/shared/helpers/user-use-case-sut.js';
+import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 
 const fixedNow = new Date('2026-02-03T15:00:00.000Z');
+const dateProvider = new DateProviderStub(fixedNow);
 
 describe('SoftDeleteUserUseCase', () => {
     it('marks user as deleted and revokes sessions', async () => {
@@ -18,7 +20,7 @@ describe('SoftDeleteUserUseCase', () => {
                 new SoftDeleteUserUseCase({
                     userRepository,
                     sessionRepository,
-                    now: () => fixedNow,
+                    dateProvider,
                 }),
         );
 
@@ -38,7 +40,7 @@ describe('SoftDeleteUserUseCase', () => {
                 new SoftDeleteUserUseCase({
                     userRepository,
                     sessionRepository,
-                    now: () => fixedNow,
+                    dateProvider,
                 }),
         );
 
@@ -61,7 +63,7 @@ describe('SoftDeleteUserUseCase', () => {
                 new SoftDeleteUserUseCase({
                     userRepository,
                     sessionRepository,
-                    now: () => fixedNow,
+                    dateProvider,
                 }),
         );
 
