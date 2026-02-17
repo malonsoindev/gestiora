@@ -9,6 +9,11 @@
 *   **📄 Documentación de la API (Swagger):** [(https://gestiora.onrender.com/docs](https://gestiora.onrender.com/docs)
 *   **📊 Slides:** [https://docs.google.com/presentation/d/1TUj86iuQ77tMXcwZqaT1rPWroCIgmve71ZtBmObPsJw/edit?usp=sharing](https://docs.google.com/presentation/d/1TUj86iuQ77tMXcwZqaT1rPWroCIgmve71ZtBmObPsJw/edit?usp=sharing)
 
+### Videos demostrativos
+La web de presentación incluye dos videos que documentan el desarrollo del proyecto:
+*   **Anatomía de un Plan:** Explica la planificación, arquitectura y decisiones de diseño del proyecto.
+*   **Demo Técnica:** Demuestra el funcionamiento de la API y sus capacidades.
+
 > **Tip:** El servidor en Render entra en modo de suspension tras un periodo de inactividad. La primera peticion puede tardar entre 30-60 segundos mientras el servicio se reactiva. Las siguientes peticiones responderan con normalidad.
 
 ## 💡 Idea General
