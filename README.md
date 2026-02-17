@@ -9,6 +9,8 @@
 *   **📄 Documentación de la API (Swagger):** [(https://gestiora.onrender.com/docs](https://gestiora.onrender.com/docs)
 *   **📊 Slides:** [https://docs.google.com/presentation/d/1TUj86iuQ77tMXcwZqaT1rPWroCIgmve71ZtBmObPsJw/edit?usp=sharing](https://docs.google.com/presentation/d/1TUj86iuQ77tMXcwZqaT1rPWroCIgmve71ZtBmObPsJw/edit?usp=sharing)
 
+> **Tip:** El servidor en Render entra en modo de suspension tras un periodo de inactividad. La primera peticion puede tardar entre 30-60 segundos mientras el servicio se reactiva. Las siguientes peticiones responderan con normalidad.
+
 ## 💡 Idea General
 El proyecto nace para resolver la lentitud de los procesos manuales y la dispersión de información en documentos no estructurados. Gestiora permite gestionar el ciclo de vida de una factura (desde su recepción hasta su archivo histórico), asegurando que los datos sean siempre accesibles y veraces, ya sean procesados por una IA o introducidos manualmente. La idea surge al observar cuellos de botella recurrentes en administracion financiera: demasiado tiempo perdido en tareas repetitivas, baja trazabilidad y errores en la captura de datos.
 
@@ -54,31 +56,58 @@ La organizacion del codigo refleja Clean Architecture, separando responsabilidad
 *   `src/composition`: Composicion y wiring de dependencias.
 
 ## 🛠️ Stack Tecnológico
+*   **Lenguaje:** TypeScript (strict mode).
 *   **Entorno:** Node.js.
 *   **Framework Web:** Fastify.
 *   **Persistencia de datos:**
     *   **Desarrollo:** Repositorios **in-memory** para un prototipado y testeo ágil de la lógica de negocio.
     *   **Producción:** Base de datos **PostgreSQL** en **Supabase** (nuestro despliegue actual).
-*   **IA:** **Genkit** para la extracción estructurada de datos y motor RAG.
+*   **Testing:** Vitest.
 *   **Seguridad:** JSON Web Tokens (JWT) y Bcrypt.
+*   **IA:** **Genkit** para la extracción estructurada de datos y motor RAG.
+*   **Cliente IA:** OpenCode para asistencia en desarrollo.
+*   **Modelos IA:**
+    *   **GPT-5.2 Codex** — Desarrollo principal en local y tareas automaticas en segundo plano (web).
+    *   **Claude Opus 4.5** — Analisis, refactorizacion y optimizacion de codigo.
 
 ## ⚙️ Instalación y Ejecución
 1.  Clonar el repositorio.
 2.  Instalar dependencias: `npm install`.
-3.  Copiar `.env.example` a `.env` y configurar las variables necesarias.
-4.  Variables minimas recomendadas:
-    *   `JWT_ACCESS_SECRET` y `JWT_REFRESH_SECRET`.
-    *   `DATABASE_TYPE` (in-memory o postgres) y `DATABASE_URL` si usas Postgres.
-    *   `AI_AGENT_TYPE=genkit` y las credenciales del proveedor (`OPENAI_API_KEY`/`PROVIDER_NAME`) si activas IA.
-5.  **Desplegar la base de datos:** `npm run db:deploy`.
-6.  **Cargar datos iniciales (seed):** `npm run db:seed`.
-7.  Iniciar el servidor en desarrollo: `npm run dev`.
+3.  Copiar `.env.example` a `.env` y configurar las variables necesarias (ver tabla abajo).
+4.  **Desplegar la base de datos:** `npm run db:deploy`.
+5.  **Cargar datos iniciales (seed):** `npm run db:seed`.
+6.  Iniciar el servidor en desarrollo: `npm run dev`.
 
-> **Importante:** Los pasos 5 y 6 son obligatorios si usas `DATABASE_TYPE=postgres`.
+> **Importante:** Los pasos 4 y 5 son obligatorios si usas `DATABASE_TYPE=postgres`.
 > - `db:deploy` crea las tablas y estructura de la base de datos.
 > - `db:seed` genera dos usuarios de prueba, uno por cada rol.
 >
 > **Nota:** Si usas `DATABASE_TYPE=in-memory`, el seed se ejecuta automaticamente al iniciar el servidor. No es necesario ejecutar `db:deploy` ni `db:seed`.
+
+### Variables de entorno
+
+| Variable | Requerida | Valor por defecto | Descripcion |
+|----------|-----------|-------------------|-------------|
+| `JWT_ACCESS_SECRET` | **Si** | - | Clave secreta para firmar tokens de acceso JWT |
+| `JWT_REFRESH_SECRET` | **Si** | - | Clave secreta para firmar tokens de refresco JWT |
+| `PORT` | No | `3000` | Puerto en el que escucha el servidor |
+| `NODE_ENV` | No | `development` | Entorno de ejecucion (`development`, `production`, `test`) |
+| `CORS` | No | `false` | Habilitar CORS (`true`, `false`, lista JSON de origenes, o string) |
+| `SWAGGER` | No | `false` | Exponer Swagger UI en `/docs` (`true`, `false`) |
+| `DATABASE_TYPE` | No | `in-memory` | Tipo de base de datos (`in-memory`, `postgres`) |
+| `DATABASE_URL` | Condicional | - | URL de conexion PostgreSQL. **Requerida si `DATABASE_TYPE=postgres`** |
+| `STORAGE_TYPE` | No | `in-memory` | Tipo de almacenamiento de archivos (`in-memory`, `local`) |
+| `STORAGE_PATH` | No | `storage` | Ruta para almacenamiento local de archivos |
+| `AI_AGENT_TYPE` | No | `stub` | Tipo de agente IA (`stub`, `stub-error`, `genkit`) |
+| `OPENAI_API_KEY` | Condicional | - | API Key de OpenAI. **Requerida si `AI_AGENT_TYPE=genkit`** |
+| `OAI_MODEL_NAME` | No | - | Nombre del modelo OpenAI a utilizar |
+| `PROVIDER_NAME` | No | - | Proveedor de IA (`OpenAI`, `Gemini`) |
+| `IA_TYPE` | No | `oai` | Tipo de cliente IA (`oai`, `local`, `google`) |
+| `RAG_INDEX_NAME` | No | - | Nombre del indice para RAG |
+| `RAG_PROMPT_DIR` | No | `prompts` | Directorio donde se encuentran los prompts |
+| `RAG_EMBEDDER_MODEL` | No | - | Modelo de embeddings para RAG |
+
+> **Minimas recomendadas:** `JWT_ACCESS_SECRET` y `JWT_REFRESH_SECRET` son obligatorias para que el servidor arranque. Si usas PostgreSQL, tambien necesitas `DATABASE_URL`.
 
 ### Credenciales por defecto (seed)
 
