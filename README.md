@@ -119,3 +119,10 @@ La organizacion del codigo refleja Clean Architecture, separando responsabilidad
 ### Plantilla de llamadas a la API
 
 En la carpeta `docs/` se encuentra el fichero [`curl.md`](docs/curl.md) con la plantilla completa de llamadas a todos los endpoints de la API (34 en total), incluyendo ejemplos para **Bash** y **PowerShell**.
+
+### Documentos de prueba
+
+En la carpeta [`demo/`](demo/) se incluyen facturas PDF de ejemplo para testear el producto:
+*   `ficticia1.pdf`
+*   `ficticia2.pdf`
+*   `ficticia3.pdf`
