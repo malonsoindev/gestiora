@@ -277,6 +277,13 @@ export const adminUsersSchemas = {
         },
         response: {
             204: { type: 'null' },
+            400: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
             403: {
                 type: 'object',
                 required: ['error'],
@@ -304,6 +311,13 @@ export const adminUsersSchemas = {
         },
         response: {
             204: { type: 'null' },
+            400: {
+                type: 'object',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string' },
+                },
+            },
             403: {
                 type: 'object',
                 required: ['error'],

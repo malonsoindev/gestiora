@@ -298,6 +298,12 @@ paths:
       responses:
         '204':
           description: User deleted
+        '400':
+          description: Self deletion not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
           content:
@@ -370,6 +376,12 @@ paths:
       responses:
         '204':
           description: Sessions revoked
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
           content:
