@@ -132,9 +132,9 @@ describeIf('PostgresInvoiceRepository', () => {
     });
 
     beforeEach(async () => {
-        await sql`delete from invoice_movements where invoice_id in ('invoice-1', 'invoice-2')`;
-        await sql`delete from invoices where id in ('invoice-1', 'invoice-2')`;
-        await sql`delete from providers where id in ('provider-1', 'provider-2')`;
+        await sql`delete from invoice_movements`;
+        await sql`delete from invoices`;
+        await sql`delete from providers`;
         await sql`
             insert into providers (
                 id,
