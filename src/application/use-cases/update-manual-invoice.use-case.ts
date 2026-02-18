@@ -6,9 +6,8 @@ import type { DateProvider } from '@application/ports/date-provider.js';
 import type { PortError } from '@application/errors/port.error.js';
 import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
-import type { Invoice } from '@domain/entities/invoice.entity.js';
 import { InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
-import { createMovementsFromInput, mapMovementsToDto } from '@application/shared/movement-mappers.js';
+import { createMovementsFromInput, mapInvoiceToDetailDto } from '@application/shared/movement-mappers.js';
 import { DataSource } from '@domain/enums/data-source.enum.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
 import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status.error.js';
@@ -102,38 +101,6 @@ export class UpdateManualInvoiceUseCase {
             return fail(reindexResult.error);
         }
 
-        return ok(this.mapResponse(updated));
-    }
-
-
-    private mapResponse(invoice: Invoice): UpdateManualInvoiceResponse {
-        return {
-            invoiceId: invoice.id,
-            providerId: invoice.providerId,
-            status: invoice.status,
-            ...(invoice.fileRef === undefined
-                ? {}
-                : {
-                      fileRef: {
-                          storageKey: invoice.fileRef.storageKey,
-                          filename: invoice.fileRef.filename,
-                          mimeType: invoice.fileRef.mimeType,
-                          sizeBytes: invoice.fileRef.sizeBytes,
-                          checksum: invoice.fileRef.checksum,
-                      },
-                  }),
-            ...(invoice.numeroFactura === undefined ? {} : { numeroFactura: invoice.numeroFactura }),
-            ...(invoice.fechaOperacion === undefined ? {} : { fechaOperacion: invoice.fechaOperacion }),
-            ...(invoice.fechaVencimiento === undefined ? {} : { fechaVencimiento: invoice.fechaVencimiento }),
-            ...(invoice.baseImponible === undefined ? {} : { baseImponible: invoice.baseImponible }),
-            ...(invoice.iva === undefined ? {} : { iva: invoice.iva }),
-            ...(invoice.total === undefined ? {} : { total: invoice.total }),
-            headerSource: invoice.headerSource,
-            headerStatus: invoice.headerStatus,
-            createdAt: invoice.createdAt.toISOString(),
-            updatedAt: invoice.updatedAt.toISOString(),
-            ...(invoice.deletedAt === undefined ? {} : { deletedAt: invoice.deletedAt.toISOString() }),
-            movements: mapMovementsToDto(invoice.movements),
-        };
+        return ok(mapInvoiceToDetailDto(updated));
     }
 }

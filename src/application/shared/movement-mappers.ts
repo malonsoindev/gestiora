@@ -1,5 +1,6 @@
 import { InvoiceMovement, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
 import { DataSource } from '@domain/enums/data-source.enum.js';
+import type { Invoice } from '@domain/entities/invoice.entity.js';
 
 /**
  * Input shape for creating an InvoiceMovement from external data (request/extraction).
@@ -82,4 +83,69 @@ export function mapMovementsToDto(movements: InvoiceMovement[]): MovementDto[] {
         source: movement.source,
         status: movement.status,
     }));
+}
+
+/**
+ * Output shape for invoice detail DTOs in responses.
+ */
+export type InvoiceDetailDto = {
+    invoiceId: string;
+    providerId: string;
+    status: 'DRAFT' | 'ACTIVE' | 'INCONSISTENT' | 'DELETED';
+    fileRef?: {
+        storageKey: string;
+        filename: string;
+        mimeType: string;
+        sizeBytes: number;
+        checksum: string;
+    };
+    numeroFactura?: string;
+    fechaOperacion?: string;
+    fechaVencimiento?: string;
+    baseImponible?: number;
+    iva?: number;
+    total?: number;
+    headerSource: 'MANUAL' | 'AI';
+    headerStatus: 'PROPOSED' | 'CONFIRMED';
+    createdAt: string;
+    updatedAt: string;
+    deletedAt?: string;
+    movements: MovementDto[];
+};
+
+/**
+ * Maps an Invoice entity to a detail DTO for API responses.
+ *
+ * @param invoice - The Invoice entity to map
+ * @returns Invoice detail DTO
+ */
+export function mapInvoiceToDetailDto(invoice: Invoice): InvoiceDetailDto {
+    return {
+        invoiceId: invoice.id,
+        providerId: invoice.providerId,
+        status: invoice.status,
+        ...(invoice.fileRef === undefined
+            ? {}
+            : {
+                  fileRef: {
+                      storageKey: invoice.fileRef.storageKey,
+                      filename: invoice.fileRef.filename,
+                      mimeType: invoice.fileRef.mimeType,
+                      sizeBytes: invoice.fileRef.sizeBytes,
+                      checksum: invoice.fileRef.checksum,
+                  },
+              }),
+        ...(invoice.numeroFactura === undefined ? {} : { numeroFactura: invoice.numeroFactura }),
+        ...(invoice.fechaOperacion === undefined ? {} : { fechaOperacion: invoice.fechaOperacion }),
+        ...(invoice.fechaVencimiento === undefined ? {} : { fechaVencimiento: invoice.fechaVencimiento }),
+        ...(invoice.baseImponible === undefined ? {} : { baseImponible: invoice.baseImponible }),
+        ...(invoice.iva === undefined ? {} : { iva: invoice.iva }),
+        ...(invoice.total === undefined ? {} : { total: invoice.total }),
+        headerSource: invoice.headerSource,
+        headerStatus: invoice.headerStatus,
+        createdAt: invoice.createdAt.toISOString(),
+        updatedAt: invoice.updatedAt.toISOString(),
+        ...(invoice.deletedAt === undefined ? {} : { deletedAt: invoice.deletedAt.toISOString() }),
+        movements: mapMovementsToDto(invoice.movements),
+    };
 }
