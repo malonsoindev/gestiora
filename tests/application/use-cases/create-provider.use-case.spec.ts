@@ -21,6 +21,7 @@ import {
     FailingProviderRepositoryOnMethod,
 } from '@tests/shared/stubs/failing-stubs.js';
 
+/** Creates a test provider entity with default active status and CIF */
 const createProviderEntity = () =>
     createTestProvider({
         now: fixedNow,
