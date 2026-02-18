@@ -23,6 +23,7 @@ import { fail, ok } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { PasswordHasherStub } from '@tests/shared/stubs/password-hasher.stub.js';
 import { TokenServiceStub } from '@tests/shared/stubs/token-service.stub.js';
+import { RefreshTokenHasherStub } from '@tests/shared/stubs/refresh-token-hasher.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
@@ -72,14 +73,6 @@ class SessionRepositorySpy implements SessionRepository {
 
     async revokeByUserId() {
         return ok(undefined);
-    }
-}
-
-
-
-class RefreshTokenHasherStub implements RefreshTokenHasher {
-    hash(value: string) {
-        return ok(`hashed:${value}`);
     }
 }
 

@@ -16,6 +16,7 @@ import { fail, ok } from '@shared/result.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { TokenServiceStub } from '@tests/shared/stubs/token-service.stub.js';
+import { RefreshTokenHasherStub } from '@tests/shared/stubs/refresh-token-hasher.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import {
     FailingDateProvider,
@@ -46,12 +47,6 @@ class SessionRepositorySpy implements SessionRepository {
 
     async revokeByUserId(_userId: string) {
         return ok(undefined);
-    }
-}
-
-class RefreshTokenHasherStub implements RefreshTokenHasher {
-    hash(value: string) {
-        return ok(`hashed:${value}`);
     }
 }
 

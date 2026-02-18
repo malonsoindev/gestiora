@@ -27,6 +27,43 @@ export interface LoginAttemptRepositoryContractContext {
     testPrefix: string;
 }
 
+type AttemptKey = { email: string; ip?: string };
+type AttemptRecord = { key: AttemptKey; succeeded: boolean; timestamp: Date };
+
+/**
+ * Helper to record multiple attempts and verify the failed count.
+ */
+async function recordAndExpectCount(
+    repository: LoginAttemptRepository,
+    attempts: AttemptRecord[],
+    countKey: AttemptKey,
+    windowMinutes: number,
+    expectedCount: number,
+): Promise<void> {
+    for (const attempt of attempts) {
+        const result = await repository.recordAttempt(attempt.key, attempt.succeeded, attempt.timestamp);
+        expect(result.success).toBe(true);
+    }
+
+    await expectFailedCount(repository, countKey, windowMinutes, expectedCount);
+}
+
+/**
+ * Helper to verify the failed attempts count.
+ */
+async function expectFailedCount(
+    repository: LoginAttemptRepository,
+    key: AttemptKey,
+    windowMinutes: number,
+    expectedCount: number,
+): Promise<void> {
+    const countResult = await repository.countFailedAttempts(key, windowMinutes);
+    expect(countResult.success).toBe(true);
+    if (countResult.success) {
+        expect(countResult.value).toBe(expectedCount);
+    }
+}
+
 /**
  * Contract tests for LoginAttemptRepository implementations.
  * These tests verify that any implementation correctly fulfills the LoginAttemptRepository interface.
@@ -40,60 +77,40 @@ export function loginAttemptRepositoryContract(ctx: LoginAttemptRepositoryContra
         it('records a successful login attempt', async () => {
             const repository = ctx.getRepository();
             const timestamp = new Date();
-            const result = await repository.recordAttempt(
-                { email: TEST_EMAILS.one, ip: TEST_IPS.one },
-                true,
-                timestamp
-            );
 
-            expect(result.success).toBe(true);
-
-            // Verify successful attempts are not counted as failed
-            const countResult = await repository.countFailedAttempts(
+            await recordAndExpectCount(
+                repository,
+                [{ key: { email: TEST_EMAILS.one, ip: TEST_IPS.one }, succeeded: true, timestamp }],
                 { email: TEST_EMAILS.one, ip: TEST_IPS.one },
-                60
+                60,
+                0,
             );
-            expect(countResult.success).toBe(true);
-            if (countResult.success) {
-                expect(countResult.value).toBe(0);
-            }
         });
 
         it('records a failed login attempt', async () => {
             const repository = ctx.getRepository();
             const timestamp = new Date();
-            const result = await repository.recordAttempt(
-                { email: TEST_EMAILS.one, ip: TEST_IPS.one },
-                false,
-                timestamp
-            );
 
-            expect(result.success).toBe(true);
-
-            // Verify it was recorded
-            const countResult = await repository.countFailedAttempts(
+            await recordAndExpectCount(
+                repository,
+                [{ key: { email: TEST_EMAILS.one, ip: TEST_IPS.one }, succeeded: false, timestamp }],
                 { email: TEST_EMAILS.one, ip: TEST_IPS.one },
-                60
+                60,
+                1,
             );
-            expect(countResult.success).toBe(true);
-            if (countResult.success) {
-                expect(countResult.value).toBe(1);
-            }
         });
 
         it('records attempt without IP', async () => {
             const repository = ctx.getRepository();
             const timestamp = new Date();
-            const result = await repository.recordAttempt({ email: TEST_EMAILS.one }, false, timestamp);
 
-            expect(result.success).toBe(true);
-
-            // Count without IP filter should find it
-            const countResult = await repository.countFailedAttempts({ email: TEST_EMAILS.one }, 60);
-            expect(countResult.success).toBe(true);
-            if (countResult.success) {
-                expect(countResult.value).toBe(1);
-            }
+            await recordAndExpectCount(
+                repository,
+                [{ key: { email: TEST_EMAILS.one }, succeeded: false, timestamp }],
+                { email: TEST_EMAILS.one },
+                60,
+                1,
+            );
         });
 
         it('counts failed attempts within time window', async () => {
@@ -101,22 +118,19 @@ export function loginAttemptRepositoryContract(ctx: LoginAttemptRepositoryContra
             const now = new Date();
             const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
             const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
+            const key = { email: TEST_EMAILS.one, ip: TEST_IPS.one };
 
-            // Record 3 failed attempts at different times
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.one }, false, fiveMinutesAgo);
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.one }, false, fiveMinutesAgo);
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.one }, false, tenMinutesAgo);
-
-            // Count within 7-minute window (should find 2)
-            const countResult = await repository.countFailedAttempts(
-                { email: TEST_EMAILS.one, ip: TEST_IPS.one },
-                7
+            await recordAndExpectCount(
+                repository,
+                [
+                    { key, succeeded: false, timestamp: fiveMinutesAgo },
+                    { key, succeeded: false, timestamp: fiveMinutesAgo },
+                    { key, succeeded: false, timestamp: tenMinutesAgo },
+                ],
+                key,
+                7,
+                2,
             );
-
-            expect(countResult.success).toBe(true);
-            if (countResult.success) {
-                expect(countResult.value).toBe(2);
-            }
         });
 
         it('counts failed attempts within larger time window', async () => {
@@ -124,115 +138,103 @@ export function loginAttemptRepositoryContract(ctx: LoginAttemptRepositoryContra
             const now = new Date();
             const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
             const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
+            const key = { email: TEST_EMAILS.one, ip: TEST_IPS.one };
 
-            // Record 3 failed attempts
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.one }, false, fiveMinutesAgo);
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.one }, false, fiveMinutesAgo);
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.one }, false, tenMinutesAgo);
-
-            // Count within 15-minute window (should find all 3)
-            const countResult = await repository.countFailedAttempts(
-                { email: TEST_EMAILS.one, ip: TEST_IPS.one },
-                15
+            await recordAndExpectCount(
+                repository,
+                [
+                    { key, succeeded: false, timestamp: fiveMinutesAgo },
+                    { key, succeeded: false, timestamp: fiveMinutesAgo },
+                    { key, succeeded: false, timestamp: tenMinutesAgo },
+                ],
+                key,
+                15,
+                3,
             );
-
-            expect(countResult.success).toBe(true);
-            if (countResult.success) {
-                expect(countResult.value).toBe(3);
-            }
         });
 
         it('does not count successful attempts', async () => {
             const repository = ctx.getRepository();
             const now = new Date();
+            const key = { email: TEST_EMAILS.one, ip: TEST_IPS.one };
 
-            // Record 2 failed and 1 successful
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.one }, false, now);
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.one }, false, now);
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.one }, true, now);
-
-            const countResult = await repository.countFailedAttempts(
-                { email: TEST_EMAILS.one, ip: TEST_IPS.one },
-                60
+            await recordAndExpectCount(
+                repository,
+                [
+                    { key, succeeded: false, timestamp: now },
+                    { key, succeeded: false, timestamp: now },
+                    { key, succeeded: true, timestamp: now },
+                ],
+                key,
+                60,
+                2,
             );
-
-            expect(countResult.success).toBe(true);
-            if (countResult.success) {
-                expect(countResult.value).toBe(2); // Only failed attempts
-            }
         });
 
         it('filters by IP when provided', async () => {
             const repository = ctx.getRepository();
             const now = new Date();
+            const keyIpOne = { email: TEST_EMAILS.one, ip: TEST_IPS.one };
+            const keyIpTwo = { email: TEST_EMAILS.one, ip: TEST_IPS.two };
 
-            // Record failed attempts from different IPs
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.one }, false, now);
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.one }, false, now);
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.two }, false, now);
-
-            // Count for IP one only
-            const countResult = await repository.countFailedAttempts(
-                { email: TEST_EMAILS.one, ip: TEST_IPS.one },
-                60
+            await recordAndExpectCount(
+                repository,
+                [
+                    { key: keyIpOne, succeeded: false, timestamp: now },
+                    { key: keyIpOne, succeeded: false, timestamp: now },
+                    { key: keyIpTwo, succeeded: false, timestamp: now },
+                ],
+                keyIpOne,
+                60,
+                2,
             );
-
-            expect(countResult.success).toBe(true);
-            if (countResult.success) {
-                expect(countResult.value).toBe(2);
-            }
         });
 
         it('counts all IPs when IP not provided in key', async () => {
             const repository = ctx.getRepository();
             const now = new Date();
 
-            // Record failed attempts from different IPs
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.one }, false, now);
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.two }, false, now);
-            await repository.recordAttempt({ email: TEST_EMAILS.one }, false, now); // No IP
-
-            // Count without IP filter (should count all)
-            const countResult = await repository.countFailedAttempts({ email: TEST_EMAILS.one }, 60);
-
-            expect(countResult.success).toBe(true);
-            if (countResult.success) {
-                expect(countResult.value).toBe(3);
-            }
+            await recordAndExpectCount(
+                repository,
+                [
+                    { key: { email: TEST_EMAILS.one, ip: TEST_IPS.one }, succeeded: false, timestamp: now },
+                    { key: { email: TEST_EMAILS.one, ip: TEST_IPS.two }, succeeded: false, timestamp: now },
+                    { key: { email: TEST_EMAILS.one }, succeeded: false, timestamp: now },
+                ],
+                { email: TEST_EMAILS.one },
+                60,
+                3,
+            );
         });
 
         it('isolates counts by email', async () => {
             const repository = ctx.getRepository();
             const now = new Date();
+            const keyEmailOne = { email: TEST_EMAILS.one, ip: TEST_IPS.one };
+            const keyEmailTwo = { email: TEST_EMAILS.two, ip: TEST_IPS.one };
 
-            // Record attempts for different emails
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.one }, false, now);
-            await repository.recordAttempt({ email: TEST_EMAILS.one, ip: TEST_IPS.one }, false, now);
-            await repository.recordAttempt({ email: TEST_EMAILS.two, ip: TEST_IPS.one }, false, now);
-
-            // Count for email one only
-            const countResult = await repository.countFailedAttempts(
-                { email: TEST_EMAILS.one, ip: TEST_IPS.one },
-                60
+            await recordAndExpectCount(
+                repository,
+                [
+                    { key: keyEmailOne, succeeded: false, timestamp: now },
+                    { key: keyEmailOne, succeeded: false, timestamp: now },
+                    { key: keyEmailTwo, succeeded: false, timestamp: now },
+                ],
+                keyEmailOne,
+                60,
+                2,
             );
-
-            expect(countResult.success).toBe(true);
-            if (countResult.success) {
-                expect(countResult.value).toBe(2);
-            }
         });
 
         it('returns zero when no failed attempts exist', async () => {
             const repository = ctx.getRepository();
-            const countResult = await repository.countFailedAttempts(
-                { email: TEST_EMAILS.one, ip: TEST_IPS.one },
-                60
-            );
 
-            expect(countResult.success).toBe(true);
-            if (countResult.success) {
-                expect(countResult.value).toBe(0);
-            }
+            await expectFailedCount(
+                repository,
+                { email: TEST_EMAILS.one, ip: TEST_IPS.one },
+                60,
+                0,
+            );
         });
     });
 }
