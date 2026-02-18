@@ -1,6 +1,19 @@
+import {
+    securityBearer,
+    error400,
+    error401,
+    error404,
+    response204,
+    paginationQueryProperties,
+    paginationResponseProperties,
+    providerStatusEnum,
+    providerIdParams,
+    providerDetailResponse,
+} from './shared-schemas.js';
+
 export const providersSchemas = {
     create: {
-        security: [{ bearerAuth: [] }],
+        security: securityBearer,
         body: {
             type: 'object',
             required: ['razonSocial'],
@@ -12,7 +25,7 @@ export const providersSchemas = {
                 poblacion: { type: 'string' },
                 provincia: { type: 'string' },
                 pais: { type: 'string' },
-                status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED', 'DRAFT'] },
+                status: providerStatusEnum,
             },
         },
         response: {
@@ -23,32 +36,19 @@ export const providersSchemas = {
                     providerId: { type: 'string' },
                 },
             },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...error400,
+            ...error401,
         },
     },
     list: {
-        security: [{ bearerAuth: [] }],
+        security: securityBearer,
         querystring: {
             type: 'object',
             additionalProperties: false,
             properties: {
-                status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED', 'DRAFT'] },
+                status: providerStatusEnum,
                 q: { type: 'string' },
-                page: { type: 'integer', minimum: 1 },
-                pageSize: { type: 'integer', minimum: 1 },
+                ...paginationQueryProperties,
             },
         },
         response: {
@@ -64,76 +64,28 @@ export const providersSchemas = {
                             properties: {
                                 providerId: { type: 'string' },
                                 razonSocial: { type: 'string' },
-                                status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED', 'DRAFT'] },
+                                status: providerStatusEnum,
                             },
                         },
                     },
-                    page: { type: 'integer' },
-                    pageSize: { type: 'integer' },
-                    total: { type: 'integer' },
+                    ...paginationResponseProperties,
                 },
             },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...error401,
         },
     },
     detail: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['providerId'],
-            properties: {
-                providerId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: providerIdParams,
         response: {
-            200: {
-                type: 'object',
-                required: ['providerId', 'razonSocial', 'status', 'createdAt', 'updatedAt'],
-                properties: {
-                    providerId: { type: 'string' },
-                    razonSocial: { type: 'string' },
-                    cif: { type: 'string' },
-                    direccion: { type: 'string' },
-                    poblacion: { type: 'string' },
-                    provincia: { type: 'string' },
-                    pais: { type: 'string' },
-                    status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED', 'DRAFT'] },
-                    createdAt: { type: 'string', format: 'date-time' },
-                    updatedAt: { type: 'string', format: 'date-time' },
-                    deletedAt: { type: 'string', format: 'date-time', nullable: true },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            200: providerDetailResponse,
+            ...error401,
+            ...error404,
         },
     },
     update: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['providerId'],
-            properties: {
-                providerId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: providerIdParams,
         body: {
             type: 'object',
             additionalProperties: false,
@@ -147,129 +99,37 @@ export const providersSchemas = {
             },
         },
         response: {
-            200: {
-                type: 'object',
-                required: ['providerId', 'razonSocial', 'status', 'createdAt', 'updatedAt'],
-                properties: {
-                    providerId: { type: 'string' },
-                    razonSocial: { type: 'string' },
-                    cif: { type: 'string' },
-                    direccion: { type: 'string' },
-                    poblacion: { type: 'string' },
-                    provincia: { type: 'string' },
-                    pais: { type: 'string' },
-                    status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED', 'DRAFT'] },
-                    createdAt: { type: 'string', format: 'date-time' },
-                    updatedAt: { type: 'string', format: 'date-time' },
-                    deletedAt: { type: 'string', format: 'date-time', nullable: true },
-                },
-            },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            200: providerDetailResponse,
+            ...error400,
+            ...error401,
+            ...error404,
         },
     },
     updateStatus: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['providerId'],
-            properties: {
-                providerId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: providerIdParams,
         body: {
             type: 'object',
             required: ['status'],
             additionalProperties: false,
             properties: {
-                status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED', 'DRAFT'] },
+                status: providerStatusEnum,
             },
         },
         response: {
-            200: {
-                type: 'object',
-                required: ['providerId', 'razonSocial', 'status', 'createdAt', 'updatedAt'],
-                properties: {
-                    providerId: { type: 'string' },
-                    razonSocial: { type: 'string' },
-                    cif: { type: 'string' },
-                    direccion: { type: 'string' },
-                    poblacion: { type: 'string' },
-                    provincia: { type: 'string' },
-                    pais: { type: 'string' },
-                    status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED', 'DRAFT'] },
-                    createdAt: { type: 'string', format: 'date-time' },
-                    updatedAt: { type: 'string', format: 'date-time' },
-                    deletedAt: { type: 'string', format: 'date-time', nullable: true },
-                },
-            },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            200: providerDetailResponse,
+            ...error400,
+            ...error401,
+            ...error404,
         },
     },
     softDelete: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['providerId'],
-            properties: {
-                providerId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: providerIdParams,
         response: {
-            204: { type: 'null' },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...response204,
+            ...error401,
+            ...error404,
         },
     },
 };

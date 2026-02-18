@@ -12,6 +12,8 @@ import { UserStatus } from '@domain/entities/user.entity.js';
 import { respondError } from '@infrastructure/delivery/http/errors/respond-error.js';
 import { getPaginationParams } from '@shared/pagination.js';
 
+type ApiUserStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED';
+
 export type AdminCreateUserBody = {
     email: string;
     password: string;
@@ -285,7 +287,7 @@ export class AdminUsersController {
         }
     }
 
-    private mapStatus(value: 'ACTIVE' | 'INACTIVE' | 'DELETED'): UserStatus | null {
+    private mapStatus(value: AdminUserStatus): UserStatus | null {
         switch (value) {
             case 'ACTIVE':
                 return UserStatus.Active;
@@ -298,7 +300,7 @@ export class AdminUsersController {
         }
     }
 
-    private mapStatusToApi(status: UserStatus): 'ACTIVE' | 'INACTIVE' | 'DELETED' {
+    private mapStatusToApi(status: UserStatus): ApiUserStatus {
         switch (status) {
             case UserStatus.Active:
                 return 'ACTIVE';

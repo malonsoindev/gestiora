@@ -23,6 +23,7 @@ import { fail, ok } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { PasswordHasherStub } from '@tests/shared/stubs/password-hasher.stub.js';
 import { TokenServiceStub } from '@tests/shared/stubs/token-service.stub.js';
+import { RefreshTokenHasherStub } from '@tests/shared/stubs/refresh-token-hasher.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
@@ -34,15 +35,10 @@ import {
     FailingRefreshTokenHasher,
 } from '@tests/shared/stubs/failing-stubs.js';
 
-const testCredentialHashValue = 'hashed-password';
-const validLoginCredential = 'valid-password';
-const invalidLoginCredential = 'wrong-password';
-
 const createUser = (overrides: Partial<UserProps> = {}): User =>
     createTestUser({
         now: fixedNow,
         overrides: {
-            passwordHash: testCredentialHashValue,
             status: UserStatus.Active,
             roles: [UserRole.user()],
             ...overrides,
@@ -77,14 +73,6 @@ class SessionRepositorySpy implements SessionRepository {
 
     async revokeByUserId() {
         return ok(undefined);
-    }
-}
-
-
-
-class RefreshTokenHasherStub implements RefreshTokenHasher {
-    hash(value: string) {
-        return ok(`hashed:${value}`);
     }
 }
 
@@ -257,7 +245,7 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
 
 const buildLoginRequest = (overrides: Partial<{ email: string; password: string; ip: string; userAgent: string }> = {}) => ({
     email: 'user@example.com',
-    password: validLoginCredential,
+    password: 'valid-password',
     ip: '127.0.0.1',
     userAgent: 'unit-test',
     ...overrides,
@@ -298,7 +286,7 @@ describe('LoginUserUseCase', () => {
 
         const result = await useCase.execute(buildLoginRequest({
             email: user.email,
-            password: invalidLoginCredential,
+            password: 'wrong-password',
         }));
 
         expect(result.success).toBe(false);

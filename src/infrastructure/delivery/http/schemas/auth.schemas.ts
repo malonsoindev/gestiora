@@ -1,3 +1,10 @@
+import {
+    error400WithMessage,
+    error401,
+    error429,
+    response204,
+} from './shared-schemas.js';
+
 export const authSchemas = {
     login: {
         body: {
@@ -10,14 +17,6 @@ export const authSchemas = {
             },
         },
         response: {
-            400: {
-                type: 'object',
-                required: ['error', 'message'],
-                properties: {
-                    error: { type: 'string' },
-                    message: { type: 'string' },
-                },
-            },
             200: {
                 type: 'object',
                 required: ['accessToken', 'refreshToken', 'expiresIn'],
@@ -27,20 +26,9 @@ export const authSchemas = {
                     expiresIn: { type: 'number' },
                 },
             },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            429: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...error400WithMessage,
+            ...error401,
+            ...error429,
         },
     },
     refresh: {
@@ -53,14 +41,6 @@ export const authSchemas = {
             },
         },
         response: {
-            400: {
-                type: 'object',
-                required: ['error', 'message'],
-                properties: {
-                    error: { type: 'string' },
-                    message: { type: 'string' },
-                },
-            },
             200: {
                 type: 'object',
                 required: ['accessToken', 'expiresIn'],
@@ -70,13 +50,8 @@ export const authSchemas = {
                     expiresIn: { type: 'number' },
                 },
             },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...error400WithMessage,
+            ...error401,
         },
     },
     logout: {
@@ -89,22 +64,9 @@ export const authSchemas = {
             },
         },
         response: {
-            400: {
-                type: 'object',
-                required: ['error', 'message'],
-                properties: {
-                    error: { type: 'string' },
-                    message: { type: 'string' },
-                },
-            },
-            204: { type: 'null' },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...response204,
+            ...error400WithMessage,
+            ...error401,
         },
     },
 };

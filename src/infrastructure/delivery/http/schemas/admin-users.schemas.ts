@@ -1,6 +1,23 @@
+import {
+    securityBearer,
+    error400,
+    error403,
+    error404,
+    response204,
+    paginationQueryProperties,
+    paginationResponseProperties,
+    dateTimeField,
+    userStatusEnum,
+    userRolesEnum,
+    userRolesArray,
+    userRolesArrayMinOne,
+    userIdParams,
+    userDetailResponse,
+} from './shared-schemas.js';
+
 export const adminUsersSchemas = {
     create: {
-        security: [{ bearerAuth: [] }],
+        security: securityBearer,
         body: {
             type: 'object',
             required: ['email', 'password', 'roles'],
@@ -8,12 +25,8 @@ export const adminUsersSchemas = {
             properties: {
                 email: { type: 'string', format: 'email' },
                 password: { type: 'string', minLength: 12 },
-                roles: {
-                    type: 'array',
-                    minItems: 1,
-                    items: { type: 'string', enum: ['Usuario', 'Administrador'] },
-                },
-                status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
+                roles: userRolesArrayMinOne,
+                status: userStatusEnum,
                 name: { type: 'string' },
                 avatar: { type: 'string' },
             },
@@ -26,32 +39,19 @@ export const adminUsersSchemas = {
                     userId: { type: 'string' },
                 },
             },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            403: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...error400,
+            ...error403,
         },
     },
     list: {
-        security: [{ bearerAuth: [] }],
+        security: securityBearer,
         querystring: {
             type: 'object',
             additionalProperties: false,
             properties: {
-                status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
-                role: { type: 'string', enum: ['Usuario', 'Administrador'] },
-                page: { type: 'integer', minimum: 1 },
-                pageSize: { type: 'integer', minimum: 1 },
+                status: userStatusEnum,
+                role: userRolesEnum,
+                ...paginationQueryProperties,
             },
         },
         response: {
@@ -69,280 +69,89 @@ export const adminUsersSchemas = {
                                 email: { type: 'string', format: 'email' },
                                 name: { type: 'string' },
                                 avatar: { type: 'string' },
-                                status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
-                                roles: {
-                                    type: 'array',
-                                    items: { type: 'string', enum: ['Usuario', 'Administrador'] },
-                                },
-                                createdAt: { type: 'string', format: 'date-time' },
+                                status: userStatusEnum,
+                                roles: userRolesArray,
+                                createdAt: dateTimeField,
                             },
                         },
                     },
-                    page: { type: 'integer' },
-                    pageSize: { type: 'integer' },
-                    total: { type: 'integer' },
+                    ...paginationResponseProperties,
                 },
             },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            403: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...error400,
+            ...error403,
         },
     },
     detail: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['userId'],
-            properties: {
-                userId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: userIdParams,
         response: {
-            200: {
-                type: 'object',
-                required: ['userId', 'email', 'status', 'roles', 'createdAt', 'updatedAt'],
-                properties: {
-                    userId: { type: 'string' },
-                    email: { type: 'string', format: 'email' },
-                    name: { type: 'string' },
-                    avatar: { type: 'string' },
-                    status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
-                    roles: {
-                        type: 'array',
-                        items: { type: 'string', enum: ['Usuario', 'Administrador'] },
-                    },
-                    createdAt: { type: 'string', format: 'date-time' },
-                    updatedAt: { type: 'string', format: 'date-time' },
-                    deletedAt: { type: 'string', format: 'date-time', nullable: true },
-                },
-            },
-            403: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            200: userDetailResponse,
+            ...error403,
+            ...error404,
         },
     },
     update: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['userId'],
-            properties: {
-                userId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: userIdParams,
         body: {
             type: 'object',
             additionalProperties: false,
             properties: {
-                roles: {
-                    type: 'array',
-                    items: { type: 'string', enum: ['Usuario', 'Administrador'] },
-                },
-                status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
+                roles: userRolesArray,
+                status: userStatusEnum,
                 name: { type: 'string' },
                 avatar: { type: 'string' },
             },
         },
         response: {
-            200: {
-                type: 'object',
-                required: ['userId', 'email', 'status', 'roles', 'createdAt', 'updatedAt'],
-                properties: {
-                    userId: { type: 'string' },
-                    email: { type: 'string', format: 'email' },
-                    name: { type: 'string' },
-                    avatar: { type: 'string' },
-                    status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
-                    roles: {
-                        type: 'array',
-                        items: { type: 'string', enum: ['Usuario', 'Administrador'] },
-                    },
-                    createdAt: { type: 'string', format: 'date-time' },
-                    updatedAt: { type: 'string', format: 'date-time' },
-                    deletedAt: { type: 'string', format: 'date-time', nullable: true },
-                },
-            },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            403: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            200: userDetailResponse,
+            ...error400,
+            ...error403,
+            ...error404,
         },
     },
     updateStatus: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['userId'],
-            properties: {
-                userId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: userIdParams,
         body: {
             type: 'object',
             required: ['status'],
             additionalProperties: false,
             properties: {
-                status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
+                status: userStatusEnum,
             },
         },
         response: {
-            200: {
-                type: 'object',
-                required: ['userId', 'email', 'status', 'roles', 'createdAt', 'updatedAt'],
-                properties: {
-                    userId: { type: 'string' },
-                    email: { type: 'string', format: 'email' },
-                    name: { type: 'string' },
-                    avatar: { type: 'string' },
-                    status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] },
-                    roles: {
-                        type: 'array',
-                        items: { type: 'string', enum: ['Usuario', 'Administrador'] },
-                    },
-                    createdAt: { type: 'string', format: 'date-time' },
-                    updatedAt: { type: 'string', format: 'date-time' },
-                    deletedAt: { type: 'string', format: 'date-time', nullable: true },
-                },
-            },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            403: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            200: userDetailResponse,
+            ...error400,
+            ...error403,
+            ...error404,
         },
     },
     softDelete: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['userId'],
-            properties: {
-                userId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: userIdParams,
         response: {
-            204: { type: 'null' },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            403: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...response204,
+            ...error400,
+            ...error403,
+            ...error404,
         },
     },
     revokeSessions: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['userId'],
-            properties: {
-                userId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: userIdParams,
         response: {
-            204: { type: 'null' },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            403: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...response204,
+            ...error400,
+            ...error403,
+            ...error404,
         },
     },
     changePassword: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['userId'],
-            properties: {
-                userId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: userIdParams,
         body: {
             type: 'object',
             required: ['newPassword'],
@@ -352,28 +161,10 @@ export const adminUsersSchemas = {
             },
         },
         response: {
-            204: { type: 'null' },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            403: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...response204,
+            ...error400,
+            ...error403,
+            ...error404,
         },
     },
 };

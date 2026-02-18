@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ListInvoicesUseCase } from '@application/use-cases/list-invoices.use-case.js';
-import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import { Invoice } from '@domain/entities/invoice.entity.js';
 import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
 import { InvoiceRepositoryStub } from '@tests/shared/stubs/invoice-repository.stub.js';
 import { createTestInvoice } from '@tests/shared/fixtures/invoice.fixture.js';

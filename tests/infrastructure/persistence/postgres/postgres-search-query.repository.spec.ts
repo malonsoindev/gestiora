@@ -1,5 +1,4 @@
 import { describe, expect, it, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import postgres from 'postgres';
 import { PostgresSearchQueryRepository } from '@infrastructure/persistence/postgres/postgres-search-query.repository.js';
 import { createPostgresTestContext } from '@tests/shared/helpers/postgres-test-context.js';
 

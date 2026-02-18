@@ -16,7 +16,7 @@ import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-stat
 import { InvalidInvoiceTotalsError } from '@domain/errors/invalid-invoice-totals.error.js';
 import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
 import { InvoiceNotFoundError } from '@domain/errors/invoice-not-found.error.js';
-import { Cif } from '@domain/value-objects/cif.value-object.js';
+
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';
 import { ok, fail, type Result } from '@shared/result.js';

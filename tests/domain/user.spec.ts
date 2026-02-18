@@ -6,13 +6,10 @@ import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 
 const baseDate = new Date('2026-01-01T00:00:00.000Z');
 
-const testCredentialHashValue = 'hash';
-
 const createUser = (overrides: Partial<UserProps> = {}): User =>
     createTestUser({
         now: baseDate,
         overrides: {
-            passwordHash: testCredentialHashValue,
             status: UserStatus.Active,
             roles: [UserRole.user()],
             ...overrides,

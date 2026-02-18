@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { LogoutUserUseCase } from '@application/use-cases/logout-user.use-case.js';
 import type { AuditLogger } from '@application/ports/audit-logger.js';
-import type { DateProvider } from '@application/ports/date-provider.js';
 import type { RefreshTokenHasher } from '@application/ports/refresh-token-hasher.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
 import type { SessionRepository } from '@application/ports/session.repository.js';
 import { PortError } from '@application/errors/port.error.js';
 import { Session, SessionStatus } from '@domain/entities/session.entity.js';
@@ -15,6 +15,7 @@ import {
     FailingAuditLogger,
     FailingRefreshTokenHasher,
 } from '@tests/shared/stubs/failing-stubs.js';
+import { RefreshTokenHasherStub } from '@tests/shared/stubs/refresh-token-hasher.stub.js';
 
 const fixedNow = new Date('2026-01-29T15:00:00.000Z');
 
@@ -37,12 +38,6 @@ class SessionRepositorySpy implements SessionRepository {
 
     async revokeByUserId(_userId: string) {
         return ok(undefined);
-    }
-}
-
-class RefreshTokenHasherStub implements RefreshTokenHasher {
-    hash(value: string) {
-        return ok(`hashed:${value}`);
     }
 }
 
@@ -170,7 +165,7 @@ describe('LogoutUserUseCase', () => {
             expect(result.success).toBe(false);
             if (!result.success) {
                 expect(result.error).toBeInstanceOf(PortError);
-                expect((result.error as PortError).port).toBe('DateProvider');
+                expect(result.error.port).toBe('DateProvider');
             }
         });
 
@@ -182,7 +177,7 @@ describe('LogoutUserUseCase', () => {
             expect(result.success).toBe(false);
             if (!result.success) {
                 expect(result.error).toBeInstanceOf(PortError);
-                expect((result.error as PortError).port).toBe('RefreshTokenHasher');
+                expect(result.error.port).toBe('RefreshTokenHasher');
             }
         });
 
@@ -196,7 +191,7 @@ describe('LogoutUserUseCase', () => {
             expect(result.success).toBe(false);
             if (!result.success) {
                 expect(result.error).toBeInstanceOf(PortError);
-                expect((result.error as PortError).port).toBe('SessionRepository');
+                expect(result.error.port).toBe('SessionRepository');
             }
         });
 
@@ -210,7 +205,7 @@ describe('LogoutUserUseCase', () => {
             expect(result.success).toBe(false);
             if (!result.success) {
                 expect(result.error).toBeInstanceOf(PortError);
-                expect((result.error as PortError).port).toBe('SessionRepository');
+                expect(result.error.port).toBe('SessionRepository');
             }
         });
 
@@ -222,7 +217,7 @@ describe('LogoutUserUseCase', () => {
             expect(result.success).toBe(false);
             if (!result.success) {
                 expect(result.error).toBeInstanceOf(PortError);
-                expect((result.error as PortError).port).toBe('AuditLogger');
+                expect(result.error.port).toBe('AuditLogger');
             }
         });
     });

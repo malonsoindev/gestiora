@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AntiBruteForceUseCase } from '@application/use-cases/anti-brute-force.use-case.js';
 import type { LoginAttemptRepository, LoginAttemptKey } from '@application/ports/login-attempt.repository.js';
-import type { AuditLogger, AuditEvent } from '@application/ports/audit-logger.js';
-import type { DateProvider } from '@application/ports/date-provider.js';
 import { PortError } from '@application/errors/port.error.js';
 import { AuthRateLimitedError } from '@domain/errors/auth-rate-limited.error.js';
 import { ok, fail, type Result } from '@shared/result.js';
