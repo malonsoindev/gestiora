@@ -1,10 +1,10 @@
-import postgres from 'postgres';
-import { describe, expect, it, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, expect, it, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { PostgresProviderRepository } from '@infrastructure/persistence/postgres/postgres-provider.repository.js';
 import { ProviderStatus } from '@domain/entities/provider.entity.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
 import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
 import { normalizeText } from '@shared/text-utils.js';
+import { createPostgresTestContext } from '@tests/shared/helpers/postgres-test-context.js';
 
 const describeIf = process.env.DATABASE_URL ? describe : describe.skip;
 const fixedNow = new Date('2026-03-10T10:00:00.000Z');
@@ -25,11 +25,13 @@ const TEST_CIFS = {
 };
 
 describeIf('PostgresProviderRepository', () => {
-    const sql = postgres(process.env.DATABASE_URL as string, { max: 1 });
-    const repository = new PostgresProviderRepository(sql);
+    const ctx = createPostgresTestContext();
+    let repository: PostgresProviderRepository;
 
     beforeAll(async () => {
-        await sql`
+        await ctx.setup();
+        
+        await ctx.sql`
             create table if not exists providers (
                 id text primary key,
                 razon_social text not null,
@@ -45,19 +47,25 @@ describeIf('PostgresProviderRepository', () => {
                 deleted_at timestamptz null
             )
         `;
+        
+        repository = new PostgresProviderRepository(ctx.sql);
     });
 
     beforeEach(async () => {
-        // Clean up invoices first due to FK constraint
-        await sql`delete from invoice_movements where invoice_id in (
-            select id from invoices where provider_id in (${PROVIDER_IDS.one}, ${PROVIDER_IDS.two}, ${PROVIDER_IDS.three})
-        )`;
-        await sql`delete from invoices where provider_id in (${PROVIDER_IDS.one}, ${PROVIDER_IDS.two}, ${PROVIDER_IDS.three})`;
-        await sql`delete from providers where id in (${PROVIDER_IDS.one}, ${PROVIDER_IDS.two}, ${PROVIDER_IDS.three})`;
+        await ctx.beginTransaction();
+        
+        // Clean up within the transaction
+        await ctx.sql`delete from invoice_movements`;
+        await ctx.sql`delete from invoices`;
+        await ctx.sql`delete from providers`;
+    });
+
+    afterEach(async () => {
+        await ctx.rollbackTransaction();
     });
 
     afterAll(async () => {
-        await sql.end({ timeout: 5 });
+        await ctx.cleanup();
     });
 
     it('creates and retrieves a provider by id', async () => {

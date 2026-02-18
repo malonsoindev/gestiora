@@ -1,6 +1,6 @@
-import postgres from 'postgres';
-import { describe, expect, it, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, expect, it, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { PostgresLoginAttemptRepository } from '@infrastructure/persistence/postgres/postgres-login-attempt.repository.js';
+import { createPostgresTestContext } from '@tests/shared/helpers/postgres-test-context.js';
 
 const describeIf = process.env.DATABASE_URL ? describe : describe.skip;
 
@@ -16,11 +16,13 @@ const TEST_IPS = {
 };
 
 describeIf('PostgresLoginAttemptRepository', () => {
-    const sql = postgres(process.env.DATABASE_URL as string, { max: 1 });
-    const repository = new PostgresLoginAttemptRepository(sql);
+    const ctx = createPostgresTestContext();
+    let repository: PostgresLoginAttemptRepository;
 
     beforeAll(async () => {
-        await sql`
+        await ctx.setup();
+        
+        await ctx.sql`
             create table if not exists login_attempts (
                 id bigserial primary key,
                 email text not null,
@@ -29,15 +31,23 @@ describeIf('PostgresLoginAttemptRepository', () => {
                 created_at timestamptz not null
             )
         `;
+        
+        repository = new PostgresLoginAttemptRepository(ctx.sql);
     });
 
     beforeEach(async () => {
-        // Clean up test-specific data only
-        await sql`delete from login_attempts where email in (${TEST_EMAILS.one}, ${TEST_EMAILS.two})`;
+        await ctx.beginTransaction();
+        
+        // Clean up within the transaction
+        await ctx.sql`delete from login_attempts`;
+    });
+
+    afterEach(async () => {
+        await ctx.rollbackTransaction();
     });
 
     afterAll(async () => {
-        await sql.end({ timeout: 5 });
+        await ctx.cleanup();
     });
 
     it('records a successful login attempt', async () => {
@@ -51,7 +61,7 @@ describeIf('PostgresLoginAttemptRepository', () => {
         expect(result.success).toBe(true);
 
         // Verify it was recorded
-        const rows = await sql`
+        const rows = await ctx.sql`
             select * from login_attempts 
             where email = ${TEST_EMAILS.one} and succeeded = true
         `;
@@ -69,7 +79,7 @@ describeIf('PostgresLoginAttemptRepository', () => {
         expect(result.success).toBe(true);
 
         // Verify it was recorded
-        const rows = await sql`
+        const rows = await ctx.sql`
             select * from login_attempts 
             where email = ${TEST_EMAILS.one} and succeeded = false
         `;
@@ -87,7 +97,7 @@ describeIf('PostgresLoginAttemptRepository', () => {
         expect(result.success).toBe(true);
 
         // Verify IP is null
-        const rows = await sql`
+        const rows = await ctx.sql`
             select * from login_attempts 
             where email = ${TEST_EMAILS.one} and ip is null
         `;

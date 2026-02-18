@@ -1,11 +1,11 @@
-import postgres from 'postgres';
-import { describe, expect, it, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, expect, it, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { PostgresSessionRepository } from '@infrastructure/persistence/postgres/postgres-session.repository.js';
 import { PostgresUserRepository } from '@infrastructure/persistence/postgres/postgres-user.repository.js';
 import { Session, SessionStatus } from '@domain/entities/session.entity.js';
 import { User, UserStatus } from '@domain/entities/user.entity.js';
 import { Email } from '@domain/value-objects/email.value-object.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import { createPostgresTestContext } from '@tests/shared/helpers/postgres-test-context.js';
 
 const describeIf = process.env.DATABASE_URL ? describe : describe.skip;
 const fixedNow = new Date('2026-03-10T10:00:00.000Z');
@@ -72,13 +72,15 @@ const createTestSession = (overrides: {
 };
 
 describeIf('PostgresSessionRepository', () => {
-    const sql = postgres(process.env.DATABASE_URL as string, { max: 1 });
-    const sessionRepository = new PostgresSessionRepository(sql);
-    const userRepository = new PostgresUserRepository(sql);
+    const ctx = createPostgresTestContext();
+    let sessionRepository: PostgresSessionRepository;
+    let userRepository: PostgresUserRepository;
 
     beforeAll(async () => {
+        await ctx.setup();
+
         // Ensure users table exists (sessions depend on it via FK)
-        await sql`
+        await ctx.sql`
             create table if not exists users (
                 id text primary key,
                 email text unique not null,
@@ -94,7 +96,7 @@ describeIf('PostgresSessionRepository', () => {
             )
         `;
 
-        await sql`
+        await ctx.sql`
             create table if not exists sessions (
                 id text primary key,
                 user_id text not null references users(id),
@@ -109,12 +111,17 @@ describeIf('PostgresSessionRepository', () => {
                 user_agent text null
             )
         `;
+
+        sessionRepository = new PostgresSessionRepository(ctx.sql);
+        userRepository = new PostgresUserRepository(ctx.sql);
     });
 
     beforeEach(async () => {
-        // Clean up in correct order due to FK constraints
-        await sql`delete from sessions where id in (${SESSION_IDS.one}, ${SESSION_IDS.two}, ${SESSION_IDS.three})`;
-        await sql`delete from users where id in (${USER_IDS.one}, ${USER_IDS.two})`;
+        await ctx.beginTransaction();
+
+        // Clean up and seed test users within the transaction
+        await ctx.sql`delete from sessions`;
+        await ctx.sql`delete from users`;
 
         // Create test users for FK references
         const user1 = createTestUser(USER_IDS.one, `${TEST_PREFIX}-1@example.com`);
@@ -123,8 +130,12 @@ describeIf('PostgresSessionRepository', () => {
         await userRepository.create(user2);
     });
 
+    afterEach(async () => {
+        await ctx.rollbackTransaction();
+    });
+
     afterAll(async () => {
-        await sql.end({ timeout: 5 });
+        await ctx.cleanup();
     });
 
     it('creates and retrieves a session by refresh token hash', async () => {
