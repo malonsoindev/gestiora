@@ -30,6 +30,7 @@ import type { InvoiceExtractionAgent, InvoiceExtractionResult } from '@applicati
 import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
 import type { UserRepository } from '@application/ports/user.repository.js';
 import type { SessionRepository } from '@application/ports/session.repository.js';
+import type { TokenService, AccessTokenPayload } from '@application/ports/token.service.js';
 import type { LoginAttemptRepository, LoginAttemptKey } from '@application/ports/login-attempt.repository.js';
 import type {
     ProviderRepository,
@@ -38,7 +39,7 @@ import type {
 } from '@application/ports/provider.repository.js';
 import type { InvoiceRepository, InvoiceListFilters, InvoiceListResult } from '@application/ports/invoice.repository.js';
 import type { User, UserStatus } from '@domain/entities/user.entity.js';
-import type { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import type { Session } from '@domain/entities/session.entity.js';
 import type { Provider } from '@domain/entities/provider.entity.js';
 import type { Invoice } from '@domain/entities/invoice.entity.js';
@@ -364,5 +365,117 @@ export class FailingInvoiceRepository implements InvoiceRepository {
 
     async getDetail(_invoiceId: string): Promise<Result<Invoice | null, PortError>> {
         return fail(new PortErrorClass(this.portName, this.errorMessage));
+    }
+}
+
+// =============================================================================
+// Method-Specific Failing Stubs
+// =============================================================================
+
+export type FailingSessionMethod = 'create' | 'findByRefreshTokenHash' | 'update' | 'revokeByUserId';
+
+/**
+ * SessionRepository that fails only on a specific method.
+ * Other methods succeed normally (returning ok with appropriate defaults).
+ *
+ * @example
+ * ```typescript
+ * // Test SessionRepository.update failure
+ * const sut = createSut({
+ *     sessionRepository: new FailingSessionRepositoryOnMethod('update'),
+ * });
+ * const result = await sut.execute(validRequest);
+ * expect(result.error.port).toBe('SessionRepository');
+ * ```
+ */
+export class FailingSessionRepositoryOnMethod implements SessionRepository {
+    private readonly portName = 'SessionRepository';
+    private readonly failOn: FailingSessionMethod;
+    private readonly errorMessage: string;
+    private readonly sessionToReturn: Session | null;
+
+    constructor(
+        failOn: FailingSessionMethod,
+        options: { errorMessage?: string; sessionToReturn?: Session | null } = {},
+    ) {
+        this.failOn = failOn;
+        this.errorMessage = options.errorMessage ?? 'Database error';
+        this.sessionToReturn = options.sessionToReturn ?? null;
+    }
+
+    async create(_session: Session): Promise<Result<void, PortError>> {
+        if (this.failOn === 'create') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok(undefined);
+    }
+
+    async findByRefreshTokenHash(_hash: string): Promise<Result<Session | null, PortError>> {
+        if (this.failOn === 'findByRefreshTokenHash') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok(this.sessionToReturn);
+    }
+
+    async update(_session: Session): Promise<Result<void, PortError>> {
+        if (this.failOn === 'update') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok(undefined);
+    }
+
+    async revokeByUserId(_userId: string): Promise<Result<void, PortError>> {
+        if (this.failOn === 'revokeByUserId') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok(undefined);
+    }
+}
+
+export type FailingTokenMethod = 'createAccessToken' | 'createRefreshToken' | 'verifyAccessToken';
+
+/**
+ * TokenService that fails only on a specific method.
+ * Other methods succeed normally (returning ok with appropriate defaults).
+ *
+ * @example
+ * ```typescript
+ * // Test TokenService.createAccessToken failure
+ * const sut = createSut({
+ *     tokenService: new FailingTokenServiceOnMethod('createAccessToken'),
+ * });
+ * const result = await sut.execute(validRequest);
+ * expect(result.error.port).toBe('TokenService');
+ * ```
+ */
+export class FailingTokenServiceOnMethod implements TokenService {
+    private readonly portName = 'TokenService';
+    private readonly failOn: FailingTokenMethod;
+    private readonly errorMessage: string;
+
+    constructor(failOn: FailingTokenMethod, errorMessage = 'Token operation failed') {
+        this.failOn = failOn;
+        this.errorMessage = errorMessage;
+    }
+
+    createAccessToken(): Result<string, PortError> {
+        if (this.failOn === 'createAccessToken') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok('access-token');
+    }
+
+    createRefreshToken(): Result<string, PortError> {
+        if (this.failOn === 'createRefreshToken') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok('refresh-token');
+    }
+
+    verifyAccessToken(): Result<AccessTokenPayload, PortError> {
+        if (this.failOn === 'verifyAccessToken') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok({ userId: 'user-1', roles: [UserRole.user()] });
     }
 }

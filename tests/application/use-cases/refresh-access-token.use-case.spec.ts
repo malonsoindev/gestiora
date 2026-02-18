@@ -14,73 +14,22 @@ import { User } from '@domain/entities/user.entity.js';
 import type { UserProps } from '@domain/entities/user.entity.js';
 import { fail, ok } from '@shared/result.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
+import { createTestSession } from '@tests/shared/fixtures/session.fixture.js';
+import { fixedNow } from '@tests/shared/fixed-now.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { TokenServiceStub } from '@tests/shared/stubs/token-service.stub.js';
 import { RefreshTokenHasherStub } from '@tests/shared/stubs/refresh-token-hasher.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import { SessionRepositorySpy } from '@tests/shared/spies/session-repository.spy.js';
 import {
     FailingDateProvider,
     FailingRefreshTokenHasher,
     FailingAuditLogger,
+    FailingSessionRepositoryOnMethod,
+    FailingTokenServiceOnMethod,
 } from '@tests/shared/stubs/failing-stubs.js';
 
-const fixedNow = new Date('2026-01-29T12:00:00.000Z');
-
-class SessionRepositorySpy implements SessionRepository {
-    created: Session | null = null;
-    updated: Session | null = null;
-    session: Session | null = null;
-
-    async create(session: Session) {
-        this.created = session;
-        return ok(undefined);
-    }
-
-    async findByRefreshTokenHash(_hash: string) {
-        return ok(this.session);
-    }
-
-    async update(session: Session) {
-        this.updated = session;
-        return ok(undefined);
-    }
-
-    async revokeByUserId(_userId: string) {
-        return ok(undefined);
-    }
-}
-
-// ========== Local PortError Stubs (with specific logic not suitable for centralization) ==========
-
-class FailingSessionRepositoryOnMethod implements SessionRepository {
-    private readonly failOn: 'findByRefreshTokenHash' | 'update';
-
-    constructor(failOn: 'findByRefreshTokenHash' | 'update' = 'findByRefreshTokenHash') {
-        this.failOn = failOn;
-    }
-
-    async create() {
-        return ok(undefined);
-    }
-
-    async findByRefreshTokenHash() {
-        if (this.failOn === 'findByRefreshTokenHash') {
-            return fail(new PortError('SessionRepository', 'Database connection lost'));
-        }
-        return ok(null);
-    }
-
-    async update() {
-        if (this.failOn === 'update') {
-            return fail(new PortError('SessionRepository', 'Database write failed'));
-        }
-        return ok(undefined);
-    }
-
-    async revokeByUserId() {
-        return ok(undefined);
-    }
-}
+// ========== Local stubs with specific behavior (not suitable for centralization) ==========
 
 const buildFailingUserRepository = (): UserRepository => ({
     findByEmail: async () => ok(null),
@@ -90,36 +39,10 @@ const buildFailingUserRepository = (): UserRepository => ({
     update: async () => ok(undefined),
 });
 
-class FailingTokenServiceOnMethod implements TokenService {
-    private readonly failOn: 'createAccessToken' | 'createRefreshToken';
-
-    constructor(failOn: 'createAccessToken' | 'createRefreshToken') {
-        this.failOn = failOn;
-    }
-
-    createAccessToken() {
-        if (this.failOn === 'createAccessToken') {
-            return fail(new PortError('TokenService', 'Token signing failed'));
-        }
-        return ok('access-token');
-    }
-
-    createRefreshToken() {
-        if (this.failOn === 'createRefreshToken') {
-            return fail(new PortError('TokenService', 'Token signing failed'));
-        }
-        return ok('refresh-token');
-    }
-
-    verifyAccessToken() {
-        return fail(new PortError('TokenService', 'Token verification failed'));
-    }
-
-    verifyRefreshToken() {
-        return fail(new PortError('TokenService', 'Token verification failed'));
-    }
-}
-
+/**
+ * SessionRepository that returns a pre-configured session and optionally fails on update.
+ * Used for testing rotation failures.
+ */
 class SessionRepositoryWithSession implements SessionRepository {
     private readonly session: Session;
     private readonly failOnUpdate: boolean;
@@ -149,6 +72,10 @@ class SessionRepositoryWithSession implements SessionRepository {
     }
 }
 
+/**
+ * RefreshTokenHasher that fails on the second call.
+ * Used for testing rotation hash failure (first call succeeds for lookup, second fails for new token).
+ */
 class RefreshTokenHasherFailOnSecondCall implements RefreshTokenHasher {
     private callCount = 0;
 
@@ -160,6 +87,12 @@ class RefreshTokenHasherFailOnSecondCall implements RefreshTokenHasher {
         return ok(`hashed:${value}`);
     }
 }
+
+// ========== Test helpers ==========
+
+const validRefreshTokenValue = 'refresh-token';
+const invalidRefreshTokenValue = 'invalid';
+const baseRequest = { refreshToken: validRefreshTokenValue };
 
 type UseCaseDependencies = {
     sessionRepository: SessionRepository;
@@ -210,20 +143,13 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
     };
 };
 
-const validRefreshTokenValue = 'refresh-token';
-const invalidRefreshTokenValue = 'invalid';
-const baseRequest = { refreshToken: validRefreshTokenValue };
-
-const createSession = (overrides: Partial<SessionProps> = {}): Session =>
-    Session.create({
+const createSession = (overrides: Partial<Omit<SessionProps, 'id' | 'userId' | 'refreshTokenHash'>> = {}): Session =>
+    createTestSession({
         id: 'session-1',
         userId: 'user-1',
         refreshTokenHash: `hashed:${validRefreshTokenValue}`,
-        status: SessionStatus.Active,
-        createdAt: fixedNow,
-        lastUsedAt: fixedNow,
-        expiresAt: new Date('2026-02-28T12:00:00.000Z'),
-        ...overrides,
+        now: fixedNow,
+        overrides,
     });
 
 const createUser = (overrides: Partial<UserProps> = {}): User =>
