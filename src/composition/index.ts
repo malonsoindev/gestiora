@@ -108,6 +108,10 @@ import { InMemorySearchQueryRepository } from '@infrastructure/adapters/in-memor
 import { SearchQueryIdGeneratorCrypto } from '@infrastructure/adapters/crypto/search-query-id-generator.js';
 import { ProcessSearchQueryUseCase } from '@application/use-cases/process-search-query.use-case.js';
 import { GetSearchResultUseCase } from '@application/use-cases/get-search-result.use-case.js';
+import { ConsoleLogger } from '@infrastructure/adapters/logging/console-logger.js';
+import { NoopLogger } from '@infrastructure/adapters/logging/noop-logger.js';
+import type { Logger } from '@application/ports/logger.js';
+import { isTest } from '@config/env.js';
 
 /* ============================================================================
  * CONSTANTES DE CONFIGURACION
@@ -254,6 +258,26 @@ const auditLogger = new InMemoryAuditLogger();
  * @see {@link SystemDateProvider}
  */
 const dateProvider = new SystemDateProvider();
+
+/* ============================================================================
+ * LOGGING TECNICO
+ * ============================================================================
+ * Logger de proposito general para diagnostico y depuracion.
+ * Seleccion dinamica segun NODE_ENV:
+ * - test: NoopLogger (silencioso)
+ * - development: ConsoleLogger nivel debug
+ * - production: ConsoleLogger nivel info
+ * ========================================================================= */
+
+/**
+ * Logger tecnico.
+ * Registra informacion de diagnostico y errores del sistema.
+ */
+const logger: Logger = isTest()
+    ? new NoopLogger()
+    : new ConsoleLogger({
+        minLevel: config.NODE_ENV === 'production' ? 'info' : 'debug',
+    });
 
 /* ============================================================================
  * GENERADORES DE ID
@@ -982,6 +1006,7 @@ export const compositionRoot = {
     fileStorage,
     auditLogger,
     dateProvider,
+    logger,
     userIdGenerator,
     invoiceIdGenerator,
     invoiceMovementIdGenerator,
