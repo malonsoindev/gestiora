@@ -1,7 +1,6 @@
 import { Invoice, InvoiceStatus, InvoiceHeaderStatus } from '@domain/entities/invoice.entity.js';
 import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
 import { InvoiceMovement, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
-import type { InvoiceMovementProps } from '@domain/entities/invoice-movement.entity.js';
 import { DataSource } from '@domain/enums/data-source.enum.js';
 import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
 import { Money } from '@domain/value-objects/money.value-object.js';

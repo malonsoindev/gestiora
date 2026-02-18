@@ -12,7 +12,6 @@ import {
     invoiceDetailWithFileResponse,
     movementInputSchema,
     invoiceHeaderFields,
-    dataSourceEnum,
 } from './shared-schemas.js';
 
 export const invoicesSchemas = {

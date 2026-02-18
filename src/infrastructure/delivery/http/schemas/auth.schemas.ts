@@ -1,5 +1,4 @@
 import {
-    errorResponse,
     error400WithMessage,
     error401,
     error429,
