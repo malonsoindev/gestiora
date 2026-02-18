@@ -12,6 +12,8 @@ const start = async () => {
     const port = config.PORT;
 
     await app.listen({ port, host: '0.0.0.0' });
+
+    compositionRoot.logger.info('Server started', { port, host: '0.0.0.0' });
 };
 
 await start().catch((error) => {

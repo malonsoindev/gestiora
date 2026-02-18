@@ -157,6 +157,23 @@ const LOGIN_WINDOW_MINUTES = 15;
 const LOGIN_LOCK_MINUTES = 30;
 
 /* ============================================================================
+ * LOGGING
+ * ============================================================================
+ * Logger tecnico para diagnostico y monitoreo del sistema.
+ * Se inicializa antes de la base de datos para poder registrar el arranque.
+ * ========================================================================= */
+
+/**
+ * Logger tecnico.
+ * Registra informacion de diagnostico y errores del sistema.
+ */
+const logger: Logger = isTest()
+    ? new NoopLogger()
+    : new ConsoleLogger({
+        minLevel: config.NODE_ENV === 'production' ? 'info' : 'debug',
+    });
+
+/* ============================================================================
  * INFRAESTRUCTURA: BASE DE DATOS Y REPOSITORIOS
  * ============================================================================
  * Seleccion dinamica de repositorios segun la variable de entorno DATABASE_TYPE.
@@ -170,6 +187,10 @@ const LOGIN_LOCK_MINUTES = 30;
 /** Indica si se usa PostgreSQL como base de datos */
 const usePostgres = usePostgresDatabase();
 
+logger.info('Database configuration', {
+    type: usePostgres ? 'postgres' : 'in-memory',
+});
+
 /** Cliente SQL para PostgreSQL (undefined si se usa in-memory) */
 const sqlClient = usePostgres ? DatabaseFactory.createClient() : undefined;
 
@@ -178,7 +199,8 @@ const unitOfWork = usePostgres ? DatabaseFactory.createUnitOfWork() : undefined;
 
 /** Verifica la conexion a PostgreSQL si esta habilitado */
 if (usePostgres && sqlClient) {
-    await DatabaseFactory.checkConnection();
+    const connected = await DatabaseFactory.checkConnection();
+    logger.info('PostgreSQL connection', { connected });
 }
 
 /**
@@ -258,26 +280,6 @@ const auditLogger = new InMemoryAuditLogger();
  * @see {@link SystemDateProvider}
  */
 const dateProvider = new SystemDateProvider();
-
-/* ============================================================================
- * LOGGING TECNICO
- * ============================================================================
- * Logger de proposito general para diagnostico y depuracion.
- * Seleccion dinamica segun NODE_ENV:
- * - test: NoopLogger (silencioso)
- * - development: ConsoleLogger nivel debug
- * - production: ConsoleLogger nivel info
- * ========================================================================= */
-
-/**
- * Logger tecnico.
- * Registra informacion de diagnostico y errores del sistema.
- */
-const logger: Logger = isTest()
-    ? new NoopLogger()
-    : new ConsoleLogger({
-        minLevel: config.NODE_ENV === 'production' ? 'info' : 'debug',
-    });
 
 /* ============================================================================
  * GENERADORES DE ID
