@@ -62,7 +62,7 @@ import { SoftDeleteProviderUseCase } from '@application/use-cases/soft-delete-pr
 import { User, UserStatus } from '@domain/entities/user.entity.js';
 import { Email } from '@domain/value-objects/email.value-object.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
-import { config, usePostgresDatabase } from '@config/env.js';
+import { config, usePostgresDatabase, isTest } from '@config/env.js';
 import { DatabaseFactory } from '@infrastructure/database/database-factory.js';
 import { PostgresUserRepository } from '@infrastructure/persistence/postgres/postgres-user.repository.js';
 import { PostgresSessionRepository } from '@infrastructure/persistence/postgres/postgres-session.repository.js';
@@ -111,7 +111,6 @@ import { GetSearchResultUseCase } from '@application/use-cases/get-search-result
 import { ConsoleLogger } from '@infrastructure/adapters/logging/console-logger.js';
 import { NoopLogger } from '@infrastructure/adapters/logging/noop-logger.js';
 import type { Logger } from '@application/ports/logger.js';
-import { isTest } from '@config/env.js';
 
 /* ============================================================================
  * CONSTANTES DE CONFIGURACION

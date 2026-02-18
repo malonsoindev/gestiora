@@ -47,6 +47,60 @@ const applyOverride = (error: unknown, overrides: ErrorOverride[]): ErrorRespons
     return null;
 };
 
+type ErrorMapping = {
+    errorClass: new (...args: never[]) => Error;
+    status: number;
+    code: string;
+};
+
+const errorMappings: ErrorMapping[] = [
+    // 429 - Rate Limited
+    { errorClass: AuthRateLimitedError, status: 429, code: 'RATE_LIMITED' },
+
+    // 401 - Authentication errors
+    { errorClass: AuthInvalidCredentialsError, status: 401, code: 'AUTH_INVALID_CREDENTIALS' },
+    { errorClass: AuthUserDisabledError, status: 401, code: 'AUTH_INVALID_CREDENTIALS' },
+    { errorClass: AuthUserLockedError, status: 401, code: 'AUTH_INVALID_CREDENTIALS' },
+    { errorClass: AuthInvalidRefreshTokenError, status: 401, code: 'AUTH_INVALID_REFRESH' },
+
+    // 404 - Not Found
+    { errorClass: SearchQueryNotFoundError, status: 404, code: 'NOT_FOUND' },
+    { errorClass: UserNotFoundError, status: 404, code: 'NOT_FOUND' },
+    { errorClass: ProviderNotFoundError, status: 404, code: 'NOT_FOUND' },
+    { errorClass: InvoiceNotFoundError, status: 404, code: 'NOT_FOUND' },
+
+    // 400 - Validation errors
+    { errorClass: QueryTooAmbiguousError, status: 400, code: 'QUERY_TOO_AMBIGUOUS' },
+    { errorClass: UserAlreadyExistsError, status: 400, code: 'USER_ALREADY_EXISTS' },
+    { errorClass: InvalidEmailError, status: 400, code: 'VALIDATION_ERROR' },
+    { errorClass: InvalidPasswordError, status: 400, code: 'VALIDATION_ERROR' },
+    { errorClass: InvalidUserRolesError, status: 400, code: 'VALIDATION_ERROR' },
+    { errorClass: InvalidUserStatusError, status: 400, code: 'VALIDATION_ERROR' },
+    { errorClass: SelfDeletionNotAllowedError, status: 400, code: 'SELF_DELETE_NOT_ALLOWED' },
+    { errorClass: ProviderAlreadyExistsError, status: 400, code: 'PROVIDER_ALREADY_EXISTS' },
+    { errorClass: InvalidCifError, status: 400, code: 'INVALID_CIF' },
+    { errorClass: InvalidProviderStatusError, status: 400, code: 'INVALID_STATUS' },
+    { errorClass: InvalidInvoiceStatusError, status: 400, code: 'INVALID_INVOICE_STATUS' },
+    { errorClass: InvalidInvoiceTotalsError, status: 400, code: 'INVALID_INVOICE_TOTALS' },
+
+    // 500 - Internal errors
+    { errorClass: PortError, status: 500, code: 'INTERNAL_ERROR' },
+];
+
+const findMappedError = (error: unknown): ErrorResponse | null => {
+    for (const mapping of errorMappings) {
+        if (error instanceof mapping.errorClass) {
+            return { status: mapping.status, body: { error: mapping.code } };
+        }
+    }
+    return null;
+};
+
+const handleAuthorizationError = (error: AuthorizationError): ErrorResponse => {
+    const status = error.code === 'FORBIDDEN' ? 403 : 401;
+    return { status, body: { error: error.code } };
+};
+
 const mapErrorToHttpResponse = (error: unknown, overrides: ErrorOverride[]): ErrorResponse => {
     const override = applyOverride(error, overrides);
     if (override) {
@@ -54,85 +108,12 @@ const mapErrorToHttpResponse = (error: unknown, overrides: ErrorOverride[]): Err
     }
 
     if (error instanceof AuthorizationError) {
-        const status = error.code === 'FORBIDDEN' ? 403 : 401;
-        return { status, body: { error: error.code } };
+        return handleAuthorizationError(error);
     }
 
-    if (error instanceof AuthRateLimitedError) {
-        return { status: 429, body: { error: 'RATE_LIMITED' } };
-    }
-
-    if (
-        error instanceof AuthInvalidCredentialsError ||
-        error instanceof AuthUserDisabledError ||
-        error instanceof AuthUserLockedError
-    ) {
-        return { status: 401, body: { error: 'AUTH_INVALID_CREDENTIALS' } };
-    }
-
-    if (error instanceof AuthInvalidRefreshTokenError) {
-        return { status: 401, body: { error: 'AUTH_INVALID_REFRESH' } };
-    }
-
-    if (error instanceof QueryTooAmbiguousError) {
-        return { status: 400, body: { error: 'QUERY_TOO_AMBIGUOUS' } };
-    }
-
-    if (error instanceof SearchQueryNotFoundError) {
-        return { status: 404, body: { error: 'NOT_FOUND' } };
-    }
-
-    if (error instanceof UserNotFoundError) {
-        return { status: 404, body: { error: 'NOT_FOUND' } };
-    }
-
-    if (error instanceof UserAlreadyExistsError) {
-        return { status: 400, body: { error: 'USER_ALREADY_EXISTS' } };
-    }
-
-    if (
-        error instanceof InvalidEmailError ||
-        error instanceof InvalidPasswordError ||
-        error instanceof InvalidUserRolesError ||
-        error instanceof InvalidUserStatusError
-    ) {
-        return { status: 400, body: { error: 'VALIDATION_ERROR' } };
-    }
-
-    if (error instanceof SelfDeletionNotAllowedError) {
-        return { status: 400, body: { error: 'SELF_DELETE_NOT_ALLOWED' } };
-    }
-
-    if (error instanceof ProviderNotFoundError) {
-        return { status: 404, body: { error: 'NOT_FOUND' } };
-    }
-
-    if (error instanceof ProviderAlreadyExistsError) {
-        return { status: 400, body: { error: 'PROVIDER_ALREADY_EXISTS' } };
-    }
-
-    if (error instanceof InvalidCifError) {
-        return { status: 400, body: { error: 'INVALID_CIF' } };
-    }
-
-    if (error instanceof InvalidProviderStatusError) {
-        return { status: 400, body: { error: 'INVALID_STATUS' } };
-    }
-
-    if (error instanceof InvoiceNotFoundError) {
-        return { status: 404, body: { error: 'NOT_FOUND' } };
-    }
-
-    if (error instanceof InvalidInvoiceStatusError) {
-        return { status: 400, body: { error: 'INVALID_INVOICE_STATUS' } };
-    }
-
-    if (error instanceof InvalidInvoiceTotalsError) {
-        return { status: 400, body: { error: 'INVALID_INVOICE_TOTALS' } };
-    }
-
-    if (error instanceof PortError) {
-        return { status: 500, body: { error: 'INTERNAL_ERROR' } };
+    const mapped = findMappedError(error);
+    if (mapped) {
+        return mapped;
     }
 
     return { status: 500, body: { error: 'INTERNAL_ERROR' } };

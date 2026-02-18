@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { CreateManualInvoiceUseCase } from '@application/use-cases/create-manual-invoice.use-case.js';
-import type { AuditLogger, AuditEvent } from '@application/ports/audit-logger.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
-import type { InvoiceRepository, InvoiceListFilters, InvoiceListResult } from '@application/ports/invoice.repository.js';
+import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
 import type { ProviderRepository, ProviderListFilters, ProviderListResult } from '@application/ports/provider.repository.js';
-import type { RagReindexInvoiceHandler, RagReindexInvoiceError } from '@application/services/rag-reindex-invoice.service.js';
+import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
 import { PortError } from '@application/errors/port.error.js';
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
-import type { Invoice } from '@domain/entities/invoice.entity.js';
 import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
 import { InvalidProviderStatusError } from '@domain/errors/invalid-provider-status.error.js';
 import { InvalidInvoiceTotalsError } from '@domain/errors/invalid-invoice-totals.error.js';

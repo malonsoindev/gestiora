@@ -285,7 +285,7 @@ export class AdminUsersController {
         }
     }
 
-    private mapStatus(value: 'ACTIVE' | 'INACTIVE' | 'DELETED'): UserStatus | null {
+    private mapStatus(value: AdminUserStatus): UserStatus | null {
         switch (value) {
             case 'ACTIVE':
                 return UserStatus.Active;

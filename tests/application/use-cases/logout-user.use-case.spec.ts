@@ -170,7 +170,7 @@ describe('LogoutUserUseCase', () => {
             expect(result.success).toBe(false);
             if (!result.success) {
                 expect(result.error).toBeInstanceOf(PortError);
-                expect((result.error as PortError).port).toBe('DateProvider');
+                expect(result.error.port).toBe('DateProvider');
             }
         });
 
@@ -182,7 +182,7 @@ describe('LogoutUserUseCase', () => {
             expect(result.success).toBe(false);
             if (!result.success) {
                 expect(result.error).toBeInstanceOf(PortError);
-                expect((result.error as PortError).port).toBe('RefreshTokenHasher');
+                expect(result.error.port).toBe('RefreshTokenHasher');
             }
         });
 
@@ -196,7 +196,7 @@ describe('LogoutUserUseCase', () => {
             expect(result.success).toBe(false);
             if (!result.success) {
                 expect(result.error).toBeInstanceOf(PortError);
-                expect((result.error as PortError).port).toBe('SessionRepository');
+                expect(result.error.port).toBe('SessionRepository');
             }
         });
 
@@ -210,7 +210,7 @@ describe('LogoutUserUseCase', () => {
             expect(result.success).toBe(false);
             if (!result.success) {
                 expect(result.error).toBeInstanceOf(PortError);
-                expect((result.error as PortError).port).toBe('SessionRepository');
+                expect(result.error.port).toBe('SessionRepository');
             }
         });
 
@@ -222,7 +222,7 @@ describe('LogoutUserUseCase', () => {
             expect(result.success).toBe(false);
             if (!result.success) {
                 expect(result.error).toBeInstanceOf(PortError);
-                expect((result.error as PortError).port).toBe('AuditLogger');
+                expect(result.error.port).toBe('AuditLogger');
             }
         });
     });

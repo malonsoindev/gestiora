@@ -62,13 +62,16 @@ export class PostgresUserRepository implements UserRepository {
             ? row.roles.map((role) => UserRole.create(String(role) as 'USER' | 'ADMIN'))
             : [];
 
+        const name = typeof row.name === 'string' ? row.name : undefined;
+        const avatar = typeof row.avatar === 'string' ? row.avatar : undefined;
+
         return User.create({
             id: String(row.id),
             email: Email.create(String(row.email)),
             passwordHash: String(row.password_hash),
             status,
-            ...(row.name ? { name: String(row.name) } : {}),
-            ...(row.avatar ? { avatar: String(row.avatar) } : {}),
+            ...(name ? { name } : {}),
+            ...(avatar ? { avatar } : {}),
             ...(row.locked_until ? { lockedUntil: toDate(row.locked_until) } : {}),
             roles,
             createdAt: toDate(row.created_at),

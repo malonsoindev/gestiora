@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { CreateProviderUseCase } from '@application/use-cases/create-provider.use-case.js';
-import type { AuditLogger } from '@application/ports/audit-logger.js';
-import type { DateProvider } from '@application/ports/date-provider.js';
 import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { ProviderRepository } from '@application/ports/provider.repository.js';
 import { PortError } from '@application/errors/port.error.js';

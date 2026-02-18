@@ -28,16 +28,8 @@ const createMovement = (overrides: Partial<InvoiceMovementProps> = {}): InvoiceM
         ...overrides,
     });
 
-type CreateInvoiceOptions = {
-    overrides?: Partial<InvoiceProps>;
-    withFileRef?: boolean;
-};
-
-const createInvoice = (options: CreateInvoiceOptions | Partial<InvoiceProps> = {}) => {
-    // Support both old signature (overrides only) and new signature (options object)
-    const isOptionsObject = 'overrides' in options || 'withFileRef' in options;
-    const overrides = isOptionsObject ? (options as CreateInvoiceOptions).overrides ?? {} : (options as Partial<InvoiceProps>);
-    const withFileRef = isOptionsObject ? (options as CreateInvoiceOptions).withFileRef ?? true : true;
+const createInvoice = (options: Partial<InvoiceProps> & { withFileRef?: boolean } = {}) => {
+    const { withFileRef = true, ...overrides } = options;
 
     const invoiceId = overrides.id ?? 'invoice-1';
     
