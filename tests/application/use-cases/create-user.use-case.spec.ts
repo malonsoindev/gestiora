@@ -28,8 +28,8 @@ import { fail, ok, type Result } from '@shared/result.js';
 
 const fixedNow = new Date('2026-02-02T10:00:00.000Z');
 
-const validNewCredential = 'StrongPass1!a';
-const invalidNewCredential = 'weak';
+const validPassword = 'StrongPass1!a';
+const invalidPassword = 'weak';
 
 const createUserEntity = (): User =>
     createTestUser({
@@ -122,7 +122,7 @@ const makeSutWithSpies = (overrides: Omit<SutOverrides, 'dateProvider' | 'auditL
 const baseRequest = {
     actorUserId: 'admin-1',
     email: 'new@example.com',
-    password: validNewCredential,
+    password: validPassword,
     roles: [UserRole.user()],
 };
 
@@ -141,7 +141,7 @@ describe('CreateUserUseCase', () => {
         expect(userRepository.createdUser).not.toBeNull();
         expect(userRepository.createdUser?.id).toBe('user-fixed');
         expect(userRepository.createdUser?.email).toBe('new@example.com');
-        expect(userRepository.createdUser?.passwordHash).toBe(`hashed:${validNewCredential}`);
+        expect(userRepository.createdUser?.passwordHash).toBe(`hashed:${validPassword}`);
         expect(userRepository.createdUser?.status).toBe(UserStatus.Active);
         expect(userRepository.createdUser?.roles[0]?.getValue()).toBe('USER');
         expect(userRepository.createdUser?.createdAt).toBe(fixedNow);
@@ -172,7 +172,7 @@ describe('CreateUserUseCase', () => {
 
         const result = await useCase.execute({
             ...baseRequest,
-            password: invalidNewCredential,
+            password: invalidPassword,
         });
 
         expect(result.success).toBe(false);

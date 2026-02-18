@@ -34,15 +34,10 @@ import {
     FailingRefreshTokenHasher,
 } from '@tests/shared/stubs/failing-stubs.js';
 
-const testCredentialHashValue = 'hashed-password';
-const validLoginCredential = 'valid-password';
-const invalidLoginCredential = 'wrong-password';
-
 const createUser = (overrides: Partial<UserProps> = {}): User =>
     createTestUser({
         now: fixedNow,
         overrides: {
-            passwordHash: testCredentialHashValue,
             status: UserStatus.Active,
             roles: [UserRole.user()],
             ...overrides,
@@ -257,7 +252,7 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
 
 const buildLoginRequest = (overrides: Partial<{ email: string; password: string; ip: string; userAgent: string }> = {}) => ({
     email: 'user@example.com',
-    password: validLoginCredential,
+    password: 'valid-password',
     ip: '127.0.0.1',
     userAgent: 'unit-test',
     ...overrides,
@@ -298,7 +293,7 @@ describe('LoginUserUseCase', () => {
 
         const result = await useCase.execute(buildLoginRequest({
             email: user.email,
-            password: invalidLoginCredential,
+            password: 'wrong-password',
         }));
 
         expect(result.success).toBe(false);
