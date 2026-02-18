@@ -1,42 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { GetProviderDetailUseCase } from '@application/use-cases/get-provider-detail.use-case.js';
-import type { ProviderRepository } from '@application/ports/provider.repository.js';
-import type { PortError } from '@application/errors/port.error.js';
-import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import type { Provider } from '@domain/entities/provider.entity.js';
+import { ProviderStatus } from '@domain/entities/provider.entity.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
-import { ok, type Result } from '@shared/result.js';
 import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
 import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
-
-const fixedNow = new Date('2026-02-04T12:00:00.000Z');
-
-class ProviderRepositoryStub implements ProviderRepository {
-    constructor(private readonly provider: Provider | null) {}
-
-    async create(): Promise<Result<void, PortError>> {
-        return ok(undefined);
-    }
-
-    async update(): Promise<Result<void, PortError>> {
-        return ok(undefined);
-    }
-
-    async findById(): Promise<Result<Provider | null, PortError>> {
-        return ok(this.provider);
-    }
-
-    async list(): Promise<Result<{ items: Provider[]; total: number }, PortError>> {
-        return ok({ items: [], total: 0 });
-    }
-
-    async findByCif(): Promise<Result<Provider | null, PortError>> {
-        return ok(null);
-    }
-
-    async findByRazonSocialNormalized(): Promise<Result<Provider | null, PortError>> {
-        return ok(null);
-    }
-}
+import { ProviderRepositorySpy } from '@tests/shared/spies/provider-repository.spy.js';
+import { fixedNow } from '@tests/shared/fixed-now.js';
 
 const createProvider = (overrides: Partial<Provider> = {}): Provider =>
     createTestProvider({
@@ -50,7 +20,7 @@ const createProvider = (overrides: Partial<Provider> = {}): Provider =>
 
 describe('GetProviderDetailUseCase', () => {
     it('returns provider detail when found', async () => {
-        const repository = new ProviderRepositoryStub(createProvider());
+        const repository = new ProviderRepositorySpy({ existingProvider: createProvider() });
         const useCase = new GetProviderDetailUseCase({ providerRepository: repository });
 
         const result = await useCase.execute({ providerId: 'provider-1' });
@@ -64,7 +34,7 @@ describe('GetProviderDetailUseCase', () => {
     });
 
     it('rejects when provider does not exist', async () => {
-        const repository = new ProviderRepositoryStub(null);
+        const repository = new ProviderRepositorySpy({ existingProvider: null });
         const useCase = new GetProviderDetailUseCase({ providerRepository: repository });
 
         const result = await useCase.execute({ providerId: 'missing' });

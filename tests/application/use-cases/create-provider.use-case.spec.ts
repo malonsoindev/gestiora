@@ -1,22 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { CreateProviderUseCase } from '@application/use-cases/create-provider.use-case.js';
 import type { IdGenerator } from '@application/ports/id-generator.js';
-import type { ProviderRepository } from '@application/ports/provider.repository.js';
 import { PortError } from '@application/errors/port.error.js';
 import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
 import { ProviderAlreadyExistsError } from '@domain/errors/provider-already-exists.error.js';
-import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
+import { ProviderStatus } from '@domain/entities/provider.entity.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
-import { fail, ok } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import { ProviderRepositorySpy } from '@tests/shared/spies/provider-repository.spy.js';
 import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
+import { fixedNow } from '@tests/shared/fixed-now.js';
 import {
     FailingDateProvider,
     FailingAuditLogger,
+    FailingProviderRepositoryOnMethod,
 } from '@tests/shared/stubs/failing-stubs.js';
-
-const fixedNow = new Date('2026-02-03T10:00:00.000Z');
 
 class ProviderIdGeneratorStub implements IdGenerator {
     constructor(private readonly id: string) {}
@@ -26,85 +25,7 @@ class ProviderIdGeneratorStub implements IdGenerator {
     }
 }
 
-class ProviderRepositorySpy implements ProviderRepository {
-    createdProvider: Provider | null = null;
-    private readonly duplicateByCif: Provider | null;
-    private readonly duplicateByRazon: Provider | null;
-
-    constructor({ duplicateByCif = null, duplicateByRazon = null }: { duplicateByCif?: Provider | null; duplicateByRazon?: Provider | null } = {}) {
-        this.duplicateByCif = duplicateByCif;
-        this.duplicateByRazon = duplicateByRazon;
-    }
-
-    async findById() {
-        return ok(null);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async create(provider: Provider) {
-        this.createdProvider = provider;
-        return ok(undefined);
-    }
-
-    async update() {
-        return ok(undefined);
-    }
-
-    async findByCif() {
-        return ok(this.duplicateByCif);
-    }
-
-    async findByRazonSocialNormalized() {
-        return ok(this.duplicateByRazon);
-    }
-}
-
-// Local stub with conditional failure logic (not suitable for centralized failing-stubs)
-class FailingProviderRepositoryOnMethod implements ProviderRepository {
-    private readonly failOn: 'findByCif' | 'findByRazonSocialNormalized' | 'create';
-
-    constructor(failOn: 'findByCif' | 'findByRazonSocialNormalized' | 'create') {
-        this.failOn = failOn;
-    }
-
-    async findById() {
-        return ok(null);
-    }
-
-    async list() {
-        return ok({ items: [], total: 0 });
-    }
-
-    async create() {
-        if (this.failOn === 'create') {
-            return fail(new PortError('ProviderRepository', 'Database write failed'));
-        }
-        return ok(undefined);
-    }
-
-    async update() {
-        return ok(undefined);
-    }
-
-    async findByCif() {
-        if (this.failOn === 'findByCif') {
-            return fail(new PortError('ProviderRepository', 'Database connection lost'));
-        }
-        return ok(null);
-    }
-
-    async findByRazonSocialNormalized() {
-        if (this.failOn === 'findByRazonSocialNormalized') {
-            return fail(new PortError('ProviderRepository', 'Database connection lost'));
-        }
-        return ok(null);
-    }
-}
-
-const createProviderEntity = (): Provider =>
+const createProviderEntity = () =>
     createTestProvider({
         now: fixedNow,
         overrides: {
