@@ -5,7 +5,6 @@ import type { DateProvider } from '@application/ports/date-provider.js';
 import type { FileStorage } from '@application/ports/file-storage.js';
 import type { InvoiceExtractionAgent, InvoiceExtractionResult } from '@application/ports/invoice-extraction-agent.js';
 import type { InvoiceRepository } from '@application/ports/invoice.repository.js';
-import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { ProviderRepository } from '@application/ports/provider.repository.js';
 import type { RagReindexInvoiceHandler } from '@application/services/rag-reindex-invoice.service.js';
 import { PortError } from '@application/errors/port.error.js';
@@ -13,8 +12,7 @@ import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import { fail, ok, type Result } from '@shared/result.js';
 import { RagReindexInvoiceServiceStub } from '@tests/shared/stubs/rag-reindex-invoice.service.stub.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
-import { InvoiceIdGeneratorStub } from '@tests/shared/stubs/invoice-id-generator.stub.js';
-import { InvoiceMovementIdGeneratorStub } from '@tests/shared/stubs/invoice-movement-id-generator.stub.js';
+import { IdGeneratorStub } from '@tests/shared/stubs/id-generator.stub.js';
 import { ProviderRepositoryStub } from '@tests/shared/stubs/provider-repository.stub.js';
 import { FileStorageStub } from '@tests/shared/stubs/file-storage.stub.js';
 import { InvoiceRepositorySpy } from '@tests/shared/spies/invoice-repository.spy.js';
@@ -87,14 +85,6 @@ class ExtractionAgentErrorStub implements InvoiceExtractionAgent {
             },
             missingFields: ['fechaVencimiento'],
         });
-    }
-}
-
-class ProviderIdGeneratorStub implements IdGenerator {
-    constructor(private readonly id: string) {}
-
-    generate(): string {
-        return this.id;
     }
 }
 
@@ -230,9 +220,9 @@ const makeSut = (overrides: SutOverrides = {}): {
         extractionAgent,
         auditLogger,
         dateProvider,
-        invoiceIdGenerator: new InvoiceIdGeneratorStub(overrides.invoiceId ?? 'invoice-fixed'),
-        invoiceMovementIdGenerator: new InvoiceMovementIdGeneratorStub(overrides.movementIds ?? ['movement-1']),
-        providerIdGenerator: new ProviderIdGeneratorStub(overrides.providerId ?? 'provider-fixed'),
+        invoiceIdGenerator: new IdGeneratorStub(overrides.invoiceId ?? 'invoice-fixed'),
+        invoiceMovementIdGenerator: new IdGeneratorStub(overrides.movementIds ?? ['movement-1'], 'movement-fallback'),
+        providerIdGenerator: new IdGeneratorStub(overrides.providerId ?? 'provider-fixed'),
         ragReindexInvoiceService,
     });
 

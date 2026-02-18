@@ -14,8 +14,7 @@ import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.j
 import { fail, ok, type Result } from '@shared/result.js';
 import { RagReindexInvoiceServiceStub } from '@tests/shared/stubs/rag-reindex-invoice.service.stub.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
-import { InvoiceIdGeneratorStub } from '@tests/shared/stubs/invoice-id-generator.stub.js';
-import { InvoiceMovementIdGeneratorStub } from '@tests/shared/stubs/invoice-movement-id-generator.stub.js';
+import { IdGeneratorStub } from '@tests/shared/stubs/id-generator.stub.js';
 import { ProviderRepositoryStub } from '@tests/shared/stubs/provider-repository.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { InvoiceRepositorySpy } from '@tests/shared/spies/invoice-repository.spy.js';
@@ -101,8 +100,8 @@ const makeSut = (overrides: SutOverrides = {}) => {
         invoiceRepository,
         auditLogger,
         dateProvider,
-        invoiceIdGenerator: new InvoiceIdGeneratorStub(overrides.invoiceId ?? 'invoice-fixed'),
-        invoiceMovementIdGenerator: new InvoiceMovementIdGeneratorStub(overrides.movementIds ?? ['movement-1']),
+        invoiceIdGenerator: new IdGeneratorStub(overrides.invoiceId ?? 'invoice-fixed'),
+        invoiceMovementIdGenerator: new IdGeneratorStub(overrides.movementIds ?? ['movement-1']),
         ragReindexInvoiceService,
     });
 
@@ -121,8 +120,8 @@ const makeSutWithSpies = (overrides: Omit<SutOverrides, 'dateProvider' | 'auditL
         invoiceRepository,
         auditLogger,
         dateProvider: new DateProviderStub(now),
-        invoiceIdGenerator: new InvoiceIdGeneratorStub(overrides.invoiceId ?? 'invoice-fixed'),
-        invoiceMovementIdGenerator: new InvoiceMovementIdGeneratorStub(overrides.movementIds ?? ['movement-1']),
+        invoiceIdGenerator: new IdGeneratorStub(overrides.invoiceId ?? 'invoice-fixed'),
+        invoiceMovementIdGenerator: new IdGeneratorStub(overrides.movementIds ?? ['movement-1']),
         ragReindexInvoiceService: new RagReindexInvoiceServiceStub(),
     });
 

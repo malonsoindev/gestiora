@@ -15,17 +15,11 @@ import { SessionStatus } from '@domain/entities/session.entity.js';
 import { AuthInvalidRefreshTokenError } from '@domain/errors/auth-invalid-refresh-token.error.js';
 import { ok } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { IdGeneratorStub } from '@tests/shared/stubs/id-generator.stub.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
 import { createPostgresTestContext } from '@tests/shared/helpers/postgres-test-context.js';
 
 const describeIf = process.env.DATABASE_URL ? describe : describe.skip;
-class SessionIdGeneratorStub {
-    constructor(private readonly id: string) {}
-
-    generate(): string {
-        return this.id;
-    }
-}
 
 class AuditLoggerStub {
     async log() {
@@ -61,7 +55,7 @@ describeIf('Postgres auth flow', () => {
     const tokenService = new JwtTokenService('access-secret', 'refresh-secret', 900, 2_592_000);
     const dateProvider = new DateProviderStub(fixedNow);
     const auditLogger = new AuditLoggerStub();
-    const sessionIdGenerator = new SessionIdGeneratorStub(TEST_SESSION_ID);
+    const sessionIdGenerator = new IdGeneratorStub(TEST_SESSION_ID);
 
     let loginUseCase: LoginUserUseCase;
     let refreshUseCase: RefreshAccessTokenUseCase;

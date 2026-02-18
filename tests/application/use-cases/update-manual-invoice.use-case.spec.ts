@@ -10,7 +10,7 @@ import { InvalidInvoiceStatusError } from '@domain/errors/invalid-invoice-status
 import { InvalidInvoiceTotalsError } from '@domain/errors/invalid-invoice-totals.error.js';
 import { RagReindexInvoiceServiceStub } from '@tests/shared/stubs/rag-reindex-invoice.service.stub.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
-import { InvoiceMovementIdGeneratorStub } from '@tests/shared/stubs/invoice-movement-id-generator.stub.js';
+import { IdGeneratorStub } from '@tests/shared/stubs/id-generator.stub.js';
 import { InvoiceRepositoryStub } from '@tests/shared/stubs/invoice-repository.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
@@ -93,7 +93,7 @@ const makeSut = (overrides: SutOverrides = {}) => {
     const invoice = overrides.invoice === undefined ? createInvoice() : overrides.invoice;
     const invoiceRepository = new InvoiceRepositoryStub(invoice);
     const auditLogger = new AuditLoggerSpy();
-    const invoiceMovementIdGenerator = new InvoiceMovementIdGeneratorStub(overrides.movementIds ?? ['movement-2']);
+    const invoiceMovementIdGenerator = new IdGeneratorStub(overrides.movementIds ?? ['movement-2']);
 
     const useCase = new UpdateManualInvoiceUseCase({
         invoiceRepository,

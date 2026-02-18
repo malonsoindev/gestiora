@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { ProcessSearchQueryUseCase } from '@application/use-cases/process-search-query.use-case.js';
 import type { SearchQueryRepository, SearchQueryRecord } from '@application/ports/search-query.repository.js';
-import type { IdGenerator } from '@application/ports/id-generator.js';
 import { PortError } from '@application/errors/port.error.js';
 import { ok, type Result } from '@shared/result.js';
 import { QueryTooAmbiguousError } from '@application/errors/query-too-ambiguous.error.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { IdGeneratorStub } from '@tests/shared/stubs/id-generator.stub.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
 
 class QueryInvoicesRagUseCaseStub {
@@ -48,14 +48,6 @@ class SearchQueryRepositoryStub implements SearchQueryRepository {
     }
 }
 
-class SearchQueryIdGeneratorStub implements IdGenerator {
-    constructor(private readonly id: string) {}
-
-    generate(): string {
-        return this.id;
-    }
-}
-
 type SutOverrides = Partial<{
     repository: SearchQueryRepository;
     queryId: string;
@@ -69,7 +61,7 @@ const makeSut = (overrides: SutOverrides = {}) => {
     const useCase = new ProcessSearchQueryUseCase({
         queryInvoicesRagUseCase: new QueryInvoicesRagUseCaseStub(overrides.answer ?? 'respuesta'),
         searchQueryRepository: repository,
-        searchQueryIdGenerator: new SearchQueryIdGeneratorStub(overrides.queryId ?? 'query-9'),
+        searchQueryIdGenerator: new IdGeneratorStub(overrides.queryId ?? 'query-9'),
         dateProvider: new DateProviderStub(now),
     });
 
