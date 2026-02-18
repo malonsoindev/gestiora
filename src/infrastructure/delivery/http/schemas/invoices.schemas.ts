@@ -1,14 +1,30 @@
+import {
+    securityBearer,
+    error400,
+    error401,
+    error404,
+    response204,
+    paginationQueryProperties,
+    paginationResponseProperties,
+    invoiceStatusEnum,
+    invoiceIdParams,
+    invoiceDetailResponse,
+    invoiceDetailWithFileResponse,
+    movementInputSchema,
+    invoiceHeaderFields,
+    dataSourceEnum,
+} from './shared-schemas.js';
+
 export const invoicesSchemas = {
     list: {
-        security: [{ bearerAuth: [] }],
+        security: securityBearer,
         querystring: {
             type: 'object',
             additionalProperties: false,
             properties: {
-                status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'INCONSISTENT', 'DELETED'] },
+                status: invoiceStatusEnum,
                 providerId: { type: 'string' },
-                page: { type: 'integer', minimum: 1 },
-                pageSize: { type: 'integer', minimum: 1 },
+                ...paginationQueryProperties,
             },
         },
         response: {
@@ -24,27 +40,19 @@ export const invoicesSchemas = {
                             properties: {
                                 invoiceId: { type: 'string' },
                                 providerId: { type: 'string' },
-                                status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'INCONSISTENT', 'DELETED'] },
+                                status: invoiceStatusEnum,
                                 createdAt: { type: 'string', format: 'date-time' },
                             },
                         },
                     },
-                    page: { type: 'integer' },
-                    pageSize: { type: 'integer' },
-                    total: { type: 'integer' },
+                    ...paginationResponseProperties,
                 },
             },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...error401,
         },
     },
     upload: {
-        security: [{ bearerAuth: [] }],
+        security: securityBearer,
         response: {
             201: {
                 type: 'object',
@@ -53,160 +61,40 @@ export const invoicesSchemas = {
                     invoiceId: { type: 'string' },
                 },
             },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...error400,
+            ...error401,
         },
     },
     detail: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['invoiceId'],
-            properties: {
-                invoiceId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: invoiceIdParams,
         response: {
-            200: {
-                type: 'object',
-                required: ['invoiceId', 'providerId', 'status', 'createdAt', 'updatedAt', 'movements'],
-                properties: {
-                    invoiceId: { type: 'string' },
-                    providerId: { type: 'string' },
-                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'INCONSISTENT', 'DELETED'] },
-                    fileRef: {
-                        type: 'object',
-                        required: ['storageKey', 'filename', 'mimeType', 'sizeBytes', 'checksum'],
-                        properties: {
-                            storageKey: { type: 'string' },
-                            filename: { type: 'string' },
-                            mimeType: { type: 'string' },
-                            sizeBytes: { type: 'integer' },
-                            checksum: { type: 'string' },
-                        },
-                    },
-                    numeroFactura: { type: 'string' },
-                    fechaOperacion: { type: 'string' },
-                    fechaVencimiento: { type: 'string' },
-                    baseImponible: { type: 'number' },
-                    iva: { type: 'number' },
-                    total: { type: 'number' },
-                    headerSource: { type: 'string', enum: ['MANUAL', 'AI'] },
-                    headerStatus: { type: 'string', enum: ['PROPOSED', 'CONFIRMED'] },
-                    createdAt: { type: 'string', format: 'date-time' },
-                    updatedAt: { type: 'string', format: 'date-time' },
-                    deletedAt: { type: 'string', format: 'date-time', nullable: true },
-                    movements: {
-                        type: 'array',
-                        items: {
-                            type: 'object',
-                            required: ['id', 'concepto', 'cantidad', 'precio', 'total', 'source', 'status'],
-                            properties: {
-                                id: { type: 'string' },
-                                concepto: { type: 'string' },
-                                cantidad: { type: 'number' },
-                                precio: { type: 'number' },
-                                baseImponible: { type: 'number' },
-                                iva: { type: 'number' },
-                                total: { type: 'number' },
-                                source: { type: 'string', enum: ['MANUAL', 'AI'] },
-                                status: { type: 'string', enum: ['PROPOSED', 'CONFIRMED', 'REJECTED'] },
-                            },
-                        },
-                    },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            200: invoiceDetailResponse,
+            ...error401,
+            ...error404,
         },
     },
     softDelete: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['invoiceId'],
-            properties: {
-                invoiceId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: invoiceIdParams,
         response: {
-            204: { type: 'null' },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...response204,
+            ...error401,
+            ...error404,
         },
     },
     file: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['invoiceId'],
-            properties: {
-                invoiceId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: invoiceIdParams,
         response: {
             200: { type: 'string' },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...error400,
+            ...error401,
+            ...error404,
         },
     },
     createManual: {
-        security: [{ bearerAuth: [] }],
+        security: securityBearer,
         body: {
             type: 'object',
             required: ['invoice'],
@@ -219,28 +107,11 @@ export const invoicesSchemas = {
                     required: ['movements'],
                     additionalProperties: false,
                     properties: {
-                        numeroFactura: { type: 'string' },
-                        fechaOperacion: { type: 'string' },
-                        fechaVencimiento: { type: 'string' },
-                        baseImponible: { type: 'number' },
-                        iva: { type: 'number' },
-                        total: { type: 'number' },
+                        ...invoiceHeaderFields,
                         movements: {
                             type: 'array',
                             minItems: 1,
-                            items: {
-                                type: 'object',
-                                required: ['concepto', 'cantidad', 'precio', 'total'],
-                                additionalProperties: false,
-                                properties: {
-                                    concepto: { type: 'string' },
-                                    cantidad: { type: 'number' },
-                                    precio: { type: 'number' },
-                                    baseImponible: { type: 'number' },
-                                    iva: { type: 'number' },
-                                    total: { type: 'number' },
-                                },
-                            },
+                            items: movementInputSchema,
                         },
                     },
                 },
@@ -254,232 +125,47 @@ export const invoicesSchemas = {
                     invoiceId: { type: 'string' },
                 },
             },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...error400,
+            ...error401,
+            ...error404,
         },
     },
     attachFile: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['invoiceId'],
-            properties: {
-                invoiceId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: invoiceIdParams,
         response: {
-            200: {
-                type: 'object',
-                required: ['invoiceId', 'providerId', 'status', 'fileRef', 'createdAt', 'updatedAt', 'movements'],
-                properties: {
-                    invoiceId: { type: 'string' },
-                    providerId: { type: 'string' },
-                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'INCONSISTENT', 'DELETED'] },
-                    fileRef: {
-                        type: 'object',
-                        required: ['storageKey', 'filename', 'mimeType', 'sizeBytes', 'checksum'],
-                        properties: {
-                            storageKey: { type: 'string' },
-                            filename: { type: 'string' },
-                            mimeType: { type: 'string' },
-                            sizeBytes: { type: 'integer' },
-                            checksum: { type: 'string' },
-                        },
-                    },
-                    numeroFactura: { type: 'string' },
-                    fechaOperacion: { type: 'string' },
-                    fechaVencimiento: { type: 'string' },
-                    baseImponible: { type: 'number' },
-                    iva: { type: 'number' },
-                    total: { type: 'number' },
-                    headerSource: { type: 'string', enum: ['MANUAL', 'AI'] },
-                    headerStatus: { type: 'string', enum: ['PROPOSED', 'CONFIRMED'] },
-                    createdAt: { type: 'string', format: 'date-time' },
-                    updatedAt: { type: 'string', format: 'date-time' },
-                    deletedAt: { type: 'string', format: 'date-time', nullable: true },
-                    movements: {
-                        type: 'array',
-                        items: {
-                            type: 'object',
-                            required: ['id', 'concepto', 'cantidad', 'precio', 'total', 'source', 'status'],
-                            properties: {
-                                id: { type: 'string' },
-                                concepto: { type: 'string' },
-                                cantidad: { type: 'number' },
-                                precio: { type: 'number' },
-                                baseImponible: { type: 'number' },
-                                iva: { type: 'number' },
-                                total: { type: 'number' },
-                                source: { type: 'string', enum: ['MANUAL', 'AI'] },
-                                status: { type: 'string', enum: ['PROPOSED', 'CONFIRMED', 'REJECTED'] },
-                            },
-                        },
-                    },
-                },
-            },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            200: invoiceDetailWithFileResponse,
+            ...error400,
+            ...error401,
+            ...error404,
         },
     },
     updateManual: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['invoiceId'],
-            properties: {
-                invoiceId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: invoiceIdParams,
         body: {
             type: 'object',
             required: ['movements'],
             additionalProperties: false,
             properties: {
-                numeroFactura: { type: 'string' },
-                fechaOperacion: { type: 'string' },
-                fechaVencimiento: { type: 'string' },
-                baseImponible: { type: 'number' },
-                iva: { type: 'number' },
-                total: { type: 'number' },
+                ...invoiceHeaderFields,
                 movements: {
                     type: 'array',
                     minItems: 1,
-                    items: {
-                        type: 'object',
-                        required: ['concepto', 'cantidad', 'precio', 'total'],
-                        additionalProperties: false,
-                        properties: {
-                            concepto: { type: 'string' },
-                            cantidad: { type: 'number' },
-                            precio: { type: 'number' },
-                            baseImponible: { type: 'number' },
-                            iva: { type: 'number' },
-                            total: { type: 'number' },
-                        },
-                    },
+                    items: movementInputSchema,
                 },
             },
         },
         response: {
-            200: {
-                type: 'object',
-                required: ['invoiceId', 'providerId', 'status', 'createdAt', 'updatedAt', 'movements'],
-                properties: {
-                    invoiceId: { type: 'string' },
-                    providerId: { type: 'string' },
-                    status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'INCONSISTENT', 'DELETED'] },
-                    fileRef: {
-                        type: 'object',
-                        required: ['storageKey', 'filename', 'mimeType', 'sizeBytes', 'checksum'],
-                        properties: {
-                            storageKey: { type: 'string' },
-                            filename: { type: 'string' },
-                            mimeType: { type: 'string' },
-                            sizeBytes: { type: 'integer' },
-                            checksum: { type: 'string' },
-                        },
-                    },
-                    numeroFactura: { type: 'string' },
-                    fechaOperacion: { type: 'string' },
-                    fechaVencimiento: { type: 'string' },
-                    baseImponible: { type: 'number' },
-                    iva: { type: 'number' },
-                    total: { type: 'number' },
-                    headerSource: { type: 'string', enum: ['MANUAL', 'AI'] },
-                    headerStatus: { type: 'string', enum: ['PROPOSED', 'CONFIRMED'] },
-                    createdAt: { type: 'string', format: 'date-time' },
-                    updatedAt: { type: 'string', format: 'date-time' },
-                    deletedAt: { type: 'string', format: 'date-time', nullable: true },
-                    movements: {
-                        type: 'array',
-                        items: {
-                            type: 'object',
-                            required: ['id', 'concepto', 'cantidad', 'precio', 'total', 'source', 'status'],
-                            properties: {
-                                id: { type: 'string' },
-                                concepto: { type: 'string' },
-                                cantidad: { type: 'number' },
-                                precio: { type: 'number' },
-                                baseImponible: { type: 'number' },
-                                iva: { type: 'number' },
-                                total: { type: 'number' },
-                                source: { type: 'string', enum: ['MANUAL', 'AI'] },
-                                status: { type: 'string', enum: ['PROPOSED', 'CONFIRMED', 'REJECTED'] },
-                            },
-                        },
-                    },
-                },
-            },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            200: invoiceDetailResponse,
+            ...error400,
+            ...error401,
+            ...error404,
         },
     },
     confirmMovements: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['invoiceId'],
-            properties: {
-                invoiceId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: invoiceIdParams,
         body: {
             type: 'object',
             required: ['movements'],
@@ -514,38 +200,14 @@ export const invoicesSchemas = {
                     invoiceId: { type: 'string' },
                 },
             },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...error400,
+            ...error401,
+            ...error404,
         },
     },
     confirmHeader: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['invoiceId'],
-            properties: {
-                invoiceId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: invoiceIdParams,
         body: {
             type: 'object',
             required: ['fields'],
@@ -621,38 +283,14 @@ export const invoicesSchemas = {
                     invoiceId: { type: 'string' },
                 },
             },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...error400,
+            ...error401,
+            ...error404,
         },
     },
     reprocess: {
-        security: [{ bearerAuth: [] }],
-        params: {
-            type: 'object',
-            required: ['invoiceId'],
-            properties: {
-                invoiceId: { type: 'string' },
-            },
-        },
+        security: securityBearer,
+        params: invoiceIdParams,
         response: {
             200: {
                 type: 'object',
@@ -661,27 +299,9 @@ export const invoicesSchemas = {
                     invoiceId: { type: 'string' },
                 },
             },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...error400,
+            ...error401,
+            ...error404,
         },
     },
 };

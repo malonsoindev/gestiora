@@ -1,6 +1,14 @@
+import {
+    securityBearer,
+    error400,
+    error401,
+    error404,
+    response204,
+} from './shared-schemas.js';
+
 export const usersSchemas = {
     updateOwnProfile: {
-        security: [{ bearerAuth: [] }],
+        security: securityBearer,
         body: {
             type: 'object',
             additionalProperties: false,
@@ -10,25 +18,13 @@ export const usersSchemas = {
             },
         },
         response: {
-            204: { type: 'null' },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...response204,
+            ...error401,
+            ...error404,
         },
     },
     changeOwnPassword: {
-        security: [{ bearerAuth: [] }],
+        security: securityBearer,
         body: {
             type: 'object',
             required: ['currentPassword', 'newPassword'],
@@ -39,28 +35,10 @@ export const usersSchemas = {
             },
         },
         response: {
-            204: { type: 'null' },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            ...response204,
+            ...error400,
+            ...error401,
+            ...error404,
         },
     },
 };

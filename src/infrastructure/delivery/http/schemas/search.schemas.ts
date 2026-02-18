@@ -1,5 +1,37 @@
+import {
+    securityBearer,
+    error400,
+    error401,
+    error404,
+} from './shared-schemas.js';
+
+const searchResultResponseProperties = {
+    answer: { type: 'string' },
+    references: {
+        type: 'array',
+        items: {
+            type: 'object',
+            required: ['documentId', 'snippets'],
+            properties: {
+                documentId: { type: 'string' },
+                snippets: {
+                    type: 'array',
+                    items: { type: 'string' },
+                },
+            },
+        },
+    },
+} as const;
+
+const searchResultResponse = {
+    type: 'object',
+    required: ['answer', 'references'],
+    properties: searchResultResponseProperties,
+} as const;
+
 export const searchSchemas = {
     search: {
+        security: securityBearer,
         body: {
             type: 'object',
             required: ['query'],
@@ -9,44 +41,13 @@ export const searchSchemas = {
             },
         },
         response: {
-            200: {
-                type: 'object',
-                required: ['answer', 'references'],
-                properties: {
-                    answer: { type: 'string' },
-                    references: {
-                        type: 'array',
-                        items: {
-                            type: 'object',
-                            required: ['documentId', 'snippets'],
-                            properties: {
-                                documentId: { type: 'string' },
-                                snippets: {
-                                    type: 'array',
-                                    items: { type: 'string' },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-            400: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            200: searchResultResponse,
+            ...error400,
+            ...error401,
         },
     },
     getById: {
+        security: securityBearer,
         params: {
             type: 'object',
             required: ['queryId'],
@@ -56,41 +57,9 @@ export const searchSchemas = {
             },
         },
         response: {
-            200: {
-                type: 'object',
-                required: ['answer', 'references'],
-                properties: {
-                    answer: { type: 'string' },
-                    references: {
-                        type: 'array',
-                        items: {
-                            type: 'object',
-                            required: ['documentId', 'snippets'],
-                            properties: {
-                                documentId: { type: 'string' },
-                                snippets: {
-                                    type: 'array',
-                                    items: { type: 'string' },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-            404: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
-            401: {
-                type: 'object',
-                required: ['error'],
-                properties: {
-                    error: { type: 'string' },
-                },
-            },
+            200: searchResultResponse,
+            ...error401,
+            ...error404,
         },
     },
 };

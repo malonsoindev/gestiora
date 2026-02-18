@@ -1,66 +1,52 @@
 import { describe, expect, it } from 'vitest';
 import { InMemoryInvoiceRepository } from '@infrastructure/persistence/in-memory/in-memory-invoice.repository.js';
-import { Invoice, InvoiceStatus } from '@domain/entities/invoice.entity.js';
-import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
-import { InvoiceMovement } from '@domain/entities/invoice-movement.entity.js';
-import type { InvoiceMovementProps } from '@domain/entities/invoice-movement.entity.js';
-import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js';
-import { Money } from '@domain/value-objects/money.value-object.js';
-import { createTestInvoice } from '@tests/shared/fixtures/invoice.fixture.js';
+import { InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import { invoiceRepositoryContract } from '@tests/infrastructure/persistence/contracts/invoice-repository.contract.js';
+import { createTestInvoice, FIXED_NOW } from '@tests/shared/builders/invoice.builder.js';
 
-const fixedNow = new Date('2026-02-12T10:00:00.000Z');
-
-const createMovement = (overrides: Partial<InvoiceMovementProps> = {}): InvoiceMovement =>
-    InvoiceMovement.create({
-        id: 'movement-1',
-        concepto: 'Servicio',
-        cantidad: 1,
-        precio: 100,
-        baseImponible: 100,
-        iva: 21,
-        total: 121,
-        ...overrides,
-    });
-
-const createInvoice = (overrides: Partial<InvoiceProps> = {}): Invoice =>
-    createTestInvoice({
-        now: fixedNow,
-        overrides: {
-            status: InvoiceStatus.Draft,
-            numeroFactura: 'FAC-2026-0001',
-            fechaOperacion: InvoiceDate.create('2026-02-10'),
-            fechaVencimiento: InvoiceDate.create('2026-03-10'),
-            baseImponible: Money.create(100),
-            iva: Money.create(21),
-            total: Money.create(121),
-            movements: [createMovement()],
-            ...overrides,
-        },
-    });
+const TEST_PREFIX = 'mem-inv-test';
 
 describe('InMemoryInvoiceRepository', () => {
-    it('stores invoices on create and returns them by id', async () => {
-        const repository = new InMemoryInvoiceRepository();
-        const invoice = createInvoice();
+    // Shared repository for contract tests
+    let repository: InMemoryInvoiceRepository;
 
-        const createResult = await repository.create(invoice);
-        const findResult = await repository.findById(invoice.id);
+    // Reset repository before each test via a fresh instance
+    const getRepository = () => {
+        repository = new InMemoryInvoiceRepository();
+        return repository;
+    };
 
-        expect(createResult.success).toBe(true);
-        expect(findResult.success).toBe(true);
-        if (findResult.success) {
-            expect(findResult.value?.id).toBe('invoice-1');
-        }
+    // Run contract tests
+    invoiceRepositoryContract({
+        getRepository,
+        testPrefix: TEST_PREFIX,
     });
 
-    it('returns null when invoice does not exist', async () => {
-        const repository = new InMemoryInvoiceRepository();
+    // Implementation-specific tests
+    describe('InMemory-specific behavior', () => {
+        it('excludes deleted invoices from list by default (no status filter)', async () => {
+            const repo = new InMemoryInvoiceRepository();
+            const activeInvoice = createTestInvoice({
+                id: 'invoice-active',
+                status: InvoiceStatus.Active,
+            });
+            const deletedInvoice = createTestInvoice({
+                id: 'invoice-deleted',
+                status: InvoiceStatus.Deleted,
+                deletedAt: FIXED_NOW,
+            });
 
-        const result = await repository.findById('missing-invoice');
+            await repo.create(activeInvoice);
+            await repo.create(deletedInvoice);
 
-        expect(result.success).toBe(true);
-        if (result.success) {
-            expect(result.value).toBeNull();
-        }
+            const result = await repo.list({ page: 1, pageSize: 100 });
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                const ids = result.value.items.map((i) => i.id);
+                expect(ids).toContain('invoice-active');
+                expect(ids).not.toContain('invoice-deleted');
+            }
+        });
     });
 });

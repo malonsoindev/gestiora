@@ -1,57 +1,19 @@
-// ============================================
-// Shared schema building blocks
-// ============================================
-
-const errorResponse = {
-    type: 'object',
-    required: ['error'],
-    properties: {
-        error: { type: 'string' },
-    },
-} as const;
-
-const userIdParams = {
-    type: 'object',
-    required: ['userId'],
-    properties: {
-        userId: { type: 'string' },
-    },
-} as const;
-
-const statusEnum = { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DELETED'] } as const;
-const rolesEnum = { type: 'string', enum: ['Usuario', 'Administrador'] } as const;
-const rolesArray = { type: 'array', items: rolesEnum } as const;
-const rolesArrayMinOne = { type: 'array', minItems: 1, items: rolesEnum } as const;
-
-const securityBearer = [{ bearerAuth: [] }] as const;
-
-// User detail response used in detail, update, and updateStatus
-const userDetailResponseProperties = {
-    userId: { type: 'string' },
-    email: { type: 'string', format: 'email' },
-    name: { type: 'string' },
-    avatar: { type: 'string' },
-    status: statusEnum,
-    roles: rolesArray,
-    createdAt: { type: 'string', format: 'date-time' },
-    updatedAt: { type: 'string', format: 'date-time' },
-    deletedAt: { type: 'string', format: 'date-time', nullable: true },
-} as const;
-
-const userDetailResponse = {
-    type: 'object',
-    required: ['userId', 'email', 'status', 'roles', 'createdAt', 'updatedAt'],
-    properties: userDetailResponseProperties,
-} as const;
-
-// Common error responses
-const error400 = { 400: errorResponse } as const;
-const error403 = { 403: errorResponse } as const;
-const error404 = { 404: errorResponse } as const;
-
-// ============================================
-// Admin Users Schemas
-// ============================================
+import {
+    securityBearer,
+    error400,
+    error403,
+    error404,
+    response204,
+    paginationQueryProperties,
+    paginationResponseProperties,
+    dateTimeField,
+    userStatusEnum,
+    userRolesEnum,
+    userRolesArray,
+    userRolesArrayMinOne,
+    userIdParams,
+    userDetailResponse,
+} from './shared-schemas.js';
 
 export const adminUsersSchemas = {
     create: {
@@ -63,8 +25,8 @@ export const adminUsersSchemas = {
             properties: {
                 email: { type: 'string', format: 'email' },
                 password: { type: 'string', minLength: 12 },
-                roles: rolesArrayMinOne,
-                status: statusEnum,
+                roles: userRolesArrayMinOne,
+                status: userStatusEnum,
                 name: { type: 'string' },
                 avatar: { type: 'string' },
             },
@@ -87,10 +49,9 @@ export const adminUsersSchemas = {
             type: 'object',
             additionalProperties: false,
             properties: {
-                status: statusEnum,
-                role: rolesEnum,
-                page: { type: 'integer', minimum: 1 },
-                pageSize: { type: 'integer', minimum: 1 },
+                status: userStatusEnum,
+                role: userRolesEnum,
+                ...paginationQueryProperties,
             },
         },
         response: {
@@ -108,15 +69,13 @@ export const adminUsersSchemas = {
                                 email: { type: 'string', format: 'email' },
                                 name: { type: 'string' },
                                 avatar: { type: 'string' },
-                                status: statusEnum,
-                                roles: rolesArray,
-                                createdAt: { type: 'string', format: 'date-time' },
+                                status: userStatusEnum,
+                                roles: userRolesArray,
+                                createdAt: dateTimeField,
                             },
                         },
                     },
-                    page: { type: 'integer' },
-                    pageSize: { type: 'integer' },
-                    total: { type: 'integer' },
+                    ...paginationResponseProperties,
                 },
             },
             ...error400,
@@ -139,8 +98,8 @@ export const adminUsersSchemas = {
             type: 'object',
             additionalProperties: false,
             properties: {
-                roles: rolesArray,
-                status: statusEnum,
+                roles: userRolesArray,
+                status: userStatusEnum,
                 name: { type: 'string' },
                 avatar: { type: 'string' },
             },
@@ -160,7 +119,7 @@ export const adminUsersSchemas = {
             required: ['status'],
             additionalProperties: false,
             properties: {
-                status: statusEnum,
+                status: userStatusEnum,
             },
         },
         response: {
@@ -174,7 +133,7 @@ export const adminUsersSchemas = {
         security: securityBearer,
         params: userIdParams,
         response: {
-            204: { type: 'null' },
+            ...response204,
             ...error400,
             ...error403,
             ...error404,
@@ -184,7 +143,7 @@ export const adminUsersSchemas = {
         security: securityBearer,
         params: userIdParams,
         response: {
-            204: { type: 'null' },
+            ...response204,
             ...error400,
             ...error403,
             ...error404,
@@ -202,7 +161,7 @@ export const adminUsersSchemas = {
             },
         },
         response: {
-            204: { type: 'null' },
+            ...response204,
             ...error400,
             ...error403,
             ...error404,
