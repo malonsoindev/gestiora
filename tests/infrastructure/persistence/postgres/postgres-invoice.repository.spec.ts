@@ -1,7 +1,6 @@
-import postgres from 'postgres';
-import { describe, expect, it, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, expect, it, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { PostgresInvoiceRepository } from '@infrastructure/persistence/postgres/postgres-invoice.repository.js';
-import { Invoice, InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
+import { InvoiceHeaderStatus, InvoiceStatus } from '@domain/entities/invoice.entity.js';
 import type { InvoiceProps } from '@domain/entities/invoice.entity.js';
 import { InvoiceMovement, InvoiceMovementStatus } from '@domain/entities/invoice-movement.entity.js';
 import type { InvoiceMovementProps } from '@domain/entities/invoice-movement.entity.js';
@@ -10,13 +9,14 @@ import { InvoiceDate } from '@domain/value-objects/invoice-date.value-object.js'
 import { Money } from '@domain/value-objects/money.value-object.js';
 import { FileRef } from '@domain/value-objects/file-ref.value-object.js';
 import { createTestInvoice } from '@tests/shared/fixtures/invoice.fixture.js';
+import { createPostgresTestContext } from '@tests/shared/helpers/postgres-test-context.js';
 
 const describeIf = process.env.DATABASE_URL ? describe : describe.skip;
 const fixedNow = new Date('2026-03-10T10:00:00.000Z');
 
 const createMovement = (overrides: Partial<InvoiceMovementProps> = {}): InvoiceMovement =>
     InvoiceMovement.create({
-        id: 'movement-1',
+        id: overrides.id ?? 'movement-1',
         concepto: 'Servicio',
         cantidad: 1,
         precio: 100,
@@ -33,11 +33,17 @@ type CreateInvoiceOptions = {
     withFileRef?: boolean;
 };
 
-const createInvoice = (options: CreateInvoiceOptions | Partial<InvoiceProps> = {}): Invoice => {
+const createInvoice = (options: CreateInvoiceOptions | Partial<InvoiceProps> = {}) => {
     // Support both old signature (overrides only) and new signature (options object)
     const isOptionsObject = 'overrides' in options || 'withFileRef' in options;
     const overrides = isOptionsObject ? (options as CreateInvoiceOptions).overrides ?? {} : (options as Partial<InvoiceProps>);
     const withFileRef = isOptionsObject ? (options as CreateInvoiceOptions).withFileRef ?? true : true;
+
+    const invoiceId = overrides.id ?? 'invoice-1';
+    
+    // Create movements with unique IDs based on invoice ID (unless explicitly provided)
+    const defaultMovement = createMovement({ id: `${invoiceId}-movement-1` });
+    const movements = overrides.movements ?? [defaultMovement];
 
     const baseProps: Partial<InvoiceProps> = {
         status: InvoiceStatus.Active,
@@ -49,7 +55,7 @@ const createInvoice = (options: CreateInvoiceOptions | Partial<InvoiceProps> = {
         baseImponible: Money.create(100),
         iva: Money.create(21),
         total: Money.create(121),
-        movements: [createMovement()],
+        movements,
         ...overrides,
     };
 
@@ -70,11 +76,14 @@ const createInvoice = (options: CreateInvoiceOptions | Partial<InvoiceProps> = {
 };
 
 describeIf('PostgresInvoiceRepository', () => {
-    const sql = postgres(process.env.DATABASE_URL as string, { max: 1 });
-    const repository = new PostgresInvoiceRepository(sql);
+    const ctx = createPostgresTestContext();
+    let repository: PostgresInvoiceRepository;
 
     beforeAll(async () => {
-        await sql`
+        await ctx.setup();
+        
+        // Create tables if they don't exist
+        await ctx.sql`
             create table if not exists providers (
                 id text primary key,
                 razon_social text not null,
@@ -91,7 +100,7 @@ describeIf('PostgresInvoiceRepository', () => {
             )
         `;
 
-        await sql`
+        await ctx.sql`
             create table if not exists invoices (
                 id text primary key,
                 provider_id text not null references providers(id),
@@ -115,7 +124,7 @@ describeIf('PostgresInvoiceRepository', () => {
             )
         `;
 
-        await sql`
+        await ctx.sql`
             create table if not exists invoice_movements (
                 id text primary key,
                 invoice_id text not null references invoices(id),
@@ -129,13 +138,20 @@ describeIf('PostgresInvoiceRepository', () => {
                 status text not null
             )
         `;
+        
+        repository = new PostgresInvoiceRepository(ctx.sql);
     });
 
     beforeEach(async () => {
-        await sql`delete from invoice_movements`;
-        await sql`delete from invoices`;
-        await sql`delete from providers`;
-        await sql`
+        await ctx.beginTransaction();
+        
+        // Clean existing data within the savepoint (will be rolled back after test)
+        await ctx.sql`delete from invoice_movements`;
+        await ctx.sql`delete from invoices`;
+        await ctx.sql`delete from providers`;
+        
+        // Seed test provider within the transaction
+        await ctx.sql`
             insert into providers (
                 id,
                 razon_social,
@@ -154,8 +170,12 @@ describeIf('PostgresInvoiceRepository', () => {
         `;
     });
 
+    afterEach(async () => {
+        await ctx.rollbackTransaction();
+    });
+
     afterAll(async () => {
-        await sql.end({ timeout: 5 });
+        await ctx.cleanup();
     });
 
     it('creates and fetches invoice with movements', async () => {
@@ -279,7 +299,7 @@ describeIf('PostgresInvoiceRepository', () => {
     });
 
     it('lists invoices with pagination (page 2)', async () => {
-        // Create 3 invoices
+        // Create 2 invoices
         const invoice1 = createInvoice({ id: 'invoice-1' });
         const invoice2 = createInvoice({ id: 'invoice-2' });
         await repository.create(invoice1);

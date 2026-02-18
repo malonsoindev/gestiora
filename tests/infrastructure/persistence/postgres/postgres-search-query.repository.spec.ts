@@ -1,16 +1,19 @@
-import { describe, expect, it, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, expect, it, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import postgres from 'postgres';
 import { PostgresSearchQueryRepository } from '@infrastructure/persistence/postgres/postgres-search-query.repository.js';
+import { createPostgresTestContext } from '@tests/shared/helpers/postgres-test-context.js';
 
 const describeIf = process.env.DATABASE_URL ? describe : describe.skip;
 const fixedNow = new Date('2026-03-15T10:00:00.000Z');
 
 describeIf('PostgresSearchQueryRepository', () => {
-    const sql = postgres(process.env.DATABASE_URL as string, { max: 1 });
-    const repository = new PostgresSearchQueryRepository(sql);
+    const ctx = createPostgresTestContext();
+    let repository: PostgresSearchQueryRepository;
 
     beforeAll(async () => {
-        await sql`
+        await ctx.setup();
+        
+        await ctx.sql`
             create table if not exists search_queries (
                 query_id text primary key,
                 user_id text not null,
@@ -22,14 +25,23 @@ describeIf('PostgresSearchQueryRepository', () => {
                 created_at timestamptz not null
             )
         `;
+        
+        repository = new PostgresSearchQueryRepository(ctx.sql);
     });
 
     beforeEach(async () => {
-        await sql`delete from search_queries where query_id in ('query-1', 'query-2')`;
+        await ctx.beginTransaction();
+        
+        // Clean up within the transaction
+        await ctx.sql`delete from search_queries`;
+    });
+
+    afterEach(async () => {
+        await ctx.rollbackTransaction();
     });
 
     afterAll(async () => {
-        await sql.end();
+        await ctx.cleanup();
     });
 
     it('saves and retrieves by key', async () => {

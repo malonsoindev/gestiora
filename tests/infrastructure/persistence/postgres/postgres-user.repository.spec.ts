@@ -1,9 +1,9 @@
-import postgres from 'postgres';
-import { describe, expect, it, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, expect, it, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { PostgresUserRepository } from '@infrastructure/persistence/postgres/postgres-user.repository.js';
 import { User, UserStatus } from '@domain/entities/user.entity.js';
 import { Email } from '@domain/value-objects/email.value-object.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
+import { createPostgresTestContext } from '@tests/shared/helpers/postgres-test-context.js';
 
 const describeIf = process.env.DATABASE_URL ? describe : describe.skip;
 const fixedNow = new Date('2026-03-10T10:00:00.000Z');
@@ -60,11 +60,13 @@ const createTestUser = (overrides: {
 };
 
 describeIf('PostgresUserRepository', () => {
-    const sql = postgres(process.env.DATABASE_URL as string, { max: 1 });
-    const repository = new PostgresUserRepository(sql);
+    const ctx = createPostgresTestContext();
+    let repository: PostgresUserRepository;
 
     beforeAll(async () => {
-        await sql`
+        await ctx.setup();
+        
+        await ctx.sql`
             create table if not exists users (
                 id text primary key,
                 email text unique not null,
@@ -79,16 +81,24 @@ describeIf('PostgresUserRepository', () => {
                 deleted_at timestamptz null
             )
         `;
+        
+        repository = new PostgresUserRepository(ctx.sql);
     });
 
     beforeEach(async () => {
-        // Clean up sessions first due to FK constraint
-        await sql`delete from sessions where user_id in (${USER_IDS.one}, ${USER_IDS.two}, ${USER_IDS.three})`;
-        await sql`delete from users where id in (${USER_IDS.one}, ${USER_IDS.two}, ${USER_IDS.three})`;
+        await ctx.beginTransaction();
+        
+        // Clean up within the transaction
+        await ctx.sql`delete from sessions`;
+        await ctx.sql`delete from users`;
+    });
+
+    afterEach(async () => {
+        await ctx.rollbackTransaction();
     });
 
     afterAll(async () => {
-        await sql.end({ timeout: 5 });
+        await ctx.cleanup();
     });
 
     it('creates and retrieves a user by id', async () => {
@@ -235,9 +245,8 @@ describeIf('PostgresUserRepository', () => {
 
         expect(listResult.success).toBe(true);
         if (listResult.success) {
-            // Should include our test users (and possibly seed users)
-            expect(listResult.value.items.length).toBeGreaterThanOrEqual(2);
-            expect(listResult.value.total).toBeGreaterThanOrEqual(2);
+            expect(listResult.value.items).toHaveLength(2);
+            expect(listResult.value.total).toBe(2);
 
             // Verify our test users are in the list
             const userIds = listResult.value.items.map((u) => u.id);

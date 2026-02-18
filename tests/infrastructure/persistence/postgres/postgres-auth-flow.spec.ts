@@ -1,5 +1,4 @@
-import postgres from 'postgres';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, afterEach, describe, expect, it } from 'vitest';
 import { PostgresUserRepository } from '@infrastructure/persistence/postgres/postgres-user.repository.js';
 import { PostgresSessionRepository } from '@infrastructure/persistence/postgres/postgres-session.repository.js';
 import { PostgresLoginAttemptRepository } from '@infrastructure/persistence/postgres/postgres-login-attempt.repository.js';
@@ -17,6 +16,7 @@ import { AuthInvalidRefreshTokenError } from '@domain/errors/auth-invalid-refres
 import { ok } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
+import { createPostgresTestContext } from '@tests/shared/helpers/postgres-test-context.js';
 
 const describeIf = process.env.DATABASE_URL ? describe : describe.skip;
 class SessionIdGeneratorStub {
@@ -51,10 +51,11 @@ const baseLoginRequest = {
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describeIf('Postgres auth flow', () => {
-    const sql = postgres(process.env.DATABASE_URL as string, { max: 1 });
-    const userRepository = new PostgresUserRepository(sql);
-    const sessionRepository = new PostgresSessionRepository(sql);
-    const loginAttemptRepository = new PostgresLoginAttemptRepository(sql);
+    const ctx = createPostgresTestContext();
+    let userRepository: PostgresUserRepository;
+    let sessionRepository: PostgresSessionRepository;
+    let loginAttemptRepository: PostgresLoginAttemptRepository;
+    
     const passwordHasher = new BcryptPasswordHasher();
     const refreshTokenHasher = new SimpleRefreshTokenHasher();
     const tokenService = new JwtTokenService('access-secret', 'refresh-secret', 900, 2_592_000);
@@ -62,42 +63,14 @@ describeIf('Postgres auth flow', () => {
     const auditLogger = new AuditLoggerStub();
     const sessionIdGenerator = new SessionIdGeneratorStub(TEST_SESSION_ID);
 
-    const loginUseCase = new LoginUserUseCase({
-        userRepository,
-        sessionRepository,
-        passwordHasher,
-        tokenService,
-        refreshTokenHasher,
-        sessionIdGenerator,
-        auditLogger,
-        loginRateLimiter: { assertAllowed: async () => ok(undefined) },
-        loginAttemptRepository,
-        dateProvider,
-        accessTokenTtlSeconds: 900,
-        refreshTokenTtlSeconds: 2_592_000,
-    });
-
-    const refreshUseCase = new RefreshAccessTokenUseCase({
-        sessionRepository,
-        userRepository,
-        tokenService,
-        refreshTokenHasher,
-        auditLogger,
-        dateProvider,
-        accessTokenTtlSeconds: 900,
-        refreshTokenTtlSeconds: 2_592_000,
-        rotateRefreshTokens: true,
-    });
-
-    const logoutUseCase = new LogoutUserUseCase({
-        sessionRepository,
-        refreshTokenHasher,
-        auditLogger,
-        dateProvider,
-    });
+    let loginUseCase: LoginUserUseCase;
+    let refreshUseCase: RefreshAccessTokenUseCase;
+    let logoutUseCase: LogoutUserUseCase;
 
     beforeAll(async () => {
-        await sql`
+        await ctx.setup();
+
+        await ctx.sql`
             create table if not exists users (
                 id text primary key,
                 email text unique not null,
@@ -110,7 +83,7 @@ describeIf('Postgres auth flow', () => {
             )
         `;
 
-        await sql`
+        await ctx.sql`
             create table if not exists sessions (
                 id text primary key,
                 user_id text not null references users(id),
@@ -126,7 +99,7 @@ describeIf('Postgres auth flow', () => {
             )
         `;
 
-        await sql`
+        await ctx.sql`
             create table if not exists login_attempts (
                 id bigserial primary key,
                 email text not null,
@@ -135,17 +108,61 @@ describeIf('Postgres auth flow', () => {
                 created_at timestamptz not null
             )
         `;
+
+        userRepository = new PostgresUserRepository(ctx.sql);
+        sessionRepository = new PostgresSessionRepository(ctx.sql);
+        loginAttemptRepository = new PostgresLoginAttemptRepository(ctx.sql);
+
+        loginUseCase = new LoginUserUseCase({
+            userRepository,
+            sessionRepository,
+            passwordHasher,
+            tokenService,
+            refreshTokenHasher,
+            sessionIdGenerator,
+            auditLogger,
+            loginRateLimiter: { assertAllowed: async () => ok(undefined) },
+            loginAttemptRepository,
+            dateProvider,
+            accessTokenTtlSeconds: 900,
+            refreshTokenTtlSeconds: 2_592_000,
+        });
+
+        refreshUseCase = new RefreshAccessTokenUseCase({
+            sessionRepository,
+            userRepository,
+            tokenService,
+            refreshTokenHasher,
+            auditLogger,
+            dateProvider,
+            accessTokenTtlSeconds: 900,
+            refreshTokenTtlSeconds: 2_592_000,
+            rotateRefreshTokens: true,
+        });
+
+        logoutUseCase = new LogoutUserUseCase({
+            sessionRepository,
+            refreshTokenHasher,
+            auditLogger,
+            dateProvider,
+        });
     });
 
     beforeEach(async () => {
-        // Only clean up test-specific data to avoid conflicts with parallel tests
-        await sql`delete from login_attempts where email = ${TEST_EMAIL}`;
-        await sql`delete from sessions where user_id = ${TEST_USER_ID}`;
-        await sql`delete from users where id = ${TEST_USER_ID}`;
+        await ctx.beginTransaction();
+
+        // Clean up within the transaction
+        await ctx.sql`delete from login_attempts`;
+        await ctx.sql`delete from sessions`;
+        await ctx.sql`delete from users`;
+    });
+
+    afterEach(async () => {
+        await ctx.rollbackTransaction();
     });
 
     afterAll(async () => {
-        await sql.end({ timeout: 5 });
+        await ctx.cleanup();
     });
 
     it('logs in, rotates refresh token, and revokes session on logout', async () => {
@@ -183,7 +200,7 @@ describeIf('Postgres auth flow', () => {
         expect(sessionResult.success).toBe(true);
         expect(sessionResult.success && sessionResult.value?.status).toBe(SessionStatus.Active);
 
-        const attempts = await sql`
+        const attempts = await ctx.sql`
             select count(*)::int as count from login_attempts where email = ${TEST_EMAIL}
         `;
         expect(attempts[0]?.count).toBe(1);
