@@ -15,7 +15,6 @@ import { AuthInvalidCredentialsError } from '@domain/errors/auth-invalid-credent
 import { AuthRateLimitedError } from '@domain/errors/auth-rate-limited.error.js';
 import { AuthUserDisabledError } from '@domain/errors/auth-user-disabled.error.js';
 import { AuthUserLockedError } from '@domain/errors/auth-user-locked.error.js';
-import { Session } from '@domain/entities/session.entity.js';
 import { User, UserStatus } from '@domain/entities/user.entity.js';
 import type { UserProps } from '@domain/entities/user.entity.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
@@ -25,6 +24,7 @@ import { PasswordHasherStub } from '@tests/shared/stubs/password-hasher.stub.js'
 import { TokenServiceStub } from '@tests/shared/stubs/token-service.stub.js';
 import { RefreshTokenHasherStub } from '@tests/shared/stubs/refresh-token-hasher.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import { SessionRepositorySpy } from '@tests/shared/spies/session-repository.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 import {
@@ -33,6 +33,8 @@ import {
     FailingAuditLogger,
     FailingPasswordHasher,
     FailingRefreshTokenHasher,
+    FailingSessionRepositoryOnMethod,
+    FailingTokenServiceOnMethod,
 } from '@tests/shared/stubs/failing-stubs.js';
 
 const createUser = (overrides: Partial<UserProps> = {}): User =>
@@ -52,29 +54,6 @@ const buildUserRepository = (user: User | null): UserRepository => ({
     list: async () => ok({ items: [], total: 0 }),
     update: async () => ok(undefined),
 });
-
-class SessionRepositorySpy implements SessionRepository {
-    created: Session | null = null;
-    updated: Session | null = null;
-
-    async create(session: Session) {
-        this.created = session;
-        return ok(undefined);
-    }
-
-    async findByRefreshTokenHash() {
-        return ok(null);
-    }
-
-    async update(session: Session) {
-        this.updated = session;
-        return ok(undefined);
-    }
-
-    async revokeByUserId() {
-        return ok(undefined);
-    }
-}
 
 class AllowAllRateLimiter implements LoginRateLimiter {
     async assertAllowed(_email: string, _ip?: string) {
@@ -139,55 +118,6 @@ class FailingLoginAttemptRepositoryOnRecord implements LoginAttemptRepository {
 
     async recordAttempt() {
         return fail(new PortError('LoginAttemptRepository', 'Database write failed'));
-    }
-}
-
-class FailingTokenService implements TokenService {
-    private readonly failOn: 'createAccessToken' | 'createRefreshToken' | 'verifyAccessToken' | 'verifyRefreshToken';
-
-    constructor(failOn: 'createAccessToken' | 'createRefreshToken' | 'verifyAccessToken' | 'verifyRefreshToken') {
-        this.failOn = failOn;
-    }
-
-    createAccessToken() {
-        if (this.failOn === 'createAccessToken') {
-            return fail(new PortError('TokenService', 'Token signing failed'));
-        }
-        return ok('access-token');
-    }
-
-    createRefreshToken() {
-        if (this.failOn === 'createRefreshToken') {
-            return fail(new PortError('TokenService', 'Token signing failed'));
-        }
-        return ok('refresh-token');
-    }
-
-    verifyAccessToken() {
-        return fail(new PortError('TokenService', 'Token verification failed'));
-    }
-
-    verifyRefreshToken() {
-        return fail(new PortError('TokenService', 'Token verification failed'));
-    }
-}
-
-// FailingSessionRepositoryOnCreate with specific behavior: only create fails
-class FailingSessionRepositoryOnCreate implements SessionRepository {
-    async create() {
-        return fail(new PortError('SessionRepository', 'Database write failed'));
-    }
-
-    async findByRefreshTokenHash() {
-        return ok(null);
-    }
-
-    async update() {
-        return ok(undefined);
-    }
-
-    async revokeByUserId() {
-        return ok(undefined);
     }
 }
 
@@ -454,7 +384,7 @@ describe('LoginUserUseCase', () => {
             const user = createUser();
             const { useCase } = createUseCase({
                 userRepository: buildUserRepository(user),
-                tokenService: new FailingTokenService('createRefreshToken'),
+                tokenService: new FailingTokenServiceOnMethod('createRefreshToken'),
             });
 
             const result = await useCase.execute(buildLoginRequest({ email: user.email }));
@@ -486,7 +416,7 @@ describe('LoginUserUseCase', () => {
             const user = createUser();
             const { useCase } = createUseCase({
                 userRepository: buildUserRepository(user),
-                sessionRepository: new FailingSessionRepositoryOnCreate(),
+                sessionRepository: new FailingSessionRepositoryOnMethod('create'),
             });
 
             const result = await useCase.execute(buildLoginRequest({ email: user.email }));
@@ -502,7 +432,7 @@ describe('LoginUserUseCase', () => {
             const user = createUser();
             const { useCase } = createUseCase({
                 userRepository: buildUserRepository(user),
-                tokenService: new FailingTokenService('createAccessToken'),
+                tokenService: new FailingTokenServiceOnMethod('createAccessToken'),
             });
 
             const result = await useCase.execute(buildLoginRequest({ email: user.email }));
