@@ -209,6 +209,70 @@ export class FailingUserRepository implements UserRepository {
     }
 }
 
+export type FailingUserMethod = 'findById' | 'findByEmail' | 'create' | 'update' | 'list';
+
+/**
+ * UserRepository that fails only on a specific method.
+ * Other methods succeed normally (returning ok with appropriate defaults).
+ *
+ * @example
+ * ```typescript
+ * // Test UserRepository.create failure
+ * const sut = createSut({
+ *     userRepository: new FailingUserRepositoryOnMethod('create'),
+ * });
+ * const result = await sut.execute(validRequest);
+ * expect(result.error.port).toBe('UserRepository');
+ * ```
+ */
+export class FailingUserRepositoryOnMethod implements UserRepository {
+    private readonly portName = 'UserRepository';
+    private readonly failOn: FailingUserMethod;
+    private readonly errorMessage: string;
+
+    constructor(failOn: FailingUserMethod, errorMessage = 'Database error') {
+        this.failOn = failOn;
+        this.errorMessage = errorMessage;
+    }
+
+    async findById(_id: string): Promise<Result<User | null, PortError>> {
+        if (this.failOn === 'findById') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok(null);
+    }
+
+    async findByEmail(_email: string): Promise<Result<User | null, PortError>> {
+        if (this.failOn === 'findByEmail') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok(null);
+    }
+
+    async create(_user: User): Promise<Result<void, PortError>> {
+        if (this.failOn === 'create') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok(undefined);
+    }
+
+    async update(_user: User): Promise<Result<void, PortError>> {
+        if (this.failOn === 'update') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok(undefined);
+    }
+
+    async list(
+        _filter: { status?: UserStatus; role?: UserRole; page: number; pageSize: number },
+    ): Promise<Result<{ items: User[]; total: number }, PortError>> {
+        if (this.failOn === 'list') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok({ items: [], total: 0 });
+    }
+}
+
 export class FailingSessionRepository implements SessionRepository {
     private readonly portName = 'SessionRepository';
     private readonly errorMessage: string;

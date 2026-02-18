@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { CreateProviderUseCase } from '@application/use-cases/create-provider.use-case.js';
-import type { IdGenerator } from '@application/ports/id-generator.js';
 import { PortError } from '@application/errors/port.error.js';
 import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
 import { ProviderAlreadyExistsError } from '@domain/errors/provider-already-exists.error.js';
 import { ProviderStatus } from '@domain/entities/provider.entity.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { IdGeneratorStub } from '@tests/shared/stubs/id-generator.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { ProviderRepositorySpy } from '@tests/shared/spies/provider-repository.spy.js';
 import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
@@ -16,14 +16,6 @@ import {
     FailingAuditLogger,
     FailingProviderRepositoryOnMethod,
 } from '@tests/shared/stubs/failing-stubs.js';
-
-class ProviderIdGeneratorStub implements IdGenerator {
-    constructor(private readonly id: string) {}
-
-    generate(): string {
-        return this.id;
-    }
-}
 
 const createProviderEntity = () =>
     createTestProvider({
@@ -38,7 +30,7 @@ describe('CreateProviderUseCase', () => {
     it('creates a provider and audits the action', async () => {
         const providerRepository = new ProviderRepositorySpy();
         const auditLogger = new AuditLoggerSpy();
-        const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+        const providerIdGenerator = new IdGeneratorStub('provider-fixed');
 
         const useCase = new CreateProviderUseCase({
             providerRepository,
@@ -71,7 +63,7 @@ describe('CreateProviderUseCase', () => {
     it('rejects invalid cif', async () => {
         const providerRepository = new ProviderRepositorySpy();
         const auditLogger = new AuditLoggerSpy();
-        const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+        const providerIdGenerator = new IdGeneratorStub('provider-fixed');
 
         const useCase = new CreateProviderUseCase({
             providerRepository,
@@ -97,7 +89,7 @@ describe('CreateProviderUseCase', () => {
     it('rejects duplicate provider by cif', async () => {
         const providerRepository = new ProviderRepositorySpy({ duplicateByCif: createProviderEntity() });
         const auditLogger = new AuditLoggerSpy();
-        const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+        const providerIdGenerator = new IdGeneratorStub('provider-fixed');
 
         const useCase = new CreateProviderUseCase({
             providerRepository,
@@ -123,7 +115,7 @@ describe('CreateProviderUseCase', () => {
     it('rejects duplicate provider by normalized razonSocial when cif is missing', async () => {
         const providerRepository = new ProviderRepositorySpy({ duplicateByRazon: createProviderEntity() });
         const auditLogger = new AuditLoggerSpy();
-        const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+        const providerIdGenerator = new IdGeneratorStub('provider-fixed');
 
         const useCase = new CreateProviderUseCase({
             providerRepository,
@@ -149,7 +141,7 @@ describe('CreateProviderUseCase', () => {
         it('propagates PortError when DateProvider.now fails', async () => {
             const providerRepository = new ProviderRepositorySpy();
             const auditLogger = new AuditLoggerSpy();
-            const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+            const providerIdGenerator = new IdGeneratorStub('provider-fixed');
 
             const useCase = new CreateProviderUseCase({
                 providerRepository,
@@ -174,7 +166,7 @@ describe('CreateProviderUseCase', () => {
         it('propagates PortError when ProviderRepository.findByCif fails', async () => {
             const providerRepository = new FailingProviderRepositoryOnMethod('findByCif');
             const auditLogger = new AuditLoggerSpy();
-            const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+            const providerIdGenerator = new IdGeneratorStub('provider-fixed');
 
             const useCase = new CreateProviderUseCase({
                 providerRepository,
@@ -199,7 +191,7 @@ describe('CreateProviderUseCase', () => {
         it('propagates PortError when ProviderRepository.findByRazonSocialNormalized fails', async () => {
             const providerRepository = new FailingProviderRepositoryOnMethod('findByRazonSocialNormalized');
             const auditLogger = new AuditLoggerSpy();
-            const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+            const providerIdGenerator = new IdGeneratorStub('provider-fixed');
 
             const useCase = new CreateProviderUseCase({
                 providerRepository,
@@ -223,7 +215,7 @@ describe('CreateProviderUseCase', () => {
         it('propagates PortError when ProviderRepository.create fails', async () => {
             const providerRepository = new FailingProviderRepositoryOnMethod('create');
             const auditLogger = new AuditLoggerSpy();
-            const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+            const providerIdGenerator = new IdGeneratorStub('provider-fixed');
 
             const useCase = new CreateProviderUseCase({
                 providerRepository,
@@ -248,7 +240,7 @@ describe('CreateProviderUseCase', () => {
         it('propagates PortError when AuditLogger.log fails', async () => {
             const providerRepository = new ProviderRepositorySpy();
             const auditLogger = new FailingAuditLogger();
-            const providerIdGenerator = new ProviderIdGeneratorStub('provider-fixed');
+            const providerIdGenerator = new IdGeneratorStub('provider-fixed');
 
             const useCase = new CreateProviderUseCase({
                 providerRepository,

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CreateUserUseCase } from '@application/use-cases/create-user.use-case.js';
 import type { PasswordHasher } from '@application/ports/password-hasher.js';
-import type { IdGenerator } from '@application/ports/id-generator.js';
 import type { DateProvider } from '@application/ports/date-provider.js';
 import type { AuditLogger } from '@application/ports/audit-logger.js';
 import type { UserRepository } from '@application/ports/user.repository.js';
@@ -17,16 +16,16 @@ import { Email } from '@domain/value-objects/email.value-object.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 import { UserRepositorySpy } from '@tests/shared/spies/user-repository.spy.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { IdGeneratorStub } from '@tests/shared/stubs/id-generator.stub.js';
 import { PasswordHasherStub } from '@tests/shared/stubs/password-hasher.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
+import { fixedNow } from '@tests/shared/fixed-now.js';
 import {
     FailingDateProvider,
     FailingAuditLogger,
     FailingPasswordHasher,
+    FailingUserRepositoryOnMethod,
 } from '@tests/shared/stubs/failing-stubs.js';
-import { fail, ok, type Result } from '@shared/result.js';
-
-const fixedNow = new Date('2026-02-02T10:00:00.000Z');
 
 const validPassword = 'StrongPass1!a';
 const invalidPassword = 'weak';
@@ -39,45 +38,6 @@ const createUserEntity = (): User =>
         },
     });
 
-class UserIdGeneratorStub implements IdGenerator {
-    constructor(private readonly id: string) {}
-
-    generate(): string {
-        return this.id;
-    }
-}
-
-// Conditional failing repository for specific method failure tests
-class FailingUserRepositoryOnMethod implements UserRepository {
-    constructor(private readonly failOn: 'findByEmail' | 'create') {}
-
-    async findByEmail(_email: string): Promise<Result<User | null, PortError>> {
-        if (this.failOn === 'findByEmail') {
-            return fail(new PortError('UserRepository', 'Database read error'));
-        }
-        return ok(null);
-    }
-
-    async findById(_id: string): Promise<Result<User | null, PortError>> {
-        return ok(null);
-    }
-
-    async create(_user: User): Promise<Result<void, PortError>> {
-        if (this.failOn === 'create') {
-            return fail(new PortError('UserRepository', 'Database write error'));
-        }
-        return ok(undefined);
-    }
-
-    async list(_filter: { status?: UserStatus; role?: UserRole; page: number; pageSize: number }): Promise<Result<{ items: User[]; total: number }, PortError>> {
-        return ok({ items: [], total: 0 });
-    }
-
-    async update(_user: User): Promise<Result<void, PortError>> {
-        return ok(undefined);
-    }
-}
-
 type SutOverrides = Partial<{
     existingUser: User | null;
     passwordHasher: PasswordHasher;
@@ -89,7 +49,7 @@ type SutOverrides = Partial<{
 const makeSut = (overrides: SutOverrides = {}) => {
     const userRepository = overrides.userRepository ?? new UserRepositorySpy(overrides.existingUser ?? null);
     const auditLogger = overrides.auditLogger ?? new AuditLoggerSpy();
-    const userIdGenerator = new UserIdGeneratorStub('user-fixed');
+    const userIdGenerator = new IdGeneratorStub('user-fixed');
     const dateProvider = overrides.dateProvider ?? new DateProviderStub(fixedNow);
 
     const useCase = new CreateUserUseCase({
@@ -106,7 +66,7 @@ const makeSut = (overrides: SutOverrides = {}) => {
 const makeSutWithSpies = (overrides: Omit<SutOverrides, 'dateProvider' | 'auditLogger' | 'userRepository'> = {}) => {
     const userRepository = new UserRepositorySpy(overrides.existingUser ?? null);
     const auditLogger = new AuditLoggerSpy();
-    const userIdGenerator = new UserIdGeneratorStub('user-fixed');
+    const userIdGenerator = new IdGeneratorStub('user-fixed');
 
     const useCase = new CreateUserUseCase({
         userRepository,

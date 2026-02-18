@@ -20,6 +20,7 @@ import type { UserProps } from '@domain/entities/user.entity.js';
 import { UserRole } from '@domain/value-objects/user-role.value-object.js';
 import { fail, ok } from '@shared/result.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
+import { IdGeneratorStub } from '@tests/shared/stubs/id-generator.stub.js';
 import { PasswordHasherStub } from '@tests/shared/stubs/password-hasher.stub.js';
 import { TokenServiceStub } from '@tests/shared/stubs/token-service.stub.js';
 import { RefreshTokenHasherStub } from '@tests/shared/stubs/refresh-token-hasher.stub.js';
@@ -64,14 +65,6 @@ class AllowAllRateLimiter implements LoginRateLimiter {
 class BlockingRateLimiter implements LoginRateLimiter {
     async assertAllowed() {
         return fail(new AuthRateLimitedError());
-    }
-}
-
-class SessionIdGeneratorStub implements IdGenerator {
-    constructor(private readonly id: string) {}
-
-    generate(): string {
-        return this.id;
     }
 }
 
@@ -158,7 +151,7 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
         loginRateLimiter: new AllowAllRateLimiter(),
         loginAttemptRepository,
         dateProvider: new DateProviderStub(fixedNow),
-        sessionIdGenerator: new SessionIdGeneratorStub('session-fixed'),
+        sessionIdGenerator: new IdGeneratorStub('session-fixed'),
         accessTokenTtlSeconds: 900,
         refreshTokenTtlSeconds: 2_592_000,
         ...dependencies,
