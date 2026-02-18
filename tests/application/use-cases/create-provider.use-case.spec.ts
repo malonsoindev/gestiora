@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { CreateProviderUseCase } from '@application/use-cases/create-provider.use-case.js';
+import type { ProviderRepository } from '@application/ports/provider.repository.js';
+import type { AuditLogger } from '@application/ports/audit-logger.js';
+import type { DateProvider } from '@application/ports/date-provider.js';
+import type { IdGenerator } from '@application/ports/id-generator.js';
 import { PortError } from '@application/errors/port.error.js';
 import { InvalidCifError } from '@domain/errors/invalid-cif.error.js';
 import { ProviderAlreadyExistsError } from '@domain/errors/provider-already-exists.error.js';
@@ -26,23 +30,43 @@ const createProviderEntity = () =>
         },
     });
 
+type SutOverrides = Partial<{
+    providerRepository: ProviderRepository;
+    auditLogger: AuditLogger;
+    dateProvider: DateProvider;
+    providerIdGenerator: IdGenerator;
+}>;
+
+const makeSut = (overrides: SutOverrides = {}) => {
+    const providerRepository = overrides.providerRepository ?? new ProviderRepositorySpy();
+    const auditLogger = overrides.auditLogger ?? new AuditLoggerSpy();
+
+    const useCase = new CreateProviderUseCase({
+        providerRepository,
+        auditLogger,
+        dateProvider: overrides.dateProvider ?? new DateProviderStub(fixedNow),
+        providerIdGenerator: overrides.providerIdGenerator ?? new IdGeneratorStub('provider-fixed'),
+    });
+
+    return {
+        useCase,
+        providerRepository: providerRepository as ProviderRepositorySpy,
+        auditLogger: auditLogger as AuditLoggerSpy,
+    };
+};
+
+const baseCommand = {
+    actorUserId: 'user-1',
+    razonSocial: 'Proveedor Uno',
+    cif: 'B12345678',
+};
+
 describe('CreateProviderUseCase', () => {
     it('creates a provider and audits the action', async () => {
-        const providerRepository = new ProviderRepositorySpy();
-        const auditLogger = new AuditLoggerSpy();
-        const providerIdGenerator = new IdGeneratorStub('provider-fixed');
-
-        const useCase = new CreateProviderUseCase({
-            providerRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(fixedNow),
-            providerIdGenerator,
-        });
+        const { useCase, providerRepository, auditLogger } = makeSut();
 
         const result = await useCase.execute({
-            actorUserId: 'user-1',
-            razonSocial: 'Proveedor Uno',
-            cif: 'B12345678',
+            ...baseCommand,
             direccion: 'Calle Falsa 123',
             poblacion: 'Madrid',
             provincia: 'Madrid',
@@ -61,20 +85,10 @@ describe('CreateProviderUseCase', () => {
     });
 
     it('rejects invalid cif', async () => {
-        const providerRepository = new ProviderRepositorySpy();
-        const auditLogger = new AuditLoggerSpy();
-        const providerIdGenerator = new IdGeneratorStub('provider-fixed');
-
-        const useCase = new CreateProviderUseCase({
-            providerRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(fixedNow),
-            providerIdGenerator,
-        });
+        const { useCase, providerRepository, auditLogger } = makeSut();
 
         const result = await useCase.execute({
-            actorUserId: 'user-1',
-            razonSocial: 'Proveedor Uno',
+            ...baseCommand,
             cif: '12345678',
         });
 
@@ -87,22 +101,11 @@ describe('CreateProviderUseCase', () => {
     });
 
     it('rejects duplicate provider by cif', async () => {
-        const providerRepository = new ProviderRepositorySpy({ duplicateByCif: createProviderEntity() });
-        const auditLogger = new AuditLoggerSpy();
-        const providerIdGenerator = new IdGeneratorStub('provider-fixed');
-
-        const useCase = new CreateProviderUseCase({
-            providerRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(fixedNow),
-            providerIdGenerator,
+        const { useCase, providerRepository, auditLogger } = makeSut({
+            providerRepository: new ProviderRepositorySpy({ duplicateByCif: createProviderEntity() }),
         });
 
-        const result = await useCase.execute({
-            actorUserId: 'user-1',
-            razonSocial: 'Proveedor Uno',
-            cif: 'B12345678',
-        });
+        const result = await useCase.execute(baseCommand);
 
         expect(result.success).toBe(false);
         if (!result.success) {
@@ -113,15 +116,8 @@ describe('CreateProviderUseCase', () => {
     });
 
     it('rejects duplicate provider by normalized razonSocial when cif is missing', async () => {
-        const providerRepository = new ProviderRepositorySpy({ duplicateByRazon: createProviderEntity() });
-        const auditLogger = new AuditLoggerSpy();
-        const providerIdGenerator = new IdGeneratorStub('provider-fixed');
-
-        const useCase = new CreateProviderUseCase({
-            providerRepository,
-            auditLogger,
-            dateProvider: new DateProviderStub(fixedNow),
-            providerIdGenerator,
+        const { useCase, providerRepository, auditLogger } = makeSut({
+            providerRepository: new ProviderRepositorySpy({ duplicateByRazon: createProviderEntity() }),
         });
 
         const result = await useCase.execute({
@@ -139,22 +135,9 @@ describe('CreateProviderUseCase', () => {
 
     describe('PortError propagation', () => {
         it('propagates PortError when DateProvider.now fails', async () => {
-            const providerRepository = new ProviderRepositorySpy();
-            const auditLogger = new AuditLoggerSpy();
-            const providerIdGenerator = new IdGeneratorStub('provider-fixed');
+            const { useCase } = makeSut({ dateProvider: new FailingDateProvider() });
 
-            const useCase = new CreateProviderUseCase({
-                providerRepository,
-                auditLogger,
-                dateProvider: new FailingDateProvider(),
-                providerIdGenerator,
-            });
-
-            const result = await useCase.execute({
-                actorUserId: 'user-1',
-                razonSocial: 'Proveedor Uno',
-                cif: 'B12345678',
-            });
+            const result = await useCase.execute(baseCommand);
 
             expect(result.success).toBe(false);
             if (!result.success) {
@@ -164,22 +147,11 @@ describe('CreateProviderUseCase', () => {
         });
 
         it('propagates PortError when ProviderRepository.findByCif fails', async () => {
-            const providerRepository = new FailingProviderRepositoryOnMethod('findByCif');
-            const auditLogger = new AuditLoggerSpy();
-            const providerIdGenerator = new IdGeneratorStub('provider-fixed');
-
-            const useCase = new CreateProviderUseCase({
-                providerRepository,
-                auditLogger,
-                dateProvider: new DateProviderStub(fixedNow),
-                providerIdGenerator,
+            const { useCase } = makeSut({
+                providerRepository: new FailingProviderRepositoryOnMethod('findByCif'),
             });
 
-            const result = await useCase.execute({
-                actorUserId: 'user-1',
-                razonSocial: 'Proveedor Uno',
-                cif: 'B12345678',
-            });
+            const result = await useCase.execute(baseCommand);
 
             expect(result.success).toBe(false);
             if (!result.success) {
@@ -189,15 +161,8 @@ describe('CreateProviderUseCase', () => {
         });
 
         it('propagates PortError when ProviderRepository.findByRazonSocialNormalized fails', async () => {
-            const providerRepository = new FailingProviderRepositoryOnMethod('findByRazonSocialNormalized');
-            const auditLogger = new AuditLoggerSpy();
-            const providerIdGenerator = new IdGeneratorStub('provider-fixed');
-
-            const useCase = new CreateProviderUseCase({
-                providerRepository,
-                auditLogger,
-                dateProvider: new DateProviderStub(fixedNow),
-                providerIdGenerator,
+            const { useCase } = makeSut({
+                providerRepository: new FailingProviderRepositoryOnMethod('findByRazonSocialNormalized'),
             });
 
             const result = await useCase.execute({
@@ -213,22 +178,11 @@ describe('CreateProviderUseCase', () => {
         });
 
         it('propagates PortError when ProviderRepository.create fails', async () => {
-            const providerRepository = new FailingProviderRepositoryOnMethod('create');
-            const auditLogger = new AuditLoggerSpy();
-            const providerIdGenerator = new IdGeneratorStub('provider-fixed');
-
-            const useCase = new CreateProviderUseCase({
-                providerRepository,
-                auditLogger,
-                dateProvider: new DateProviderStub(fixedNow),
-                providerIdGenerator,
+            const { useCase } = makeSut({
+                providerRepository: new FailingProviderRepositoryOnMethod('create'),
             });
 
-            const result = await useCase.execute({
-                actorUserId: 'user-1',
-                razonSocial: 'Proveedor Uno',
-                cif: 'B12345678',
-            });
+            const result = await useCase.execute(baseCommand);
 
             expect(result.success).toBe(false);
             if (!result.success) {
@@ -238,22 +192,9 @@ describe('CreateProviderUseCase', () => {
         });
 
         it('propagates PortError when AuditLogger.log fails', async () => {
-            const providerRepository = new ProviderRepositorySpy();
-            const auditLogger = new FailingAuditLogger();
-            const providerIdGenerator = new IdGeneratorStub('provider-fixed');
+            const { useCase } = makeSut({ auditLogger: new FailingAuditLogger() });
 
-            const useCase = new CreateProviderUseCase({
-                providerRepository,
-                auditLogger,
-                dateProvider: new DateProviderStub(fixedNow),
-                providerIdGenerator,
-            });
-
-            const result = await useCase.execute({
-                actorUserId: 'user-1',
-                razonSocial: 'Proveedor Uno',
-                cif: 'B12345678',
-            });
+            const result = await useCase.execute(baseCommand);
 
             expect(result.success).toBe(false);
             if (!result.success) {

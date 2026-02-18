@@ -1,6 +1,7 @@
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
 import type { ProviderProps } from '@domain/entities/provider.entity.js';
 import { Cif } from '@domain/value-objects/cif.value-object.js';
+import { fixedNow } from '@tests/shared/fixed-now.js';
 
 type CreateProviderParams = {
     now: Date;
@@ -32,3 +33,17 @@ export const createTestProvider = ({ now, overrides, omitCif }: CreateProviderPa
         ...resolvedOverrides,
     });
 };
+
+/**
+ * Creates an active provider with CIF for use-case tests.
+ * Common helper to reduce duplication in provider-related use-case specs.
+ */
+export const createActiveProvider = (overrides: Partial<ProviderProps> = {}): Provider =>
+    createTestProvider({
+        now: fixedNow,
+        overrides: {
+            status: ProviderStatus.Active,
+            cif: Cif.create('B12345678'),
+            ...overrides,
+        },
+    });

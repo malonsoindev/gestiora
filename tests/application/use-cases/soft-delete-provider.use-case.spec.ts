@@ -1,25 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { SoftDeleteProviderUseCase } from '@application/use-cases/soft-delete-provider.use-case.js';
 import { Provider, ProviderStatus } from '@domain/entities/provider.entity.js';
-import type { ProviderProps } from '@domain/entities/provider.entity.js';
-import { Cif } from '@domain/value-objects/cif.value-object.js';
 import { ProviderNotFoundError } from '@domain/errors/provider-not-found.error.js';
 import { RagReindexProviderInvoicesServiceStub } from '@tests/shared/stubs/rag-reindex-provider-invoices.service.stub.js';
 import { DateProviderStub } from '@tests/shared/stubs/date-provider.stub.js';
 import { AuditLoggerSpy } from '@tests/shared/spies/audit-logger.spy.js';
 import { ProviderRepositorySpy } from '@tests/shared/spies/provider-repository.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
-import { createTestProvider } from '@tests/shared/fixtures/provider.fixture.js';
-
-const createProvider = (overrides: Partial<ProviderProps> = {}): Provider =>
-    createTestProvider({
-        now: fixedNow,
-        overrides: {
-            status: ProviderStatus.Active,
-            cif: Cif.create('B12345678'),
-            ...overrides,
-        },
-    });
+import { createActiveProvider } from '@tests/shared/fixtures/provider.fixture.js';
 
 type SutOverrides = Partial<{
     provider: Provider | null;
@@ -28,7 +16,7 @@ type SutOverrides = Partial<{
 
 const makeSut = (overrides: SutOverrides = {}) => {
     const now = overrides.now ?? fixedNow;
-    const provider = overrides.provider === undefined ? createProvider() : overrides.provider;
+    const provider = overrides.provider === undefined ? createActiveProvider() : overrides.provider;
     const providerRepository = new ProviderRepositorySpy({ existingProvider: provider });
     const auditLogger = new AuditLoggerSpy();
 
@@ -76,7 +64,7 @@ describe('SoftDeleteProviderUseCase', () => {
 
     it('rejects when provider is already deleted', async () => {
         const { useCase, providerRepository } = makeSut({
-            provider: createProvider({ deletedAt: new Date('2026-02-01T00:00:00.000Z') }),
+            provider: createActiveProvider({ deletedAt: new Date('2026-02-01T00:00:00.000Z') }),
         });
 
         const result = await useCase.execute(baseCommand);
