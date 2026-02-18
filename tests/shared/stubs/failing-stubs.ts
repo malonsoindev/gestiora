@@ -45,7 +45,7 @@ import type { Invoice } from '@domain/entities/invoice.entity.js';
 import type { PortError } from '@application/errors/port.error.js';
 import type { AuthRateLimitedError } from '@domain/errors/auth-rate-limited.error.js';
 import { PortError as PortErrorClass } from '@application/errors/port.error.js';
-import { fail, type Result } from '@shared/result.js';
+import { fail, ok, type Result } from '@shared/result.js';
 
 // =============================================================================
 // Core Infrastructure Stubs
@@ -280,6 +280,61 @@ export class FailingProviderRepository implements ProviderRepository {
 
     async list(_filters: ProviderListFilters): Promise<Result<ProviderListResult, PortError>> {
         return fail(new PortErrorClass(this.portName, this.errorMessage));
+    }
+}
+
+export type FailingProviderMethod = 'findById' | 'findByCif' | 'findByRazonSocialNormalized' | 'create' | 'update' | 'list';
+
+export class FailingProviderRepositoryOnMethod implements ProviderRepository {
+    private readonly portName = 'ProviderRepository';
+    private readonly failOn: FailingProviderMethod;
+    private readonly errorMessage: string;
+
+    constructor(failOn: FailingProviderMethod, errorMessage = 'Database connection lost') {
+        this.failOn = failOn;
+        this.errorMessage = errorMessage;
+    }
+
+    async findById(_id: string): Promise<Result<Provider | null, PortError>> {
+        if (this.failOn === 'findById') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok(null);
+    }
+
+    async findByCif(_cif: string): Promise<Result<Provider | null, PortError>> {
+        if (this.failOn === 'findByCif') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok(null);
+    }
+
+    async findByRazonSocialNormalized(_normalized: string): Promise<Result<Provider | null, PortError>> {
+        if (this.failOn === 'findByRazonSocialNormalized') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok(null);
+    }
+
+    async create(_provider: Provider): Promise<Result<void, PortError>> {
+        if (this.failOn === 'create') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok(undefined);
+    }
+
+    async update(_provider: Provider): Promise<Result<void, PortError>> {
+        if (this.failOn === 'update') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok(undefined);
+    }
+
+    async list(_filters: ProviderListFilters): Promise<Result<ProviderListResult, PortError>> {
+        if (this.failOn === 'list') {
+            return fail(new PortErrorClass(this.portName, this.errorMessage));
+        }
+        return ok({ items: [], total: 0 });
     }
 }
 
