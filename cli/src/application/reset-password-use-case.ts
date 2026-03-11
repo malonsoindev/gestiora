@@ -19,5 +19,5 @@ export async function resetPasswordUseCase(
     throw new CliError('Las contraseñas no coinciden.');
   }
 
-  await repo.resetPassword(id, { password });
+  await repo.resetPassword(id, { newPassword: password });
 }

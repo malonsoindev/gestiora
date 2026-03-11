@@ -13,6 +13,7 @@ import {
   handleResetPassword,
 } from '../../src/infrastructure/ui/main-menu.ts';
 import type { UserRepository } from '../../src/domain/ports.ts';
+import type { UserRole } from '../../src/domain/user.ts';
 
 vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
@@ -37,12 +38,12 @@ const mockRepo: UserRepository = {
 };
 
 const mockUser = {
-  id: '1',
+  userId: '1',
   email: 'a@b.com',
-  firstName: 'A',
-  lastName: 'B',
-  role: 'USER' as const,
+  name: 'A',
+  roles: ['Usuario'] as UserRole[],
   status: 'ACTIVE' as const,
+  createdAt: '2024-01-01T00:00:00.000Z',
 };
 
 beforeEach(() => {
@@ -74,14 +75,13 @@ describe('handleUpdateUser', () => {
   it('construye el payload con los campos no vacíos y llama a updateUserUseCase', async () => {
     vi.mocked(input)
       .mockResolvedValueOnce('1')      // id
-      .mockResolvedValueOnce('Nuevo')  // firstName
-      .mockResolvedValueOnce('')       // lastName (vacío → se omite)
-      .mockResolvedValueOnce('');      // email (vacío → se omite)
+      .mockResolvedValueOnce('Nuevo')  // name
+      .mockResolvedValueOnce('');      // avatar (vacío → se omite)
     vi.mocked(updateUserUseCase).mockResolvedValue(mockUser);
 
     await handleUpdateUser(mockRepo);
 
-    expect(updateUserUseCase).toHaveBeenCalledWith(mockRepo, '1', { firstName: 'Nuevo' });
+    expect(updateUserUseCase).toHaveBeenCalledWith(mockRepo, '1', { name: 'Nuevo' });
   });
 });
 

@@ -29,8 +29,8 @@ export class UserApiRepository implements UserRepository {
     if (res.status === 401) throw new AuthError();
     if (!res.ok) throw new CliError(`Error al listar usuarios (${res.status})`);
 
-    const data = await res.json() as { users: User[] };
-    return data.users;
+    const data = await res.json() as { items: User[]; total: number; page: number; pageSize: number };
+    return data.items;
   }
 
   async findUsers(query: string): Promise<User[]> {
@@ -43,8 +43,8 @@ export class UserApiRepository implements UserRepository {
     if (res.status === 401) throw new AuthError();
     if (!res.ok) throw new CliError(`Error al buscar usuarios (${res.status})`);
 
-    const data = await res.json() as { users: User[] };
-    return data.users;
+    const data = await res.json() as { items: User[]; total: number; page: number; pageSize: number };
+    return data.items;
   }
 
   async updateUser(id: string, payload: UpdateUserPayload): Promise<User> {

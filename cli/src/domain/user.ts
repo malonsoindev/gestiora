@@ -1,13 +1,14 @@
-export type UserRole = 'ADMIN' | 'USER';
+export type UserRole = 'Usuario' | 'Administrador';
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED';
 
 export interface User {
-  id: string;
+  userId: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
+  name?: string;
+  avatar?: string;
+  roles: UserRole[];
   status: UserStatus;
+  createdAt: string;
 }
 
 export interface LoginCredentials {
@@ -20,11 +21,12 @@ export interface AuthResponse {
 }
 
 export interface UpdateUserPayload {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
+  name?: string;
+  avatar?: string;
+  roles?: UserRole[];
+  status?: UserStatus;
 }
 
 export interface ResetPasswordPayload {
-  password: string;
+  newPassword: string;
 }

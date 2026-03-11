@@ -5,12 +5,12 @@ import type { User } from '../../src/domain/user.ts';
 import { CliError, NotFoundError } from '../../src/domain/errors.ts';
 
 const mockUser: User = {
-  id: '1',
+  userId: '1',
   email: 'ana@example.com',
-  firstName: 'Ana',
-  lastName: 'García',
-  role: 'USER',
+  name: 'Ana García',
+  roles: ['Usuario'],
   status: 'ACTIVE',
+  createdAt: '2024-01-01T00:00:00.000Z',
 };
 
 const mockRepo: UserRepository = {
@@ -28,13 +28,13 @@ beforeEach(() => {
 
 describe('updateUserUseCase', () => {
   it('actualiza el usuario con los campos proporcionados', async () => {
-    const updated = { ...mockUser, firstName: 'Ángela' };
+    const updated = { ...mockUser, name: 'Ángela' };
     vi.mocked(mockRepo.updateUser).mockResolvedValue(updated);
 
-    const result = await updateUserUseCase(mockRepo, '1', { firstName: 'Ángela' });
+    const result = await updateUserUseCase(mockRepo, '1', { name: 'Ángela' });
 
-    expect(mockRepo.updateUser).toHaveBeenCalledWith('1', { firstName: 'Ángela' });
-    expect(result.firstName).toBe('Ángela');
+    expect(mockRepo.updateUser).toHaveBeenCalledWith('1', { name: 'Ángela' });
+    expect(result.name).toBe('Ángela');
   });
 
   it('lanza error si el payload está vacío', async () => {
@@ -43,7 +43,7 @@ describe('updateUserUseCase', () => {
   });
 
   it('lanza error si el id está vacío', async () => {
-    await expect(updateUserUseCase(mockRepo, '', { firstName: 'Ana' })).rejects.toThrow(CliError);
+    await expect(updateUserUseCase(mockRepo, '', { name: 'Ana' })).rejects.toThrow(CliError);
     expect(mockRepo.updateUser).not.toHaveBeenCalled();
   });
 

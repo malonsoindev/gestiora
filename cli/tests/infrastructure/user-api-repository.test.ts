@@ -56,7 +56,7 @@ describe('UserApiRepository', () => {
     it('devuelve la lista de usuarios', async () => {
       tokenStore.set('tok123');
       mockFetch.mockResolvedValue(
-        jsonResponse({ users: [{ id: '1', email: 'a@b.com', firstName: 'A', lastName: 'B', role: 'USER', status: 'ACTIVE' }], total: 1 }),
+        jsonResponse({ items: [{ userId: '1', email: 'a@b.com', name: 'A', roles: ['Usuario'], status: 'ACTIVE', createdAt: '2024-01-01T00:00:00.000Z' }], total: 1, page: 1, pageSize: 10 }),
       );
 
       const users = await repo.listUsers();
@@ -81,7 +81,7 @@ describe('UserApiRepository', () => {
     it('devuelve usuarios filtrados por query', async () => {
       tokenStore.set('tok123');
       mockFetch.mockResolvedValue(
-        jsonResponse({ users: [{ id: '1', email: 'ana@b.com', firstName: 'Ana', lastName: 'G', role: 'USER', status: 'ACTIVE' }], total: 1 }),
+        jsonResponse({ items: [{ userId: '1', email: 'ana@b.com', name: 'Ana', roles: ['Usuario'], status: 'ACTIVE', createdAt: '2024-01-01T00:00:00.000Z' }], total: 1, page: 1, pageSize: 10 }),
       );
 
       const users = await repo.findUsers('ana');
@@ -97,10 +97,10 @@ describe('UserApiRepository', () => {
   describe('updateUser', () => {
     it('actualiza el usuario y devuelve el usuario actualizado', async () => {
       tokenStore.set('tok123');
-      const updated = { id: '1', email: 'new@b.com', firstName: 'New', lastName: 'G', role: 'USER', status: 'ACTIVE' };
+      const updated = { userId: '1', email: 'new@b.com', name: 'New', roles: ['Usuario'], status: 'ACTIVE', createdAt: '2024-01-01T00:00:00.000Z' };
       mockFetch.mockResolvedValue(jsonResponse(updated));
 
-      const result = await repo.updateUser('1', { email: 'new@b.com' });
+      const result = await repo.updateUser('1', { name: 'New' });
 
       expect(mockFetch).toHaveBeenCalledWith(
         `${BASE_URL}/admin/users/1`,
@@ -113,7 +113,7 @@ describe('UserApiRepository', () => {
       tokenStore.set('tok123');
       mockFetch.mockResolvedValue(jsonResponse({ message: 'Not found' }, 404));
 
-      await expect(repo.updateUser('999', { firstName: 'X' })).rejects.toThrow(NotFoundError);
+      await expect(repo.updateUser('999', { name: 'X' })).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -146,13 +146,13 @@ describe('UserApiRepository', () => {
       tokenStore.set('tok123');
       mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
 
-      await repo.resetPassword('1', { password: MOCK_NEW_CREDENTIAL });
+      await repo.resetPassword('1', { newPassword: MOCK_NEW_CREDENTIAL });
 
       expect(mockFetch).toHaveBeenCalledWith(
         `${BASE_URL}/admin/users/1/password`,
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ password: MOCK_NEW_CREDENTIAL }),
+          body: JSON.stringify({ newPassword: MOCK_NEW_CREDENTIAL }),
         }),
       );
     });
@@ -161,7 +161,7 @@ describe('UserApiRepository', () => {
       tokenStore.set('tok123');
       mockFetch.mockResolvedValue(jsonResponse({ message: 'Not found' }, 404));
 
-      await expect(repo.resetPassword('999', { password: MOCK_SHORT_CREDENTIAL })).rejects.toThrow(NotFoundError);
+      await expect(repo.resetPassword('999', { newPassword: MOCK_SHORT_CREDENTIAL })).rejects.toThrow(NotFoundError);
     });
   });
 });

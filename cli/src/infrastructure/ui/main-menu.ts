@@ -17,7 +17,7 @@ function displayUsers(users: User[]): void {
   }
   console.log(`\n  ${users.length} usuario(s):\n`);
   for (const u of users) {
-    console.log(`  [${u.id}] ${u.email} — ${u.firstName} ${u.lastName} | ${u.role} | ${u.status}`);
+    console.log(`  [${u.userId}] ${u.email} — ${u.name ?? ''} | ${u.roles.join(', ')} | ${u.status}`);
   }
   console.log('');
 }
@@ -35,14 +35,12 @@ export async function handleFindUsers(repo: UserRepository): Promise<void> {
 
 export async function handleUpdateUser(repo: UserRepository): Promise<void> {
   const id = await input({ message: 'ID del usuario a actualizar:' });
-  const firstName = await input({ message: 'Nuevo nombre (enter para omitir):' });
-  const lastName = await input({ message: 'Nuevo apellido (enter para omitir):' });
-  const email = await input({ message: 'Nuevo email (enter para omitir):' });
+  const name = await input({ message: 'Nuevo nombre (enter para omitir):' });
+  const avatar = await input({ message: 'URL del avatar (enter para omitir):' });
 
   const payload: UpdateUserPayload = {};
-  if (firstName) payload.firstName = firstName;
-  if (lastName) payload.lastName = lastName;
-  if (email) payload.email = email;
+  if (name) payload.name = name;
+  if (avatar) payload.avatar = avatar;
 
   await updateUserUseCase(repo, id, payload);
   console.log('\n✓ Usuario actualizado correctamente\n');

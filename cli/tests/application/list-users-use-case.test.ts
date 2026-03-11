@@ -4,8 +4,8 @@ import type { UserRepository } from '../../src/domain/ports.ts';
 import type { User } from '../../src/domain/user.ts';
 import { AuthError } from '../../src/domain/errors.ts';
 
-const ana: User = { id: '1', email: 'a@example.com', firstName: 'Ana', lastName: 'García', role: 'USER', status: 'ACTIVE' };
-const bruno: User = { id: '2', email: 'b@example.com', firstName: 'Bruno', lastName: 'López', role: 'USER', status: 'INACTIVE' };
+const ana: User = { userId: '1', email: 'a@example.com', name: 'Ana García', roles: ['Usuario'], status: 'ACTIVE', createdAt: '2024-01-01T00:00:00.000Z' };
+const bruno: User = { userId: '2', email: 'b@example.com', name: 'Bruno López', roles: ['Usuario'], status: 'INACTIVE', createdAt: '2024-01-01T00:00:00.000Z' };
 
 const mockRepo: UserRepository = {
   login: vi.fn(),

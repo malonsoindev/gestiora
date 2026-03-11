@@ -25,7 +25,7 @@ describe('resetPasswordUseCase', () => {
 
     await resetPasswordUseCase(mockRepo, '1', MOCK_VALUE, MOCK_VALUE);
 
-    expect(mockRepo.resetPassword).toHaveBeenCalledWith('1', { password: MOCK_VALUE });
+    expect(mockRepo.resetPassword).toHaveBeenCalledWith('1', { newPassword: MOCK_VALUE });
   });
 
   it('lanza error si las contraseñas no coinciden', async () => {
