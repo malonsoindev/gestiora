@@ -102,10 +102,11 @@ Opcionales:
 ## Documentacion
 - `README.md` contiene informacion ampliada del proyecto. Leer para contexto adicional.
 - Estructura de `docs/`:
-  - `docs/architecture/`: ADRs, design docs (DDs) y diagramas.
   - `docs/product/`: Descripcion de idea y user stories.
-  - `docs/backend/`: Documentacion de API, contratos (`openapi.yaml`, `curl.md`).
-  - `docs/cli/`: Documentacion del CLI.
+  - `docs/backend/`: Documentacion de API y contratos (`openapi.yaml`, `curl.md`).
+    - `docs/backend/architecture/`: ADRs y diagramas.
+    - `docs/backend/design-docs/`: Design Docs (DDs).
+  - `docs/cli/`: Documentacion y definiciones del CLI.
   - `docs/releases/`: Notas de release.
 
 ## Scripts utiles
