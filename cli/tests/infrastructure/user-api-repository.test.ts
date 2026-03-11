@@ -4,6 +4,9 @@ import { tokenStore } from '../../src/core/token-store.ts';
 import { AuthError, NotFoundError } from '../../src/domain/errors.ts';
 
 const BASE_URL = 'http://localhost:3000';
+const MOCK_CREDENTIAL = 'Pass1!';
+const MOCK_NEW_CREDENTIAL = 'NewPass1!';
+const MOCK_SHORT_CREDENTIAL = 'X';
 
 const mockFetch = vi.fn();
 
@@ -30,13 +33,13 @@ describe('UserApiRepository', () => {
     it('devuelve el accessToken en login correcto', async () => {
       mockFetch.mockResolvedValue(jsonResponse({ accessToken: 'tok123', refreshToken: 'ref456' }));
 
-      const token = await repo.login('admin@example.com', 'Pass1!');
+      const token = await repo.login('admin@example.com', MOCK_CREDENTIAL);
 
       expect(mockFetch).toHaveBeenCalledWith(
         `${BASE_URL}/auth/login`,
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ email: 'admin@example.com', password: 'Pass1!' }),
+          body: JSON.stringify({ email: 'admin@example.com', password: MOCK_CREDENTIAL }),
         }),
       );
       expect(token).toBe('tok123');
@@ -143,13 +146,13 @@ describe('UserApiRepository', () => {
       tokenStore.set('tok123');
       mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
 
-      await repo.resetPassword('1', { password: 'NewPass1!' });
+      await repo.resetPassword('1', { password: MOCK_NEW_CREDENTIAL });
 
       expect(mockFetch).toHaveBeenCalledWith(
         `${BASE_URL}/admin/users/1/password`,
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ password: 'NewPass1!' }),
+          body: JSON.stringify({ password: MOCK_NEW_CREDENTIAL }),
         }),
       );
     });
@@ -158,7 +161,7 @@ describe('UserApiRepository', () => {
       tokenStore.set('tok123');
       mockFetch.mockResolvedValue(jsonResponse({ message: 'Not found' }, 404));
 
-      await expect(repo.resetPassword('999', { password: 'X' })).rejects.toThrow(NotFoundError);
+      await expect(repo.resetPassword('999', { password: MOCK_SHORT_CREDENTIAL })).rejects.toThrow(NotFoundError);
     });
   });
 });

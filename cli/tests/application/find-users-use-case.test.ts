@@ -28,7 +28,8 @@ describe('findUsersUseCase', () => {
 
     expect(mockRepo.findUsers).toHaveBeenCalledWith('ana');
     expect(result).toHaveLength(1);
-    expect(result[0]!.email).toBe('ana@example.com');
+    const [first] = result;
+    expect(first?.email).toBe('ana@example.com');
   });
 
   it('devuelve array vacío si no hay coincidencias', async () => {

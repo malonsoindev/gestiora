@@ -26,8 +26,9 @@ describe('listUsersUseCase', () => {
 
     const result = await listUsersUseCase(mockRepo);
 
-    expect(result[0]!.email).toBe('a@example.com');
-    expect(result[1]!.email).toBe('b@example.com');
+    const [first, second] = result;
+    expect(first?.email).toBe('a@example.com');
+    expect(second?.email).toBe('b@example.com');
   });
 
   it('devuelve array vacío si no hay usuarios', async () => {
