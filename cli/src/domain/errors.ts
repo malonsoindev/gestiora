@@ -21,3 +21,10 @@ export class NotFoundError extends CliError {
     this.name = 'NotFoundError';
   }
 }
+
+export class ForbiddenError extends CliError {
+  constructor(message = 'Acceso denegado') {
+    super(message, 403);
+    this.name = 'ForbiddenError';
+  }
+}

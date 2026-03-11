@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { input, password } from '@inquirer/prompts';
 import { loginUseCase } from '../../src/application/login-use-case.ts';
 import { runLoginMenu } from '../../src/infrastructure/ui/login-menu.ts';
-import { AuthError } from '../../src/domain/errors.ts';
+import { AuthError, ForbiddenError } from '../../src/domain/errors.ts';
 import type { UserRepository } from '../../src/domain/ports.ts';
 
 vi.mock('@inquirer/prompts', () => ({
@@ -36,6 +36,14 @@ describe('runLoginMenu', () => {
 
     expect(loginUseCase).toHaveBeenCalledWith(mockRepo, 'admin@example.com', 'Pass1!');
     expect(result).toBe(true);
+  });
+
+  it('devuelve false si loginUseCase lanza ForbiddenError', async () => {
+    vi.mocked(loginUseCase).mockRejectedValue(new ForbiddenError());
+
+    const result = await runLoginMenu(mockRepo);
+
+    expect(result).toBe(false);
   });
 
   it('devuelve false si loginUseCase lanza AuthError', async () => {
