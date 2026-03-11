@@ -20,4 +20,8 @@ export async function resetPasswordUseCase(
   }
 
   await repo.resetPassword(id, { newPassword: password });
+
+  // TODO: deuda técnica — la revocación debería ocurrir en el backend
+  // dentro de ChangeUserPasswordUseCase, igual que en SoftDeleteUserUseCase.
+  await repo.revokeUserSessions(id);
 }

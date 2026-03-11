@@ -10,6 +10,7 @@ const mockRepo: UserRepository = {
   updateUser: vi.fn(),
   disableUser: vi.fn(),
   resetPassword: vi.fn(),
+  revokeUserSessions: vi.fn(),
 };
 
 beforeEach(() => {
@@ -19,10 +20,12 @@ beforeEach(() => {
 describe('disableUserUseCase', () => {
   it('deshabilita el usuario correctamente', async () => {
     vi.mocked(mockRepo.disableUser).mockResolvedValue(undefined);
+    vi.mocked(mockRepo.revokeUserSessions).mockResolvedValue(undefined);
 
     await disableUserUseCase(mockRepo, '1');
 
     expect(mockRepo.disableUser).toHaveBeenCalledWith('1');
+    expect(mockRepo.revokeUserSessions).toHaveBeenCalledWith('1');
   });
 
   it('lanza error si el id está vacío', async () => {

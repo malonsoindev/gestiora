@@ -164,4 +164,25 @@ describe('UserApiRepository', () => {
       await expect(repo.resetPassword('999', { newPassword: MOCK_SHORT_CREDENTIAL })).rejects.toThrow(NotFoundError);
     });
   });
+
+  describe('revokeUserSessions', () => {
+    it('envía DELETE a sessions/revoke y no devuelve nada', async () => {
+      tokenStore.set('tok123');
+      mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
+
+      await repo.revokeUserSessions('1');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE_URL}/admin/users/1/sessions/revoke`,
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+
+    it('lanza NotFoundError si el servidor devuelve 404', async () => {
+      tokenStore.set('tok123');
+      mockFetch.mockResolvedValue(jsonResponse({ message: 'Not found' }, 404));
+
+      await expect(repo.revokeUserSessions('999')).rejects.toThrow(NotFoundError);
+    });
+  });
 });

@@ -85,6 +85,22 @@ export class UserApiRepository implements UserRepository {
     if (!res.ok) throw new CliError(`Error al resetear contraseña (${res.status})`);
   }
 
+  // TODO: deuda técnica — esta lógica debería ejecutarse en el backend tras cambiar
+  // contraseña o deshabilitar usuario, igual que hace SoftDeleteUserUseCase.
+  // Pendiente refactorizar ChangeUserPasswordUseCase y UpdateUserStatusUseCase
+  // para que invoquen sessionRepository.revokeByUserId() internamente.
+  async revokeUserSessions(id: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/admin/users/${id}/sessions/revoke`, {
+      method: 'POST',
+      headers: this.authHeaders(),
+      body: JSON.stringify({}),
+    });
+
+    if (res.status === 401) throw new AuthError();
+    if (res.status === 404) throw new NotFoundError();
+    if (!res.ok) throw new CliError(`Error al revocar sesiones (${res.status})`);
+  }
+
   private authHeaders(): Record<string, string> {
     const token = tokenStore.get();
     return {

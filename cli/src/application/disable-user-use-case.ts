@@ -10,4 +10,8 @@ export async function disableUserUseCase(
   }
 
   await repo.disableUser(id);
+
+  // TODO: deuda técnica — la revocación debería ocurrir en el backend
+  // dentro de UpdateUserStatusUseCase, igual que en SoftDeleteUserUseCase.
+  await repo.revokeUserSessions(id);
 }

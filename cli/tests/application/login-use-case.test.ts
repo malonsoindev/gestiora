@@ -19,6 +19,7 @@ const mockRepo: UserRepository = {
   updateUser: vi.fn(),
   disableUser: vi.fn(),
   resetPassword: vi.fn(),
+  revokeUserSessions: vi.fn(),
 };
 
 beforeEach(() => {

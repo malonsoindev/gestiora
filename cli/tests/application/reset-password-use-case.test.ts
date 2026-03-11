@@ -10,6 +10,7 @@ const mockRepo: UserRepository = {
   updateUser: vi.fn(),
   disableUser: vi.fn(),
   resetPassword: vi.fn(),
+  revokeUserSessions: vi.fn(),
 };
 
 const MOCK_VALUE = 'NewPass1!';
@@ -22,10 +23,12 @@ beforeEach(() => {
 describe('resetPasswordUseCase', () => {
   it('resetea la contraseña cuando las dos coinciden', async () => {
     vi.mocked(mockRepo.resetPassword).mockResolvedValue(undefined);
+    vi.mocked(mockRepo.revokeUserSessions).mockResolvedValue(undefined);
 
     await resetPasswordUseCase(mockRepo, '1', MOCK_VALUE, MOCK_VALUE);
 
     expect(mockRepo.resetPassword).toHaveBeenCalledWith('1', { newPassword: MOCK_VALUE });
+    expect(mockRepo.revokeUserSessions).toHaveBeenCalledWith('1');
   });
 
   it('lanza error si las contraseñas no coinciden', async () => {

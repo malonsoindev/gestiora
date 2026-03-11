@@ -5,4 +5,5 @@ export interface UserRepository {
   updateUser(id: string, payload: import('./user.ts').UpdateUserPayload): Promise<import('./user.ts').User>;
   disableUser(id: string): Promise<void>;
   resetPassword(id: string, payload: import('./user.ts').ResetPasswordPayload): Promise<void>;
+  revokeUserSessions(id: string): Promise<void>;
 }
