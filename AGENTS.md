@@ -97,13 +97,16 @@ Opcionales:
 ## Swagger / OpenAPI
 - Swagger UI solo se expone si `SWAGGER=true`.
 - Endpoint: `/docs`
-- Especificacion: `docs/openapi.yaml`
+- Especificacion: `docs/backend/openapi.yaml`
 
 ## Documentacion
 - `README.md` contiene informacion ampliada del proyecto. Leer para contexto adicional.
-- `docs/` contiene ADRs, design docs, user stories y diagramas.
-- `docs/openapi.yaml` es el contrato de la API.
-- `docs/release-1.0.1.md` y notas de release en `docs/`.
+- Estructura de `docs/`:
+  - `docs/architecture/`: ADRs, design docs (DDs) y diagramas.
+  - `docs/product/`: Descripcion de idea y user stories.
+  - `docs/backend/`: Documentacion de API, contratos (`openapi.yaml`, `curl.md`).
+  - `docs/cli/`: Documentacion del CLI.
+  - `docs/releases/`: Notas de release.
 
 ## Scripts utiles
 - `npm run db:deploy`
