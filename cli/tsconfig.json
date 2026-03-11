@@ -4,14 +4,14 @@
     "outDir": "./dist",
     "baseUrl": ".",
 
-    "module": "nodenext",
+    "module": "preserve",
+    "moduleResolution": "bundler",
     "target": "es2022",
     "lib": ["es2022"],
-    "types": [],
+    "types": ["node"],
 
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
     "paths": {
       "@domain/*": ["src/domain/*"],
       "@application/*": ["src/application/*"],
