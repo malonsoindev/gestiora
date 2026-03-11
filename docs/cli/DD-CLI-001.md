@@ -17,6 +17,8 @@ La herramienta está dirigida exclusivamente a usuarios con rol `Administrador`.
 - **US-CLI-04 Modificación de Datos:** Como administrador, quiero poder editar los campos principales del perfil de un usuario para corregir información errónea o desactualizada.
 - **US-CLI-05 Deshabilitar Usuario (y Revocación):** Como administrador, quiero poder deshabilitar a un usuario, forzando la revocación automática de sus sesiones, para cortar el acceso de manera inmediata frente a brechas de seguridad.
 - **US-CLI-06 Restablecer Contraseña:** Como administrador, quiero establecer una nueva contraseña a un usuario (confirmándola dos veces) y que se le revoquen las sesiones actuales, forzándole a reloguearse con la nueva credencial.
+- **US-CLI-07 Crear Usuario:** Como administrador, quiero poder dar de alta un nuevo usuario especificando su email, contraseña inicial, nombre y rol, para que pueda acceder al sistema con las credenciales asignadas.
+- **US-CLI-08 Eliminar Usuario:** Como administrador, quiero poder eliminar (borrado lógico) a un usuario del sistema, previa confirmación explícita, para darlo de baja de forma definitiva inhabilitando todos sus accesos y sesiones.
 
 *Las validaciones formales, como evitar que un administrador inhabilite sus propias sesiones al cambiar su propia contraseña, deben respetarse tal y como define el Backend en su núcleo.*
 
@@ -81,6 +83,16 @@ sequenceDiagram
         CLI->>API: GET /admin/users (con Bearer Token)
         API-->>CLI: Devuelve JSON con usuarios
         CLI->>Admin: Muestra listado formateado en pantalla
+        Admin-->>CLI: Selecciona "Crear Usuario"
+        CLI->>Admin: Pide email, contraseña, nombre y rol
+        CLI->>API: POST /admin/users
+        API-->>CLI: 201 Created — devuelve el usuario creado
+        CLI->>Admin: Confirma creación
+        Admin-->>CLI: Selecciona "Eliminar Usuario"
+        CLI->>Admin: Pide userId y solicita confirmación explícita
+        CLI->>API: DELETE /admin/users/:userId
+        API-->>CLI: 204 No Content
+        CLI->>Admin: Confirma eliminación
     end
 ```
 
@@ -126,3 +138,60 @@ Aunque sea un cliente de CLI, adoptará un patrón de diseño estricto basado en
    - **`ui/` (Views/Prompts):** Controla el dibujado de la consola y la entrada interactiva (`@inquirer/prompts`). Instancia (o recibe) los Casos de Uso y les pasa los parámetros introducidos por el teclado del administrador.
 4. **Core (`src/core/`):** Mantiene el estado persistido *in-memory* durante la vida de la app (como el `JWT Access Token`).
    *Nota: Dado que se aprovechará el entorno Node nativo, la lectura de variables de entorno (como `API_BASE_URL`) se hará directamente procesando el `.env` u obteniéndolo de `process.env`, lo que elimina la necesidad de un módulo o carpeta `config/` dedicada inicial.*
+
+---
+
+## 11. Ampliación de Dominio — US-CLI-07 y US-CLI-08
+
+### 11.1 Contrato de dominio
+
+Se añaden las siguientes interfaces al módulo `src/domain/user.ts`:
+
+```typescript
+export interface CreateUserPayload {
+  email: string;
+  password: string;
+  name?: string;
+  roles: UserRole[];
+}
+```
+
+La operación de eliminar usuario no requiere payload adicional más allá del `userId` (ya capturado como parámetro de la llamada HTTP).
+
+### 11.2 Puerto `UserRepository` ampliado
+
+```typescript
+export interface UserRepository {
+  // ...existing...
+  createUser(payload: CreateUserPayload): Promise<User>;
+  deleteUser(id: string): Promise<void>;
+}
+```
+
+### 11.3 Flujo de interacción — Crear Usuario (US-CLI-07)
+
+1. El administrador selecciona "Crear usuario" en el menú principal.
+2. La UI pide secuencialmente: email, contraseña inicial (con confirmación), nombre (opcional) y rol (`Usuario` / `Administrador`).
+3. El caso de uso `createUserUseCase` valida que email y contraseña no estén vacíos y que el rol sea válido.
+4. Se llama a `POST /admin/users` con el payload.
+5. Se muestra el `userId` asignado y el email del usuario creado.
+
+### 11.4 Flujo de interacción — Eliminar Usuario (US-CLI-08)
+
+1. El administrador selecciona "Eliminar usuario" en el menú principal.
+2. La UI pide el `userId`.
+3. Se solicita confirmación explícita: `"¿Eliminar usuario {userId}? Esta acción es irreversible."`.
+4. Si confirma, el caso de uso `deleteUserUseCase` llama a `DELETE /admin/users/:userId`.
+5. El backend realiza un borrado lógico (`status: DELETED`) y revoca las sesiones automáticamente.
+6. Se muestra confirmación de éxito.
+
+### 11.5 Errores contemplados
+
+| Escenario | Error esperado |
+|---|---|
+| Email ya registrado al crear | `CliError` con mensaje del backend |
+| Contraseñas no coinciden | `CliError` previo a la llamada HTTP |
+| Rol no válido | `CliError` previo a la llamada HTTP |
+| Usuario no encontrado al eliminar | `NotFoundError` |
+| Administrador intenta eliminarse a sí mismo | `CliError` con mensaje del backend |
+| Cancelación por el usuario | Operación abortada sin llamada HTTP |
