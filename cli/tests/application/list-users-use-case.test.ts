@@ -1,0 +1,46 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { listUsersUseCase } from '../../src/application/list-users-use-case.ts';
+import type { UserRepository } from '../../src/domain/ports.ts';
+import type { User } from '../../src/domain/user.ts';
+import { AuthError } from '../../src/domain/errors.ts';
+
+const ana: User = { id: '1', email: 'a@example.com', firstName: 'Ana', lastName: 'García', role: 'USER', status: 'ACTIVE' };
+const bruno: User = { id: '2', email: 'b@example.com', firstName: 'Bruno', lastName: 'López', role: 'USER', status: 'INACTIVE' };
+
+const mockRepo: UserRepository = {
+  login: vi.fn(),
+  listUsers: vi.fn(),
+  findUsers: vi.fn(),
+  updateUser: vi.fn(),
+  disableUser: vi.fn(),
+  resetPassword: vi.fn(),
+};
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+describe('listUsersUseCase', () => {
+  it('devuelve la lista de usuarios ordenada alfabéticamente por email', async () => {
+    vi.mocked(mockRepo.listUsers).mockResolvedValue([bruno, ana]);
+
+    const result = await listUsersUseCase(mockRepo);
+
+    expect(result[0]!.email).toBe('a@example.com');
+    expect(result[1]!.email).toBe('b@example.com');
+  });
+
+  it('devuelve array vacío si no hay usuarios', async () => {
+    vi.mocked(mockRepo.listUsers).mockResolvedValue([]);
+
+    const result = await listUsersUseCase(mockRepo);
+
+    expect(result).toEqual([]);
+  });
+
+  it('propaga AuthError si el repositorio lo lanza', async () => {
+    vi.mocked(mockRepo.listUsers).mockRejectedValue(new AuthError());
+
+    await expect(listUsersUseCase(mockRepo)).rejects.toThrow(AuthError);
+  });
+});
