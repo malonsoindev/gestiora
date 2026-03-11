@@ -2,6 +2,7 @@ import { input, password as promptPassword, select, confirm } from '@inquirer/pr
 import type { UserRepository } from '../../domain/ports.ts';
 import type { User, UpdateUserPayload } from '../../domain/user.ts';
 import { CliError } from '../../domain/errors.ts';
+import { printSuccess, printError } from './colors.ts';
 import { listUsersUseCase } from '../../application/list-users-use-case.ts';
 import { findUsersUseCase } from '../../application/find-users-use-case.ts';
 import { updateUserUseCase } from '../../application/update-user-use-case.ts';
@@ -43,7 +44,7 @@ export async function handleUpdateUser(repo: UserRepository): Promise<void> {
   if (avatar) payload.avatar = avatar;
 
   await updateUserUseCase(repo, id, payload);
-  console.log('\n✓ Usuario actualizado correctamente\n');
+  printSuccess('\n✓ Usuario actualizado correctamente\n');
 }
 
 export async function handleDisableUser(repo: UserRepository): Promise<void> {
@@ -54,7 +55,7 @@ export async function handleDisableUser(repo: UserRepository): Promise<void> {
     return;
   }
   await disableUserUseCase(repo, id);
-  console.log('\n✓ Usuario deshabilitado correctamente\n');
+  printSuccess('\n✓ Usuario deshabilitado correctamente\n');
 }
 
 export async function handleResetPassword(repo: UserRepository): Promise<void> {
@@ -62,7 +63,7 @@ export async function handleResetPassword(repo: UserRepository): Promise<void> {
   const newPassword = await promptPassword({ message: 'Nueva contraseña:', mask: '*' });
   const confirmPass = await promptPassword({ message: 'Confirmar contraseña:', mask: '*' });
   await resetPasswordUseCase(repo, id, newPassword, confirmPass);
-  console.log('\n✓ Contraseña actualizada correctamente\n');
+  printSuccess('\n✓ Contraseña actualizada correctamente\n');
 }
 
 export async function runMainMenu(repo: UserRepository): Promise<void> {
@@ -91,7 +92,7 @@ export async function runMainMenu(repo: UserRepository): Promise<void> {
       else if (action === 'reset-password') await handleResetPassword(repo);
     } catch (e) {
       if (e instanceof CliError) {
-        console.error(`\n✗ ${e.message}\n`);
+        printError(`\n✗ ${e.message}\n`);
       } else {
         throw e;
       }
