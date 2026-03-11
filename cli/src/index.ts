@@ -6,9 +6,9 @@ import { runMainMenu } from './infrastructure/ui/main-menu.ts';
 const baseUrl = process.env['API_BASE_URL'] ?? 'http://localhost:3000';
 const repo = new UserApiRepository(baseUrl);
 
-let authenticated = false;
-while (!authenticated) {
-  authenticated = await runLoginMenu(repo);
+const authenticated = await runLoginMenu(repo);
+if (!authenticated) {
+  process.exit(1);
 }
 
 await runMainMenu(repo);
