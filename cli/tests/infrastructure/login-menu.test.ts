@@ -38,27 +38,41 @@ describe('runLoginMenu', () => {
     expect(result).toBe(true);
   });
 
-  it('devuelve false si loginUseCase lanza ForbiddenError', async () => {
+  it('devuelve false si loginUseCase lanza ForbiddenError (sin reintentar)', async () => {
     vi.mocked(loginUseCase).mockRejectedValue(new ForbiddenError());
 
     const result = await runLoginMenu(mockRepo);
 
+    expect(loginUseCase).toHaveBeenCalledTimes(1);
     expect(result).toBe(false);
   });
 
-  it('devuelve false si loginUseCase lanza AuthError', async () => {
+  it('reintenta hasta 3 veces con AuthError y devuelve false', async () => {
     vi.mocked(loginUseCase).mockRejectedValue(new AuthError());
 
     const result = await runLoginMenu(mockRepo);
 
+    expect(loginUseCase).toHaveBeenCalledTimes(3);
     expect(result).toBe(false);
   });
 
-  it('devuelve false si hay un error genérico de red', async () => {
+  it('devuelve true si el segundo intento tiene éxito', async () => {
+    vi.mocked(loginUseCase)
+      .mockRejectedValueOnce(new AuthError())
+      .mockResolvedValueOnce(undefined);
+
+    const result = await runLoginMenu(mockRepo);
+
+    expect(loginUseCase).toHaveBeenCalledTimes(2);
+    expect(result).toBe(true);
+  });
+
+  it('devuelve false tras error de red sin reintentar', async () => {
     vi.mocked(loginUseCase).mockRejectedValue(new Error('Network error'));
 
     const result = await runLoginMenu(mockRepo);
 
+    expect(loginUseCase).toHaveBeenCalledTimes(1);
     expect(result).toBe(false);
   });
 });
