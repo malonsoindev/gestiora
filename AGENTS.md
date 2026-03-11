@@ -163,7 +163,7 @@ Estas reglas son obligatorias para cambios en el codigo.
 - No filtrar errores internos al cliente.
 
 ### OpenAPI
-- El contrato es `docs/openapi.yaml`.
+- El contrato es `docs/backend/openapi.yaml`.
 - Endpoints deben respetar el contrato.
 
 ### Prohibido
