@@ -30,3 +30,10 @@ export interface UpdateUserPayload {
 export interface ResetPasswordPayload {
   newPassword: string;
 }
+
+export interface CreateUserPayload {
+  email: string;
+  password: string;
+  name?: string;
+  roles: UserRole[];
+}

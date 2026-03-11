@@ -1,19 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { input, password, confirm } from '@inquirer/prompts';
+import { input, password, confirm, select } from '@inquirer/prompts';
 import { listUsersUseCase } from '../../src/application/list-users-use-case.ts';
 import { findUsersUseCase } from '../../src/application/find-users-use-case.ts';
 import { updateUserUseCase } from '../../src/application/update-user-use-case.ts';
 import { disableUserUseCase } from '../../src/application/disable-user-use-case.ts';
 import { resetPasswordUseCase } from '../../src/application/reset-password-use-case.ts';
+import { createUserUseCase } from '../../src/application/create-user-use-case.ts';
+import { deleteUserUseCase } from '../../src/application/delete-user-use-case.ts';
 import {
   handleListUsers,
   handleFindUsers,
   handleUpdateUser,
   handleDisableUser,
   handleResetPassword,
+  handleCreateUser,
+  handleDeleteUser,
 } from '../../src/infrastructure/ui/main-menu.ts';
 import type { UserRepository } from '../../src/domain/ports.ts';
 import type { UserRole } from '../../src/domain/user.ts';
+import { CliError } from '../../src/domain/errors.ts';
 
 vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
@@ -27,6 +32,8 @@ vi.mock('../../src/application/find-users-use-case.ts', () => ({ findUsersUseCas
 vi.mock('../../src/application/update-user-use-case.ts', () => ({ updateUserUseCase: vi.fn() }));
 vi.mock('../../src/application/disable-user-use-case.ts', () => ({ disableUserUseCase: vi.fn() }));
 vi.mock('../../src/application/reset-password-use-case.ts', () => ({ resetPasswordUseCase: vi.fn() }));
+vi.mock('../../src/application/create-user-use-case.ts', () => ({ createUserUseCase: vi.fn() }));
+vi.mock('../../src/application/delete-user-use-case.ts', () => ({ deleteUserUseCase: vi.fn() }));
 
 const mockRepo: UserRepository = {
   login: vi.fn(),
@@ -36,6 +43,8 @@ const mockRepo: UserRepository = {
   disableUser: vi.fn(),
   resetPassword: vi.fn(),
   revokeUserSessions: vi.fn(),
+  createUser: vi.fn(),
+  deleteUser: vi.fn(),
 };
 
 const mockUser = {
@@ -48,7 +57,7 @@ const mockUser = {
 };
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
 });
 
 describe('handleListUsers', () => {
@@ -118,5 +127,69 @@ describe('handleResetPassword', () => {
     await handleResetPassword(mockRepo);
 
     expect(resetPasswordUseCase).toHaveBeenCalledWith(mockRepo, '1', 'NewPass1!', 'NewPass1!');
+  });
+});
+
+describe('handleCreateUser', () => {
+  it('crea el usuario con los datos del prompt y muestra el userId creado', async () => {
+    vi.mocked(input)
+      .mockResolvedValueOnce('new@example.com') // email
+      .mockResolvedValueOnce('Nuevo');            // name
+    vi.mocked(password)
+      .mockResolvedValueOnce('Pass1!')
+      .mockResolvedValueOnce('Pass1!');
+    vi.mocked(select).mockResolvedValue('Usuario');
+    const created = {
+      userId: 'new-id',
+      email: 'new@example.com',
+      name: 'Nuevo',
+      roles: ['Usuario'] as UserRole[],
+      status: 'ACTIVE' as const,
+      createdAt: '2025-01-01T00:00:00.000Z',
+    };
+    vi.mocked(createUserUseCase).mockResolvedValue(created);
+
+    await handleCreateUser(mockRepo);
+
+    expect(createUserUseCase).toHaveBeenCalledWith(mockRepo, {
+      email: 'new@example.com',
+      password: 'Pass1!',
+      name: 'Nuevo',
+      roles: ['Usuario'],
+    });
+  });
+
+  it('lanza CliError si las contraseñas no coinciden', async () => {
+    vi.mocked(input)
+      .mockResolvedValueOnce('new@example.com')
+      .mockResolvedValueOnce('');
+    vi.mocked(password)
+      .mockResolvedValueOnce('Pass1!')
+      .mockResolvedValueOnce('OtraPass!');
+    vi.mocked(select).mockResolvedValue('Usuario');
+
+    await expect(handleCreateUser(mockRepo)).rejects.toThrow(CliError);
+    expect(createUserUseCase).not.toHaveBeenCalled();
+  });
+});
+
+describe('handleDeleteUser', () => {
+  it('elimina el usuario si el administrador confirma', async () => {
+    vi.mocked(input).mockResolvedValue('user-123');
+    vi.mocked(confirm).mockResolvedValue(true);
+    vi.mocked(deleteUserUseCase).mockResolvedValue(undefined);
+
+    await handleDeleteUser(mockRepo);
+
+    expect(deleteUserUseCase).toHaveBeenCalledWith(mockRepo, 'user-123');
+  });
+
+  it('no llama a deleteUserUseCase si el administrador cancela', async () => {
+    vi.mocked(input).mockResolvedValue('user-123');
+    vi.mocked(confirm).mockResolvedValue(false);
+
+    await handleDeleteUser(mockRepo);
+
+    expect(deleteUserUseCase).not.toHaveBeenCalled();
   });
 });

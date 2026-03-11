@@ -1,5 +1,5 @@
 import type { UserRepository } from '../../domain/ports.ts';
-import type { User, UpdateUserPayload, ResetPasswordPayload } from '../../domain/user.ts';
+import type { User, UpdateUserPayload, ResetPasswordPayload, CreateUserPayload } from '../../domain/user.ts';
 import { AuthError, NotFoundError, CliError } from '../../domain/errors.ts';
 import { tokenStore } from '../../core/token-store.ts';
 
@@ -99,6 +99,30 @@ export class UserApiRepository implements UserRepository {
     if (res.status === 401) throw new AuthError();
     if (res.status === 404) throw new NotFoundError();
     if (!res.ok) throw new CliError(`Error al revocar sesiones (${res.status})`);
+  }
+
+  async createUser(payload: CreateUserPayload): Promise<User> {
+    const res = await fetch(`${this.baseUrl}/admin/users`, {
+      method: 'POST',
+      headers: this.authHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (res.status === 401) throw new AuthError();
+    if (!res.ok) throw new CliError(`Error al crear usuario (${res.status})`);
+
+    return res.json() as Promise<User>;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/admin/users/${id}`, {
+      method: 'DELETE',
+      headers: this.authHeaders(),
+    });
+
+    if (res.status === 401) throw new AuthError();
+    if (res.status === 404) throw new NotFoundError();
+    if (!res.ok) throw new CliError(`Error al eliminar usuario (${res.status})`);
   }
 
   private authHeaders(): Record<string, string> {

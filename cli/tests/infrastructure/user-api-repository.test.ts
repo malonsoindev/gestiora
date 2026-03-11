@@ -185,4 +185,66 @@ describe('UserApiRepository', () => {
       await expect(repo.revokeUserSessions('999')).rejects.toThrow(NotFoundError);
     });
   });
+
+  describe('createUser', () => {
+    it('envía POST con el payload y devuelve el usuario creado', async () => {
+      tokenStore.set('tok123');
+      const created = {
+        userId: 'new-id',
+        email: 'new@example.com',
+        name: 'Nuevo',
+        roles: ['Usuario'],
+        status: 'ACTIVE',
+        createdAt: '2025-01-01T00:00:00.000Z',
+      };
+      mockFetch.mockResolvedValue(jsonResponse(created, 201));
+
+      const payload = { email: 'new@example.com', password: 'Pass1!', name: 'Nuevo', roles: ['Usuario'] as const };
+      const result = await repo.createUser(payload);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE_URL}/admin/users`,
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }),
+      );
+      expect(result.userId).toBe('new-id');
+    });
+
+    it('lanza AuthError si el servidor devuelve 401', async () => {
+      tokenStore.set('tok123');
+      mockFetch.mockResolvedValue(jsonResponse({ message: 'Unauthorized' }, 401));
+
+      await expect(repo.createUser({ email: 'a@b.com', password: 'X', roles: ['Usuario'] })).rejects.toThrow(AuthError);
+    });
+  });
+
+  describe('deleteUser', () => {
+    it('envía DELETE a /admin/users/:id y no devuelve nada', async () => {
+      tokenStore.set('tok123');
+      mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
+
+      await repo.deleteUser('user-123');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE_URL}/admin/users/user-123`,
+        expect.objectContaining({ method: 'DELETE' }),
+      );
+    });
+
+    it('lanza NotFoundError si el servidor devuelve 404', async () => {
+      tokenStore.set('tok123');
+      mockFetch.mockResolvedValue(jsonResponse({ message: 'Not found' }, 404));
+
+      await expect(repo.deleteUser('999')).rejects.toThrow(NotFoundError);
+    });
+
+    it('lanza AuthError si el servidor devuelve 401', async () => {
+      tokenStore.set('tok123');
+      mockFetch.mockResolvedValue(jsonResponse({ message: 'Unauthorized' }, 401));
+
+      await expect(repo.deleteUser('1')).rejects.toThrow(AuthError);
+    });
+  });
 });

@@ -8,8 +8,10 @@ import { findUsersUseCase } from '../../application/find-users-use-case.ts';
 import { updateUserUseCase } from '../../application/update-user-use-case.ts';
 import { disableUserUseCase } from '../../application/disable-user-use-case.ts';
 import { resetPasswordUseCase } from '../../application/reset-password-use-case.ts';
+import { createUserUseCase } from '../../application/create-user-use-case.ts';
+import { deleteUserUseCase } from '../../application/delete-user-use-case.ts';
 
-type MenuAction = 'list' | 'find' | 'update' | 'disable' | 'reset-password' | 'logout';
+type MenuAction = 'list' | 'find' | 'update' | 'disable' | 'reset-password' | 'create' | 'delete' | 'logout';
 
 function displayUsers(users: User[]): void {
   if (users.length === 0) {
@@ -66,6 +68,44 @@ export async function handleResetPassword(repo: UserRepository): Promise<void> {
   printSuccess('\n✓ Contraseña actualizada correctamente\n');
 }
 
+export async function handleCreateUser(repo: UserRepository): Promise<void> {
+  const email = await input({ message: 'Email del nuevo usuario:' });
+  const newPassword = await promptPassword({ message: 'Contraseña inicial:', mask: '*' });
+  const confirmPass = await promptPassword({ message: 'Confirmar contraseña:', mask: '*' });
+  if (newPassword !== confirmPass) {
+    throw new CliError('Las contraseñas no coinciden.');
+  }
+  const name = await input({ message: 'Nombre (enter para omitir):' });
+  const role = await select<'Usuario' | 'Administrador'>({
+    message: 'Rol:',
+    choices: [
+      { name: 'Usuario', value: 'Usuario' },
+      { name: 'Administrador', value: 'Administrador' },
+    ],
+  });
+  const user = await createUserUseCase(repo, {
+    email,
+    password: newPassword,
+    ...(name ? { name } : {}),
+    roles: [role],
+  });
+  printSuccess(`\n✓ Usuario creado: [${user.userId}] ${user.email}\n`);
+}
+
+export async function handleDeleteUser(repo: UserRepository): Promise<void> {
+  const id = await input({ message: 'ID del usuario a eliminar:' });
+  const ok = await confirm({
+    message: `¿Eliminar usuario ${id}? Esta acción es irreversible.`,
+    default: false,
+  });
+  if (!ok) {
+    console.log('\n  Operación cancelada\n');
+    return;
+  }
+  await deleteUserUseCase(repo, id);
+  printSuccess('\n✓ Usuario eliminado correctamente\n');
+}
+
 export async function runMainMenu(repo: UserRepository): Promise<void> {
   const choices: Array<{ name: string; value: MenuAction }> = [
     { name: 'Listar todos los usuarios', value: 'list' },
@@ -73,6 +113,8 @@ export async function runMainMenu(repo: UserRepository): Promise<void> {
     { name: 'Actualizar usuario', value: 'update' },
     { name: 'Deshabilitar usuario', value: 'disable' },
     { name: 'Cambiar contraseña de usuario', value: 'reset-password' },
+    { name: 'Crear usuario', value: 'create' },
+    { name: 'Eliminar usuario', value: 'delete' },
     { name: 'Cerrar sesión', value: 'logout' },
   ];
 
@@ -90,6 +132,8 @@ export async function runMainMenu(repo: UserRepository): Promise<void> {
       else if (action === 'update') await handleUpdateUser(repo);
       else if (action === 'disable') await handleDisableUser(repo);
       else if (action === 'reset-password') await handleResetPassword(repo);
+      else if (action === 'create') await handleCreateUser(repo);
+      else if (action === 'delete') await handleDeleteUser(repo);
     } catch (e) {
       if (e instanceof CliError) {
         printError(`\n✗ ${e.message}\n`);
