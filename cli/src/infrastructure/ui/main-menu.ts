@@ -141,7 +141,11 @@ export async function runMainMenu(repo: UserRepository): Promise<void> {
   ];
 
   while (true) {
-    const action = await select<MenuAction>({ message: 'Selecciona una acción:', choices });
+    const action = await select<MenuAction>({ 
+      message: 'Selecciona una acción:', 
+      choices,
+      pageSize: choices.length 
+    });
 
     if (action === 'logout') {
       console.log('\nHasta luego!\n');
