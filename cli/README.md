@@ -22,6 +22,8 @@ Opera como un cliente HTTP independiente: se autentica contra la API de Gestiora
 | 04 | **Actualizar perfil** | Edición de nombre, apellido y email |
 | 05 | **Deshabilitar usuario** | Cambio de estado a `INACTIVE` con confirmación previa |
 | 06 | **Cambiar contraseña** | Reset de contraseña con doble confirmación |
+| 07 | **Crear usuario** | Alta de un nuevo usuario en el sistema con asignación de roles |
+| 08 | **Eliminar usuario** | Borrado lógico (`DELETED`) de un usuario con confirmación explícita |
 
 ---
 
@@ -107,19 +109,21 @@ npm test
 npm run test:watch
 ```
 
-**Cobertura actual:** 9 ficheros de test · **43 tests** · 100% verde
+**Cobertura actual:** 11 ficheros de test · **67 tests** · 100% verde
 
 | Capa | Fichero de test | Tests |
 |------|----------------|-------|
-| Application | `login-use-case.test.ts` | 3 |
+| Application | `login-use-case.test.ts` | 4 |
 | Application | `list-users-use-case.test.ts` | 3 |
 | Application | `find-users-use-case.test.ts` | 4 |
 | Application | `update-user-use-case.test.ts` | 4 |
 | Application | `disable-user-use-case.test.ts` | 4 |
 | Application | `reset-password-use-case.test.ts` | 5 |
-| Infrastructure | `user-api-repository.test.ts` | 11 |
-| Infrastructure | `login-menu.test.ts` | 3 |
-| Infrastructure | `main-menu.test.ts` | 6 |
+| Application | `create-user-use-case.test.ts` | 6 |
+| Application | `delete-user-use-case.test.ts` | 4 |
+| Infrastructure | `user-api-repository.test.ts` | 18 |
+| Infrastructure | `login-menu.test.ts` | 5 |
+| Infrastructure | `main-menu.test.ts` | 10 |
 
 ---
 
@@ -144,6 +148,8 @@ cli/
 │   │   ├── update-user-use-case.ts   # US-CLI-04
 │   │   ├── disable-user-use-case.ts  # US-CLI-05
 │   │   ├── reset-password-use-case.ts # US-CLI-06
+│   │   ├── create-user-use-case.ts   # US-CLI-07
+│   │   ├── delete-user-use-case.ts   # US-CLI-08
 │   │   └── index.ts                  # Barrel de re-exports
 │   └── infrastructure/
 │       ├── api/
