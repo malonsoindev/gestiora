@@ -14,6 +14,16 @@ function getRolesFromToken(token: string): string[] {
   }
 }
 
+/**
+ * Autentica al administrador contra la API y almacena el token en memoria.
+ * Verifica que el JWT contenga el rol ADMIN antes de aceptar la sesión.
+ *
+ * @param repo - Adaptador HTTP para autenticación.
+ * @param email - Email del administrador.
+ * @param password - Contraseña en texto plano.
+ * @throws {AuthError} Si las credenciales son incorrectas.
+ * @throws {ForbiddenError} Si el usuario no tiene rol ADMIN.
+ */
 export async function loginUseCase(
   repo: UserRepository,
   email: string,
