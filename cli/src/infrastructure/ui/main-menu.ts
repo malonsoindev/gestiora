@@ -106,6 +106,28 @@ export async function handleDeleteUser(repo: UserRepository): Promise<void> {
   printSuccess('\n✓ Usuario eliminado correctamente\n');
 }
 
+const ACTION_HANDLERS: Partial<Record<MenuAction, (repo: UserRepository) => Promise<void>>> = {
+  list: handleListUsers,
+  find: handleFindUsers,
+  update: handleUpdateUser,
+  disable: handleDisableUser,
+  'reset-password': handleResetPassword,
+  create: handleCreateUser,
+  delete: handleDeleteUser,
+};
+
+async function dispatchAction(repo: UserRepository, action: MenuAction): Promise<void> {
+  try {
+    await ACTION_HANDLERS[action]?.(repo);
+  } catch (e) {
+    if (e instanceof CliError) {
+      printError(`\n✗ ${e.message}\n`);
+    } else {
+      throw e;
+    }
+  }
+}
+
 export async function runMainMenu(repo: UserRepository): Promise<void> {
   const choices: Array<{ name: string; value: MenuAction }> = [
     { name: 'Listar todos los usuarios', value: 'list' },
@@ -126,20 +148,6 @@ export async function runMainMenu(repo: UserRepository): Promise<void> {
       break;
     }
 
-    try {
-      if (action === 'list') await handleListUsers(repo);
-      else if (action === 'find') await handleFindUsers(repo);
-      else if (action === 'update') await handleUpdateUser(repo);
-      else if (action === 'disable') await handleDisableUser(repo);
-      else if (action === 'reset-password') await handleResetPassword(repo);
-      else if (action === 'create') await handleCreateUser(repo);
-      else if (action === 'delete') await handleDeleteUser(repo);
-    } catch (e) {
-      if (e instanceof CliError) {
-        printError(`\n✗ ${e.message}\n`);
-      } else {
-        throw e;
-      }
-    }
+    await dispatchAction(repo, action);
   }
 }
