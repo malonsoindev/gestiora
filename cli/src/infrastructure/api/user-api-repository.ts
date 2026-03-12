@@ -23,7 +23,7 @@ export class UserApiRepository implements UserRepository {
   async listUsers(): Promise<User[]> {
     const res = await fetch(`${this.baseUrl}/admin/users`, {
       method: 'GET',
-      headers: this.authHeaders(),
+      headers: this.authHeadersNoBody(),
     });
 
     if (res.status === 401) throw new AuthError();
@@ -37,7 +37,7 @@ export class UserApiRepository implements UserRepository {
     const url = `${this.baseUrl}/admin/users?query=${encodeURIComponent(query)}`;
     const res = await fetch(url, {
       method: 'GET',
-      headers: this.authHeaders(),
+      headers: this.authHeadersNoBody(),
     });
 
     if (res.status === 401) throw new AuthError();
@@ -117,7 +117,7 @@ export class UserApiRepository implements UserRepository {
   async deleteUser(id: string): Promise<void> {
     const res = await fetch(`${this.baseUrl}/admin/users/${id}`, {
       method: 'DELETE',
-      headers: this.authHeaders(),
+      headers: this.authHeadersNoBody(),
     });
 
     if (res.status === 401) throw new AuthError();
@@ -131,5 +131,10 @@ export class UserApiRepository implements UserRepository {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
+  }
+
+  private authHeadersNoBody(): Record<string, string> {
+    const token = tokenStore.get();
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }
 }

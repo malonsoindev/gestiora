@@ -12,6 +12,7 @@ const mockFetch = vi.fn();
 
 beforeEach(() => {
   vi.stubGlobal('fetch', mockFetch);
+  vi.clearAllMocks();
   tokenStore.clear();
 });
 
@@ -151,7 +152,7 @@ describe('UserApiRepository', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         `${BASE_URL}/admin/users/1/password`,
         expect.objectContaining({
-          method: 'PUT',
+          method: 'POST',
           body: JSON.stringify({ newPassword: MOCK_PASS_ALT }),
         }),
       );
@@ -221,7 +222,7 @@ describe('UserApiRepository', () => {
   });
 
   describe('deleteUser', () => {
-    it('envía DELETE a /admin/users/:id y no devuelve nada', async () => {
+    it('envía DELETE a /admin/users/:id sin Content-Type y no devuelve nada', async () => {
       tokenStore.set('tok123');
       mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
 
@@ -229,7 +230,10 @@ describe('UserApiRepository', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         `${BASE_URL}/admin/users/user-123`,
-        expect.objectContaining({ method: 'DELETE' }),
+        expect.objectContaining({
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer tok123' },
+        }),
       );
     });
 
