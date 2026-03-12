@@ -38,6 +38,9 @@ import {
     FailingTokenServiceOnMethod,
 } from '@tests/shared/stubs/failing-stubs.js';
 
+const MOCK_CREDENTIAL = 'MOCK_PASS_123!';
+const MOCK_WRONG_CREDENTIAL = 'MOCK_WRONG_123!';
+
 const createUser = (overrides: Partial<UserProps> = {}): User =>
     createTestUser({
         now: fixedNow,
@@ -168,7 +171,7 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
 
 const buildLoginRequest = (overrides: Partial<{ email: string; password: string; ip: string; userAgent: string }> = {}) => ({
     email: 'user@example.com',
-    password: 'MOCK_PASS_123!',
+    password: MOCK_CREDENTIAL,
     ip: '127.0.0.1',
     userAgent: 'unit-test',
     ...overrides,
@@ -209,7 +212,7 @@ describe('LoginUserUseCase', () => {
 
         const result = await useCase.execute(buildLoginRequest({
             email: user.email,
-            password: 'MOCK_WRONG_123!',
+            password: MOCK_WRONG_CREDENTIAL,
         }));
 
         expect(result.success).toBe(false);

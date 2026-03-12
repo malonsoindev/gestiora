@@ -12,8 +12,8 @@ import { UserRepositorySpy } from '@tests/shared/spies/user-repository.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 
-const validNewPassword = 'MOCK_PASS_123!';
-const invalidNewPassword = 'short';
+const validNewCredential = 'MOCK_PASS_123!';
+const invalidNewCredential = 'short';
 
 const createUser = (overrides: Partial<UserProps> = {}): User =>
     createTestUser({
@@ -54,11 +54,11 @@ describe('ChangeUserPasswordUseCase', () => {
         const result = await useCase.execute({
             actorUserId: 'admin-1',
             userId: 'user-1',
-            newPassword: validNewPassword,
+            newPassword: validNewCredential,
         });
 
         expect(result.success).toBe(true);
-        expect(userRepository.updatedUser?.passwordHash).toBe(`hashed:${validNewPassword}`);
+        expect(userRepository.updatedUser?.passwordHash).toBe(`hashed:${validNewCredential}`);
         expect(auditLogger.events.some((event) => event.action === 'USER_PASSWORD_CHANGED')).toBe(true);
     });
 
@@ -68,7 +68,7 @@ describe('ChangeUserPasswordUseCase', () => {
         const result = await useCase.execute({
             actorUserId: 'admin-1',
             userId: 'user-1',
-            newPassword: invalidNewPassword,
+            newPassword: invalidNewCredential,
         });
 
         expect(result.success).toBe(false);
@@ -84,7 +84,7 @@ describe('ChangeUserPasswordUseCase', () => {
         const result = await useCase.execute({
             actorUserId: 'admin-1',
             userId: 'missing',
-            newPassword: validNewPassword,
+            newPassword: validNewCredential,
         });
 
         expect(result.success).toBe(false);

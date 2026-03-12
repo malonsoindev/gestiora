@@ -27,8 +27,8 @@ import {
     FailingUserRepositoryOnMethod,
 } from '@tests/shared/stubs/failing-stubs.js';
 
-const validPassword = 'MOCK_PASS_123!';
-const invalidPassword = 'weak';
+const validCredential = 'MOCK_PASS_123!';
+const invalidCredential = 'weak';
 
 const createUserEntity = (): User =>
     createTestUser({
@@ -82,7 +82,7 @@ const makeSutWithSpies = (overrides: Omit<SutOverrides, 'dateProvider' | 'auditL
 const baseRequest = {
     actorUserId: 'admin-1',
     email: 'new@example.com',
-    password: validPassword,
+    password: validCredential,
     roles: [UserRole.user()],
 };
 
@@ -101,7 +101,7 @@ describe('CreateUserUseCase', () => {
         expect(userRepository.createdUser).not.toBeNull();
         expect(userRepository.createdUser?.id).toBe('user-fixed');
         expect(userRepository.createdUser?.email).toBe('new@example.com');
-        expect(userRepository.createdUser?.passwordHash).toBe(`hashed:${validPassword}`);
+        expect(userRepository.createdUser?.passwordHash).toBe(`hashed:${validCredential}`);
         expect(userRepository.createdUser?.status).toBe(UserStatus.Active);
         expect(userRepository.createdUser?.roles[0]?.getValue()).toBe('USER');
         expect(userRepository.createdUser?.createdAt).toBe(fixedNow);
@@ -132,7 +132,7 @@ describe('CreateUserUseCase', () => {
 
         const result = await useCase.execute({
             ...baseRequest,
-            password: invalidPassword,
+            password: invalidCredential,
         });
 
         expect(result.success).toBe(false);

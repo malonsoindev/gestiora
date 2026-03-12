@@ -25,10 +25,10 @@ const createUser = (overrides: Partial<UserProps> = {}): User =>
         },
     });
 
-const validCurrentPassword = 'MOCK_CURRENT_123!';
-const validNewPassword = 'MOCK_PASS_123!';
-const invalidNewPassword = 'short';
-const wrongCurrentPassword = 'MOCK_WRONG_123!';
+const validCurrentCredential = 'MOCK_CURRENT_123!';
+const validNewCredential = 'MOCK_PASS_123!';
+const invalidNewCredential = 'short';
+const wrongCurrentCredential = 'MOCK_WRONG_123!';
 
 type SutOverrides = Partial<{
     user: User | null;
@@ -57,12 +57,12 @@ describe('ChangeOwnPasswordUseCase', () => {
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
-            currentPassword: validCurrentPassword,
-            newPassword: validNewPassword,
+            currentPassword: validCurrentCredential,
+            newPassword: validNewCredential,
         });
 
         expect(result.success).toBe(true);
-        expect(userRepository.updatedUser?.passwordHash).toBe(`hashed:${validNewPassword}`);
+        expect(userRepository.updatedUser?.passwordHash).toBe(`hashed:${validNewCredential}`);
         expect(auditLogger.events.some((event) => event.action === 'USER_PASSWORD_CHANGED')).toBe(true);
     });
 
@@ -71,8 +71,8 @@ describe('ChangeOwnPasswordUseCase', () => {
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
-            currentPassword: wrongCurrentPassword,
-            newPassword: validNewPassword,
+            currentPassword: wrongCurrentCredential,
+            newPassword: validNewCredential,
         });
 
         expect(result.success).toBe(false);
@@ -87,8 +87,8 @@ describe('ChangeOwnPasswordUseCase', () => {
 
         const result = await useCase.execute({
             actorUserId: 'user-1',
-            currentPassword: validCurrentPassword,
-            newPassword: invalidNewPassword,
+            currentPassword: validCurrentCredential,
+            newPassword: invalidNewCredential,
         });
 
         expect(result.success).toBe(false);
@@ -103,8 +103,8 @@ describe('ChangeOwnPasswordUseCase', () => {
 
         const result = await useCase.execute({
             actorUserId: 'missing-user',
-            currentPassword: validCurrentPassword,
-            newPassword: validNewPassword,
+            currentPassword: validCurrentCredential,
+            newPassword: validNewCredential,
         });
 
         expect(result.success).toBe(false);
