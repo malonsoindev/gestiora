@@ -37,3 +37,7 @@ export interface CreateUserPayload {
   name?: string;
   roles: UserRole[];
 }
+
+export interface CreateUserResult {
+  userId: string;
+}

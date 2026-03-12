@@ -1,11 +1,11 @@
 import type { UserRepository } from '../domain/ports.ts';
-import type { CreateUserPayload, User } from '../domain/user.ts';
+import type { CreateUserPayload, CreateUserResult } from '../domain/user.ts';
 import { CliError } from '../domain/errors.ts';
 
 export async function createUserUseCase(
   repo: UserRepository,
   payload: CreateUserPayload,
-): Promise<User> {
+): Promise<CreateUserResult> {
   if (!payload.email.trim()) {
     throw new CliError('El email no puede estar vacío.');
   }

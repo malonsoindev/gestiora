@@ -188,16 +188,9 @@ describe('UserApiRepository', () => {
   });
 
   describe('createUser', () => {
-    it('envía POST con el payload y devuelve el usuario creado', async () => {
+    it('envía POST con el payload y devuelve el userId creado', async () => {
       tokenStore.set('tok123');
-      const created = {
-        userId: 'new-id',
-        email: 'new@example.com',
-        name: 'Nuevo',
-        roles: ['Usuario'],
-        status: 'ACTIVE',
-        createdAt: '2025-01-01T00:00:00.000Z',
-      };
+      const created = { userId: 'new-id' };
       mockFetch.mockResolvedValue(jsonResponse(created, 201));
 
       const payload = { email: 'new@example.com', password: MOCK_PASS, name: 'Nuevo', roles: ['Usuario'] as const };

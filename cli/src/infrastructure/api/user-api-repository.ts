@@ -1,5 +1,5 @@
 import type { UserRepository } from '../../domain/ports.ts';
-import type { User, UpdateUserPayload, ResetPasswordPayload, CreateUserPayload } from '../../domain/user.ts';
+import type { User, UpdateUserPayload, ResetPasswordPayload, CreateUserPayload, CreateUserResult } from '../../domain/user.ts';
 import { AuthError, NotFoundError, CliError } from '../../domain/errors.ts';
 import { tokenStore } from '../../core/token-store.ts';
 
@@ -101,7 +101,7 @@ export class UserApiRepository implements UserRepository {
     if (!res.ok) throw new CliError(`Error al revocar sesiones (${res.status})`);
   }
 
-  async createUser(payload: CreateUserPayload): Promise<User> {
+  async createUser(payload: CreateUserPayload): Promise<CreateUserResult> {
     const res = await fetch(`${this.baseUrl}/admin/users`, {
       method: 'POST',
       headers: this.authHeaders(),
@@ -111,7 +111,7 @@ export class UserApiRepository implements UserRepository {
     if (res.status === 401) throw new AuthError();
     if (!res.ok) throw new CliError(`Error al crear usuario (${res.status})`);
 
-    return res.json() as Promise<User>;
+    return res.json() as Promise<CreateUserResult>;
   }
 
   async deleteUser(id: string): Promise<void> {

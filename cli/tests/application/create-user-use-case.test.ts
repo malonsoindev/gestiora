@@ -1,18 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createUserUseCase } from '../../src/application/create-user-use-case.ts';
 import type { UserRepository } from '../../src/domain/ports.ts';
-import type { CreateUserPayload, User } from '../../src/domain/user.ts';
+import type { CreateUserPayload, CreateUserResult } from '../../src/domain/user.ts';
 import { CliError } from '../../src/domain/errors.ts';
 
 const MOCK_PASS = 'Pass1234!';
 
-const mockUser: User = {
+const mockResult: CreateUserResult = {
   userId: 'new-id',
-  email: 'new@example.com',
-  name: 'Nuevo',
-  roles: ['Usuario'],
-  status: 'ACTIVE',
-  createdAt: '2025-01-01T00:00:00.000Z',
 };
 
 const mockRepo: UserRepository = {
@@ -32,8 +27,8 @@ beforeEach(() => {
 });
 
 describe('createUserUseCase', () => {
-  it('crea el usuario y devuelve el usuario creado', async () => {
-    vi.mocked(mockRepo.createUser).mockResolvedValue(mockUser);
+  it('crea el usuario y devuelve el resultado con el userId', async () => {
+    vi.mocked(mockRepo.createUser).mockResolvedValue(mockResult);
 
     const payload: CreateUserPayload = {
       email: 'new@example.com',
@@ -45,7 +40,7 @@ describe('createUserUseCase', () => {
     const result = await createUserUseCase(mockRepo, payload);
 
     expect(mockRepo.createUser).toHaveBeenCalledWith(payload);
-    expect(result).toEqual(mockUser);
+    expect(result).toEqual(mockResult);
   });
 
   it('lanza CliError si el email está vacío', async () => {

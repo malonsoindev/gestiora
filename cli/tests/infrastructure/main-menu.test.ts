@@ -142,14 +142,7 @@ describe('handleCreateUser', () => {
       .mockResolvedValueOnce(MOCK_PASS)
       .mockResolvedValueOnce(MOCK_PASS);
     vi.mocked(select).mockResolvedValue('Usuario');
-    const created = {
-      userId: 'new-id',
-      email: 'new@example.com',
-      name: 'Nuevo',
-      roles: ['Usuario'] as UserRole[],
-      status: 'ACTIVE' as const,
-      createdAt: '2025-01-01T00:00:00.000Z',
-    };
+    const created = { userId: 'new-id' };
     vi.mocked(createUserUseCase).mockResolvedValue(created);
 
     await handleCreateUser(mockRepo);

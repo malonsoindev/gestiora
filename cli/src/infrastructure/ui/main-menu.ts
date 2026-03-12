@@ -89,7 +89,7 @@ export async function handleCreateUser(repo: UserRepository): Promise<void> {
     ...(name ? { name } : {}),
     roles: [role],
   });
-  printSuccess(`\n✓ Usuario creado: [${user.userId}] ${user.email}\n`);
+  printSuccess(`\n✓ Usuario creado: [${user.userId}] ${email}\n`);
 }
 
 export async function handleDeleteUser(repo: UserRepository): Promise<void> {
