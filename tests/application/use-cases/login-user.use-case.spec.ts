@@ -168,7 +168,7 @@ const createUseCase = (dependencies: Partial<UseCaseDependencies> = {}): {
 
 const buildLoginRequest = (overrides: Partial<{ email: string; password: string; ip: string; userAgent: string }> = {}) => ({
     email: 'user@example.com',
-    password: 'valid-password',
+    password: 'MOCK_PASS_123!',
     ip: '127.0.0.1',
     userAgent: 'unit-test',
     ...overrides,
@@ -209,7 +209,7 @@ describe('LoginUserUseCase', () => {
 
         const result = await useCase.execute(buildLoginRequest({
             email: user.email,
-            password: 'wrong-password',
+            password: 'MOCK_WRONG_123!',
         }));
 
         expect(result.success).toBe(false);

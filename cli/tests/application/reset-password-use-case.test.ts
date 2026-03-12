@@ -11,10 +11,12 @@ const mockRepo: UserRepository = {
   disableUser: vi.fn(),
   resetPassword: vi.fn(),
   revokeUserSessions: vi.fn(),
+  createUser: vi.fn(),
+  deleteUser: vi.fn(),
 };
 
-const MOCK_VALUE = 'NewPass1!';
-const MOCK_VALUE_ALT = 'OtroPass2!';
+const MOCK_PASS = 'NewPass1!';
+const MOCK_PASS_ALT = 'OtroPass2!';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -25,22 +27,22 @@ describe('resetPasswordUseCase', () => {
     vi.mocked(mockRepo.resetPassword).mockResolvedValue(undefined);
     vi.mocked(mockRepo.revokeUserSessions).mockResolvedValue(undefined);
 
-    await resetPasswordUseCase(mockRepo, '1', MOCK_VALUE, MOCK_VALUE);
+    await resetPasswordUseCase(mockRepo, '1', MOCK_PASS, MOCK_PASS);
 
-    expect(mockRepo.resetPassword).toHaveBeenCalledWith('1', { newPassword: MOCK_VALUE });
+    expect(mockRepo.resetPassword).toHaveBeenCalledWith('1', { newPassword: MOCK_PASS });
     expect(mockRepo.revokeUserSessions).toHaveBeenCalledWith('1');
   });
 
   it('lanza error si las contraseñas no coinciden', async () => {
     await expect(
-      resetPasswordUseCase(mockRepo, '1', MOCK_VALUE, MOCK_VALUE_ALT),
+      resetPasswordUseCase(mockRepo, '1', MOCK_PASS, MOCK_PASS_ALT),
     ).rejects.toThrow(CliError);
     expect(mockRepo.resetPassword).not.toHaveBeenCalled();
   });
 
   it('lanza error si el id está vacío', async () => {
     await expect(
-      resetPasswordUseCase(mockRepo, '', MOCK_VALUE, MOCK_VALUE),
+      resetPasswordUseCase(mockRepo, '', MOCK_PASS, MOCK_PASS),
     ).rejects.toThrow(CliError);
     expect(mockRepo.resetPassword).not.toHaveBeenCalled();
   });
@@ -56,7 +58,7 @@ describe('resetPasswordUseCase', () => {
     vi.mocked(mockRepo.resetPassword).mockRejectedValue(new NotFoundError());
 
     await expect(
-      resetPasswordUseCase(mockRepo, '999', MOCK_VALUE, MOCK_VALUE),
+      resetPasswordUseCase(mockRepo, '999', MOCK_PASS, MOCK_PASS),
     ).rejects.toThrow(NotFoundError);
   });
 });

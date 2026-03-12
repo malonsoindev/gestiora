@@ -20,6 +20,9 @@ import type { UserRepository } from '../../src/domain/ports.ts';
 import type { UserRole } from '../../src/domain/user.ts';
 import { CliError } from '../../src/domain/errors.ts';
 
+const MOCK_PASS = 'TestPass123!';
+const MOCK_PASS_ALT = 'WrongPass123!';
+
 vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
   password: vi.fn(),
@@ -120,13 +123,13 @@ describe('handleResetPassword', () => {
   it('llama a resetPasswordUseCase con los valores del prompt', async () => {
     vi.mocked(input).mockResolvedValue('1');
     vi.mocked(password)
-      .mockResolvedValueOnce('NewPass1!')
-      .mockResolvedValueOnce('NewPass1!');
+      .mockResolvedValueOnce(MOCK_PASS)
+      .mockResolvedValueOnce(MOCK_PASS);
     vi.mocked(resetPasswordUseCase).mockResolvedValue(undefined);
 
     await handleResetPassword(mockRepo);
 
-    expect(resetPasswordUseCase).toHaveBeenCalledWith(mockRepo, '1', 'NewPass1!', 'NewPass1!');
+    expect(resetPasswordUseCase).toHaveBeenCalledWith(mockRepo, '1', MOCK_PASS, MOCK_PASS);
   });
 });
 
@@ -136,8 +139,8 @@ describe('handleCreateUser', () => {
       .mockResolvedValueOnce('new@example.com') // email
       .mockResolvedValueOnce('Nuevo');            // name
     vi.mocked(password)
-      .mockResolvedValueOnce('Pass1!')
-      .mockResolvedValueOnce('Pass1!');
+      .mockResolvedValueOnce(MOCK_PASS)
+      .mockResolvedValueOnce(MOCK_PASS);
     vi.mocked(select).mockResolvedValue('Usuario');
     const created = {
       userId: 'new-id',
@@ -153,7 +156,7 @@ describe('handleCreateUser', () => {
 
     expect(createUserUseCase).toHaveBeenCalledWith(mockRepo, {
       email: 'new@example.com',
-      password: 'Pass1!',
+      password: MOCK_PASS,
       name: 'Nuevo',
       roles: ['Usuario'],
     });
@@ -164,8 +167,8 @@ describe('handleCreateUser', () => {
       .mockResolvedValueOnce('new@example.com')
       .mockResolvedValueOnce('');
     vi.mocked(password)
-      .mockResolvedValueOnce('Pass1!')
-      .mockResolvedValueOnce('OtraPass!');
+      .mockResolvedValueOnce(MOCK_PASS)
+      .mockResolvedValueOnce(MOCK_PASS_ALT);
     vi.mocked(select).mockResolvedValue('Usuario');
 
     await expect(handleCreateUser(mockRepo)).rejects.toThrow(CliError);

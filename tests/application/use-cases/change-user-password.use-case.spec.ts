@@ -12,7 +12,7 @@ import { UserRepositorySpy } from '@tests/shared/spies/user-repository.spy.js';
 import { fixedNow } from '@tests/shared/fixed-now.js';
 import { createTestUser } from '@tests/shared/fixtures/user.fixture.js';
 
-const validNewPassword = 'NewPassword1!a';
+const validNewPassword = 'MOCK_PASS_123!';
 const invalidNewPassword = 'short';
 
 const createUser = (overrides: Partial<UserProps> = {}): User =>

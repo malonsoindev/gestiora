@@ -20,7 +20,12 @@ const mockRepo: UserRepository = {
   disableUser: vi.fn(),
   resetPassword: vi.fn(),
   revokeUserSessions: vi.fn(),
+  createUser: vi.fn(),
+  deleteUser: vi.fn(),
 };
+
+const MOCK_PASS = 'TestPass123!';
+const MOCK_PASS_ALT = 'WrongPass123!';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -31,9 +36,9 @@ describe('loginUseCase', () => {
   it('almacena el token en memoria cuando las credenciales son correctas y el usuario es ADMIN', async () => {
     vi.mocked(mockRepo.login).mockResolvedValue(ADMIN_TOKEN);
 
-    await loginUseCase(mockRepo, 'admin@example.com', 'AdminPass1!a');
+    await loginUseCase(mockRepo, 'admin@example.com', MOCK_PASS);
 
-    expect(mockRepo.login).toHaveBeenCalledWith('admin@example.com', 'AdminPass1!a');
+    expect(mockRepo.login).toHaveBeenCalledWith('admin@example.com', MOCK_PASS);
     expect(tokenStore.get()).toBe(ADMIN_TOKEN);
   });
 
@@ -41,7 +46,7 @@ describe('loginUseCase', () => {
     vi.mocked(mockRepo.login).mockResolvedValue(USER_TOKEN);
 
     await expect(
-      loginUseCase(mockRepo, 'user@example.com', 'UserPass1!a'),
+      loginUseCase(mockRepo, 'user@example.com', MOCK_PASS),
     ).rejects.toThrow(ForbiddenError);
 
     expect(tokenStore.get()).toBeNull();
@@ -51,7 +56,7 @@ describe('loginUseCase', () => {
     vi.mocked(mockRepo.login).mockRejectedValue(new AuthError('Credenciales inválidas'));
 
     await expect(
-      loginUseCase(mockRepo, 'admin@example.com', 'wrong-password'),
+      loginUseCase(mockRepo, 'admin@example.com', MOCK_PASS_ALT),
     ).rejects.toThrow(AuthError);
 
     expect(tokenStore.get()).toBeNull();
@@ -60,7 +65,7 @@ describe('loginUseCase', () => {
   it('no almacena token si el login falla', async () => {
     vi.mocked(mockRepo.login).mockRejectedValue(new AuthError());
 
-    await expect(loginUseCase(mockRepo, 'x@x.com', 'bad')).rejects.toThrow();
+    await expect(loginUseCase(mockRepo, 'x@x.com', MOCK_PASS_ALT)).rejects.toThrow();
 
     expect(tokenStore.isSet()).toBe(false);
   });

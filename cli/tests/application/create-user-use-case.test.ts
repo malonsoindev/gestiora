@@ -4,6 +4,8 @@ import type { UserRepository } from '../../src/domain/ports.ts';
 import type { CreateUserPayload, User } from '../../src/domain/user.ts';
 import { CliError } from '../../src/domain/errors.ts';
 
+const MOCK_PASS = 'Pass1234!';
+
 const mockUser: User = {
   userId: 'new-id',
   email: 'new@example.com',
@@ -35,7 +37,7 @@ describe('createUserUseCase', () => {
 
     const payload: CreateUserPayload = {
       email: 'new@example.com',
-      password: 'Pass1234!',
+      password: MOCK_PASS,
       name: 'Nuevo',
       roles: ['Usuario'],
     };
@@ -47,13 +49,13 @@ describe('createUserUseCase', () => {
   });
 
   it('lanza CliError si el email está vacío', async () => {
-    const payload: CreateUserPayload = { email: '', password: 'Pass1234!', roles: ['Usuario'] };
+    const payload: CreateUserPayload = { email: '', password: MOCK_PASS, roles: ['Usuario'] };
     await expect(createUserUseCase(mockRepo, payload)).rejects.toThrow(CliError);
     expect(mockRepo.createUser).not.toHaveBeenCalled();
   });
 
   it('lanza CliError si el email es solo espacios', async () => {
-    const payload: CreateUserPayload = { email: '   ', password: 'Pass1234!', roles: ['Usuario'] };
+    const payload: CreateUserPayload = { email: '   ', password: MOCK_PASS, roles: ['Usuario'] };
     await expect(createUserUseCase(mockRepo, payload)).rejects.toThrow(CliError);
     expect(mockRepo.createUser).not.toHaveBeenCalled();
   });
@@ -65,7 +67,7 @@ describe('createUserUseCase', () => {
   });
 
   it('lanza CliError si el array de roles está vacío', async () => {
-    const payload: CreateUserPayload = { email: 'a@b.com', password: 'Pass1234!', roles: [] };
+    const payload: CreateUserPayload = { email: 'a@b.com', password: MOCK_PASS, roles: [] };
     await expect(createUserUseCase(mockRepo, payload)).rejects.toThrow(CliError);
     expect(mockRepo.createUser).not.toHaveBeenCalled();
   });
@@ -73,7 +75,7 @@ describe('createUserUseCase', () => {
   it('propaga errores del repositorio', async () => {
     vi.mocked(mockRepo.createUser).mockRejectedValue(new CliError('Email en uso'));
 
-    const payload: CreateUserPayload = { email: 'dup@example.com', password: 'Pass!', roles: ['Usuario'] };
+    const payload: CreateUserPayload = { email: 'dup@example.com', password: MOCK_PASS, roles: ['Usuario'] };
     await expect(createUserUseCase(mockRepo, payload)).rejects.toThrow(CliError);
   });
 });

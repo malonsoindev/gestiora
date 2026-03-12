@@ -27,7 +27,7 @@ import {
     FailingUserRepositoryOnMethod,
 } from '@tests/shared/stubs/failing-stubs.js';
 
-const validPassword = 'StrongPass1!a';
+const validPassword = 'MOCK_PASS_123!';
 const invalidPassword = 'weak';
 
 const createUserEntity = (): User =>

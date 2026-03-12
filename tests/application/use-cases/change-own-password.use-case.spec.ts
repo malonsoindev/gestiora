@@ -25,10 +25,10 @@ const createUser = (overrides: Partial<UserProps> = {}): User =>
         },
     });
 
-const validCurrentPassword = 'Current1!a';
-const validNewPassword = 'NewPassword1!a';
+const validCurrentPassword = 'MOCK_CURRENT_123!';
+const validNewPassword = 'MOCK_PASS_123!';
 const invalidNewPassword = 'short';
-const wrongCurrentPassword = 'WrongPass1!a';
+const wrongCurrentPassword = 'MOCK_WRONG_123!';
 
 type SutOverrides = Partial<{
     user: User | null;

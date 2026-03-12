@@ -4,8 +4,8 @@ import { tokenStore } from '../../src/core/token-store.ts';
 import { AuthError, NotFoundError } from '../../src/domain/errors.ts';
 
 const BASE_URL = 'http://localhost:3000';
-const MOCK_CREDENTIAL = 'Pass1!';
-const MOCK_NEW_CREDENTIAL = 'NewPass1!';
+const MOCK_PASS = 'Pass1234!';
+const MOCK_PASS_ALT = 'NewPass1234!';
 const MOCK_SHORT_CREDENTIAL = 'X';
 
 const mockFetch = vi.fn();
@@ -33,13 +33,13 @@ describe('UserApiRepository', () => {
     it('devuelve el accessToken en login correcto', async () => {
       mockFetch.mockResolvedValue(jsonResponse({ accessToken: 'tok123', refreshToken: 'ref456' }));
 
-      const token = await repo.login('admin@example.com', MOCK_CREDENTIAL);
+      const token = await repo.login('admin@example.com', MOCK_PASS);
 
       expect(mockFetch).toHaveBeenCalledWith(
         `${BASE_URL}/auth/login`,
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ email: 'admin@example.com', password: MOCK_CREDENTIAL }),
+          body: JSON.stringify({ email: 'admin@example.com', password: MOCK_PASS }),
         }),
       );
       expect(token).toBe('tok123');
@@ -48,7 +48,7 @@ describe('UserApiRepository', () => {
     it('lanza AuthError si el servidor devuelve 401', async () => {
       mockFetch.mockResolvedValue(jsonResponse({ message: 'Invalid credentials' }, 401));
 
-      await expect(repo.login('a@b.com', 'wrong')).rejects.toThrow(AuthError);
+      await expect(repo.login('a@b.com', MOCK_PASS_ALT)).rejects.toThrow(AuthError);
     });
   });
 
@@ -146,13 +146,13 @@ describe('UserApiRepository', () => {
       tokenStore.set('tok123');
       mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
 
-      await repo.resetPassword('1', { newPassword: MOCK_NEW_CREDENTIAL });
+      await repo.resetPassword('1', { newPassword: MOCK_PASS_ALT });
 
       expect(mockFetch).toHaveBeenCalledWith(
         `${BASE_URL}/admin/users/1/password`,
         expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({ newPassword: MOCK_NEW_CREDENTIAL }),
+          method: 'PUT',
+          body: JSON.stringify({ newPassword: MOCK_PASS_ALT }),
         }),
       );
     });
@@ -199,7 +199,7 @@ describe('UserApiRepository', () => {
       };
       mockFetch.mockResolvedValue(jsonResponse(created, 201));
 
-      const payload = { email: 'new@example.com', password: 'Pass1!', name: 'Nuevo', roles: ['Usuario'] as const };
+      const payload = { email: 'new@example.com', password: MOCK_PASS, name: 'Nuevo', roles: ['Usuario'] as const };
       const result = await repo.createUser(payload);
 
       expect(mockFetch).toHaveBeenCalledWith(
@@ -216,7 +216,7 @@ describe('UserApiRepository', () => {
       tokenStore.set('tok123');
       mockFetch.mockResolvedValue(jsonResponse({ message: 'Unauthorized' }, 401));
 
-      await expect(repo.createUser({ email: 'a@b.com', password: 'X', roles: ['Usuario'] })).rejects.toThrow(AuthError);
+      await expect(repo.createUser({ email: 'a@b.com', password: MOCK_PASS_ALT, roles: ['Usuario'] })).rejects.toThrow(AuthError);
     });
   });
 
