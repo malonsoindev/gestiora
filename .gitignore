@@ -15,3 +15,7 @@ storage/
 __db_*.json
 hist_pruebas/
 nul
+
+# Angular overrides (web-app)
+/web-app/.angular/cache
+/web-app/out-tsc
