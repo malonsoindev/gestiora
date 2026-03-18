@@ -606,3 +606,21 @@ footer {
         transform: translateX(50%) translateY(-2px);
     }
 }
+
+.full-width-section .container-fluid {
+    max-width: 1600px;
+}
+.full-width-section .features-grid {
+    grid-template-columns: repeat(4, 1fr);
+}
+@media (max-width: 1200px) {
+    .full-width-section .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 768px) {
+    .full-width-section .features-grid {
+        grid-template-columns: 1fr;
+    }
+}
+

@@ -37,6 +37,10 @@ Gestiora destaca por su flexibilidad, permitiendo que la operativa del negocio n
 *   Implementación de **Retrieval-Augmented Generation (RAG)** para realizar búsquedas en lenguaje natural sobre el histórico documental.
 *   Respuestas precisas basadas exclusivamente en los documentos autorizados, con referencias directas para visualizar o descargar el archivo original.
 
+### 4. CLI de Administración y Gestión
+*   Herramienta de consola interactiva (basada en interfaz REPL) exclusiva para el grupo de Soporte y Administradores.
+*   Permite gestionar de manera ágil todo el ciclo de vida de los usuarios (altas, bajas, modificación de perfiles, reseteo de contraseñas y revocación proactiva de sesiones) sin necesidad de requerir un entorno gráfico complejo.
+
 ## 🛡️ Seguridad y Protección Activa
 La plataforma aplica el enfoque de **Security by Design** para garantizar la integridad de la información:
 
@@ -53,12 +57,16 @@ El backend está construido siguiendo un patrón de **Monolito Modular** bajo lo
 *   **Principios y calidad:** Diseño guiado por SOLID, desarrollo con TDD (tests marcan el avance), buenas prácticas continuas, enfoque **Security by Design** desde el arranque y documentación tratada como código desde el inicio del repositorio.
 
 ## 🧩 Estructura del Proyecto
-La organización del código refleja Clean Architecture, separando responsabilidades y evitando acoplamientos:
+El ecosistema se divide principalmente en el nodo central (API) y su herramienta de administración en el mismo repositorio monorepo, ambas reflejando el principio de Clean Architecture:
 
+**Backend (API):**
 *   `src/domain`: Entidades, value objects y reglas de negocio puras.
 *   `src/application`: Casos de uso y puertos (interfaces) que orquestan la lógica.
 *   `src/infrastructure`: Adaptadores técnicos (HTTP, DB, storage, IA).
 *   `src/composition`: Composición y wiring de dependencias.
+
+**Herramientas:**
+*   `cli/`: Herramienta de Interfaz de Línea de Comandos (aislada bajo sus propios patrones estructurales) para interactuar contra la API desde consola.
 
 ## 🛠️ Stack Tecnológico
 *   **Lenguaje:** TypeScript (strict mode).
@@ -121,9 +129,27 @@ La organización del código refleja Clean Architecture, separando responsabilid
 | Administrador | admin@example.com | AdminPass1!a |
 | Usuario | user@example.com | UserPass1!a |
 
+### Ejecución de la CLI (Herramienta de Administración)
+Dentro del mismo repositorio se encuentra la CLI interactiva instalable por separado en la máquina del administrador. Permite apuntar contra los entornos arrastrando la variable local o global.
+
+Para información técnica más profunda y decisiones de arquitectura sobre la CLI, consulta el [README de la CLI](cli/README.md) y su [Design Document](docs/cli/DD-CLI-001.md).
+
+```bash
+cd cli
+npm install
+
+# Para arrancar en modo desarrollo interactivo
+npm run dev
+
+# Para compilar e iniciar como si fuera un binario Node
+npm run build
+npm start
+```
+*Si deseas apuntar la CLI a un servidor diferente al localhost (ej: Producción o Staging), deberás crear el archivo `cli/.env` y establecer la variable `API_BASE_URL` correspondiente.*
+
 ### Plantilla de llamadas a la API
 
-En la carpeta `docs/` se encuentra el fichero [`curl.md`](docs/curl.md) con la plantilla completa de llamadas a todos los endpoints de la API (34 en total), incluyendo ejemplos para **Bash** y **PowerShell**.
+En la carpeta `docs/backend/` se encuentra el fichero [`curl.md`](docs/backend/curl.md) con la plantilla completa de llamadas a todos los endpoints de la API (34 en total), incluyendo ejemplos para **Bash** y **PowerShell**.
 
 ### Documentos de prueba
 
