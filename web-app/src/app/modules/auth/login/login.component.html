@@ -1,0 +1,79 @@
+<div class="login-card">
+
+  <div class="brand">
+    <img src="/logo_02.svg" alt="Gestiora" class="brand-logo" />
+    <h1>Gestiora</h1>
+  </div>
+  <p class="brand-tagline">Gestión inteligente que avanza contigo</p>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Correo electrónico</mat-label>
+      <input
+        #emailInput
+        matInput
+        type="email"
+        name="email"
+        formControlName="email"
+        autocomplete="email"
+        placeholder="usuario@empresa.com"
+      />
+      <mat-icon matSuffix>mail_outline</mat-icon>
+      @if (form.controls.email.hasError('required') && form.controls.email.touched) {
+        <mat-error>El correo es obligatorio</mat-error>
+      } @else if (form.controls.email.hasError('email') && form.controls.email.touched) {
+        <mat-error>Introduce un correo válido</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Contraseña</mat-label>
+      <input
+        #passwordInput
+        matInput
+        [type]="showPassword() ? 'text' : 'password'"
+        name="password"
+        formControlName="password"
+        [attr.autocomplete]="showPassword() ? 'on' : 'current-password'"
+      />
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+        (click)="togglePassword()"
+      >
+        <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      @if (form.controls.password.hasError('required') && form.controls.password.touched) {
+        <mat-error>La contraseña es obligatoria</mat-error>
+      } @else if (form.controls.password.hasError('minlength') && form.controls.password.touched) {
+        <mat-error>La contraseña debe tener al menos 12 caracteres</mat-error>
+      }
+    </mat-form-field>
+
+    @if (errorMessage()) {
+      <div class="error-alert" role="alert">
+        <mat-icon>warning_amber</mat-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      class="submit-btn"
+      [disabled]="isLoading()"
+      [attr.aria-busy]="isLoading()"
+    >
+      @if (isLoading()) {
+        <mat-progress-spinner diameter="22" mode="indeterminate" />
+      } @else {
+        Iniciar Sesión
+      }
+    </button>
+
+  </form>
+</div>

@@ -43,12 +43,18 @@ html {
   );
 }
 
+app-root {
+  display: block;
+  height: 100%;
+}
+
 body {
   // Default the application to a light color theme.
   color-scheme: light;
   // Font and body resets
   margin: 0;
   height: 100%;
+  overflow: hidden;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--bg-light);
   color: var(--text-dark);
