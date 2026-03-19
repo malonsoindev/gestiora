@@ -1,15 +1,7 @@
-import { Component } from '@angular/core';
 import { Routes } from '@angular/router';
 import { AuthLayoutComponent } from './layout/auth-layout/auth-layout';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
-
-@Component({
-  selector: 'app-dashboard-placeholder',
-  standalone: true,
-  template: '<h1>Dashboard</h1>',
-})
-class DashboardPlaceholderComponent {}
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -30,7 +22,10 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     canActivate: [authGuard],
-    component: DashboardPlaceholderComponent,
+    loadComponent: () =>
+      import('./modules/dashboard/dashboard.component').then(
+        (m) => m.DashboardComponent,
+      ),
   },
   { path: '**', redirectTo: 'login' },
 ];
