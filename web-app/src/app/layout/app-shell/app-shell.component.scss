@@ -53,6 +53,23 @@
   }
 }
 
+// mat-sidenav-container does not recalculate the content margin when sidenav
+// width changes via CSS only (mode="side"). We override it manually.
+::ng-deep .shell-container {
+  .mat-drawer-content {
+    margin-left: 240px !important;
+    transition: margin-left 0.2s ease;
+  }
+
+  &.sidenav--compact-container .mat-drawer-content {
+    margin-left: 64px !important;
+  }
+
+  &.sidenav--mobile-container .mat-drawer-content {
+    margin-left: 0 !important;
+  }
+}
+
 .sidenav-inner {
   display: flex;
   flex-direction: column;

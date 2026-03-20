@@ -8,7 +8,12 @@
   </mat-toolbar>
 }
 
-<mat-sidenav-container class="shell-container" [class.has-toolbar]="isMobile()">
+<mat-sidenav-container
+  class="shell-container"
+  [class.has-toolbar]="isMobile()"
+  [class.sidenav--compact-container]="isCompact()"
+  [class.sidenav--mobile-container]="isMobile()"
+>
   <mat-sidenav
     class="shell-sidenav"
     [class.sidenav--compact]="isCompact()"
@@ -19,7 +24,7 @@
     <div class="sidenav-inner">
       <div class="sidenav-header">
         <img src="/logo_02.svg" alt="Gestiora" class="sidenav-logo" />
-        @if (isFull()) {
+        @if (!isCompact()) {
           <span class="sidenav-title">Gestiora</span>
         }
       </div>
@@ -34,7 +39,7 @@
           matTooltipPosition="right"
         >
           <mat-icon matListItemIcon>dashboard</mat-icon>
-          @if (isFull()) {
+          @if (!isCompact()) {
             <span matListItemTitle>Dashboard</span>
           }
         </a>
@@ -48,7 +53,7 @@
           matTooltipPosition="right"
         >
           <mat-icon matListItemIcon>business</mat-icon>
-          @if (isFull()) {
+          @if (!isCompact()) {
             <span matListItemTitle>Proveedores</span>
           }
         </a>
@@ -72,7 +77,7 @@
           } @else {
             <mat-icon matListItemIcon>logout</mat-icon>
           }
-          @if (isFull()) {
+          @if (!isCompact()) {
             <span matListItemTitle>Cerrar sesión</span>
           }
         </mat-list-item>
