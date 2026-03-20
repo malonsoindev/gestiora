@@ -15,6 +15,15 @@
 
 .providers-table {
   width: 100%;
+
+  // Pin actions column to the right edge
+  .mat-column-actions {
+    width: 96px;
+    min-width: 96px;
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 8px;
+  }
 }
 
 .no-data-cell {
@@ -24,9 +33,25 @@
 }
 
 .status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 12px;
   min-height: 24px;
-  padding: 0 8px;
+  // Fixed width sized to the longest label (INACTIVE) so all chips look identical
+  width: 88px !important;
+  box-sizing: border-box;
+
+  // Override MDC internals: make the action span fill the chip and center its text
+  ::ng-deep .mdc-evolution-chip__action {
+    width: 100%;
+    justify-content: center;
+    padding: 0;
+  }
+
+  ::ng-deep .mdc-evolution-chip__text-label {
+    text-align: center;
+  }
 
   &.status-active {
     background-color: #e8f5e9;

@@ -35,6 +35,7 @@ describe('LoginComponent', () => {
   describe('form validation', () => {
     it('should be invalid when empty', () => {
       const fixture = TestBed.createComponent(LoginComponent);
+      fixture.componentInstance.form.setValue({ email: '', password: '' });
       expect(fixture.componentInstance.form.invalid).toBe(true);
     });
 
@@ -60,12 +61,14 @@ describe('LoginComponent', () => {
   describe('onSubmit', () => {
     it('should not call loginUseCase when form is invalid', () => {
       const fixture = TestBed.createComponent(LoginComponent);
+      fixture.componentInstance.form.setValue({ email: '', password: '' });
       fixture.componentInstance.onSubmit();
       expect(mockLoginUseCase.execute).not.toHaveBeenCalled();
     });
 
     it('should mark all as touched when form is invalid on submit', () => {
       const fixture = TestBed.createComponent(LoginComponent);
+      fixture.componentInstance.form.setValue({ email: '', password: '' });
       const markSpy = vi.spyOn(fixture.componentInstance.form, 'markAllAsTouched');
       fixture.componentInstance.onSubmit();
       expect(markSpy).toHaveBeenCalled();

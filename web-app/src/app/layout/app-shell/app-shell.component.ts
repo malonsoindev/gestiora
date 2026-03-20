@@ -2,10 +2,9 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Router } from '@angular/router';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { LogoutUseCase } from '../../../core/application/auth/logout.use-case';
 import { SessionService } from '../../../core/application/auth/session.service';
@@ -18,10 +17,9 @@ import { SessionService } from '../../../core/application/auth/session.service';
     RouterLink,
     RouterLinkActive,
     MatSidenavModule,
-    MatToolbarModule,
     MatListModule,
+    MatDividerModule,
     MatIconModule,
-    MatButtonModule,
     MatProgressSpinnerModule,
   ],
   templateUrl: './app-shell.component.html',

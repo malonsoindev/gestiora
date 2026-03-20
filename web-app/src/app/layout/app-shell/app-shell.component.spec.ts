@@ -83,7 +83,7 @@ describe('AppShellComponent', () => {
     const fixture = TestBed.createComponent(AppShellComponent);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
-    const btn = el.querySelector('button.logout-btn');
+    const btn = el.querySelector('mat-list-item.logout-item');
     expect(btn).toBeTruthy();
   });
 

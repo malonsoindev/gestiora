@@ -10,10 +10,13 @@
 
 .shell-sidenav {
   width: 240px;
+  border-right: 1px solid var(--mat-sidenav-container-divider-color, rgba(0, 0, 0, 0.12));
+}
+
+.sidenav-inner {
   display: flex;
   flex-direction: column;
-  background-color: var(--mat-sidenav-container-background-color, #fff);
-  border-right: 1px solid var(--mat-sidenav-container-divider-color, rgba(0, 0, 0, 0.12));
+  height: 100%;
 }
 
 .sidenav-header {
@@ -37,8 +40,11 @@
 }
 
 mat-nav-list {
-  flex: 1;
   padding-top: 8px;
+}
+
+.sidenav-spacer {
+  flex: 1;
 }
 
 a.active-link {
@@ -50,16 +56,13 @@ a.active-link {
   }
 }
 
-.sidenav-footer {
-  padding: 16px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-}
+.logout-item {
+  cursor: pointer;
 
-.logout-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  &--busy {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 }
 
 .shell-content {

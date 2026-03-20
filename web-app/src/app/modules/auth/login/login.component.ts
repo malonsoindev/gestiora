@@ -30,14 +30,22 @@ export class LoginComponent {
   @ViewChild('passwordInput') passwordInputRef!: ElementRef<HTMLInputElement>;
 
   readonly form = new FormGroup({
-    email: new FormControl('', {
-      validators: [Validators.required, Validators.email],
-      nonNullable: true,
-    }),
-    password: new FormControl('', {
-      validators: [Validators.required, Validators.minLength(12)],
-      nonNullable: true,
-    }),
+    email: new FormControl(
+      // TODO: remove default credentials before production
+      'admin@example.com',
+      {
+        validators: [Validators.required, Validators.email],
+        nonNullable: true,
+      },
+    ),
+    password: new FormControl(
+      // TODO: remove default credentials before production
+      'AdminPass1!a',
+      {
+        validators: [Validators.required, Validators.minLength(12)],
+        nonNullable: true,
+      },
+    ),
   });
 
   readonly showPassword = signal(false);
