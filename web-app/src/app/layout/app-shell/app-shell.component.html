@@ -27,6 +27,30 @@
         @if (!isCompact()) {
           <span class="sidenav-title">Gestiora</span>
         }
+        @if (!isCompact() && !isMobile()) {
+          <button
+            mat-icon-button
+            class="collapse-btn"
+            (click)="toggleCollapse()"
+            [attr.aria-label]="isCollapsed() ? 'Expandir menú' : 'Contraer menú'"
+            matTooltip="Contraer menú"
+            matTooltipPosition="right"
+          >
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+        }
+        @if (isCollapsed()) {
+          <button
+            mat-icon-button
+            class="expand-btn"
+            (click)="toggleCollapse()"
+            aria-label="Expandir menú"
+            matTooltip="Expandir menú"
+            matTooltipPosition="right"
+          >
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        }
       </div>
 
       <mat-nav-list>

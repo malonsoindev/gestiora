@@ -133,6 +133,46 @@ describe('AppShellComponent', () => {
       const el: HTMLElement = fixture.nativeElement;
       expect(el.querySelector('mat-toolbar.mobile-toolbar')).toBeNull();
     });
+
+    it('should show the collapse button in full mode', () => {
+      const fixture = TestBed.createComponent(AppShellComponent);
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      expect(el.querySelector('button.collapse-btn')).toBeTruthy();
+    });
+
+    it('should switch to compact when toggleCollapse is called', () => {
+      const fixture = TestBed.createComponent(AppShellComponent);
+      fixture.detectChanges();
+      const c = fixture.componentInstance;
+      expect(c.isFull()).toBe(true);
+      c.toggleCollapse();
+      fixture.detectChanges();
+      expect(c.isFull()).toBe(false);
+      expect(c.isCompact()).toBe(true);
+      expect(c.isCollapsed()).toBe(true);
+    });
+
+    it('should show expand button after collapsing', () => {
+      const fixture = TestBed.createComponent(AppShellComponent);
+      fixture.detectChanges();
+      fixture.componentInstance.toggleCollapse();
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      expect(el.querySelector('button.expand-btn')).toBeTruthy();
+      expect(el.querySelector('button.collapse-btn')).toBeNull();
+    });
+
+    it('should restore full mode when toggleCollapse is called again', () => {
+      const fixture = TestBed.createComponent(AppShellComponent);
+      fixture.detectChanges();
+      const c = fixture.componentInstance;
+      c.toggleCollapse();
+      c.toggleCollapse();
+      fixture.detectChanges();
+      expect(c.isFull()).toBe(true);
+      expect(c.isCompact()).toBe(false);
+    });
   });
 
   describe('compact mode (600px – 1023px)', () => {
@@ -158,6 +198,14 @@ describe('AppShellComponent', () => {
       const fixture = TestBed.createComponent(AppShellComponent);
       fixture.detectChanges();
       expect(fixture.componentInstance.sidenavOpened()).toBe(true);
+    });
+
+    it('should not show collapse or expand buttons when compact is forced by breakpoint', () => {
+      const fixture = TestBed.createComponent(AppShellComponent);
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      expect(el.querySelector('button.collapse-btn')).toBeNull();
+      expect(el.querySelector('button.expand-btn')).toBeNull();
     });
   });
 
@@ -198,6 +246,28 @@ describe('AppShellComponent', () => {
       const fixture = TestBed.createComponent(AppShellComponent);
       fixture.detectChanges();
       expect(fixture.componentInstance.sidenavMode()).toBe('over');
+    });
+
+    it('should not show collapse or expand buttons in mobile mode', () => {
+      const fixture = TestBed.createComponent(AppShellComponent);
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      expect(el.querySelector('button.collapse-btn')).toBeNull();
+      expect(el.querySelector('button.expand-btn')).toBeNull();
+    });
+
+    it('should close sidenav after navigation in mobile mode', async () => {
+      const fixture = TestBed.createComponent(AppShellComponent);
+      fixture.detectChanges();
+      const c = fixture.componentInstance;
+      const router = TestBed.inject(Router);
+      // Open sidenav first
+      c.toggleSidenav();
+      expect(c.sidenavOpened()).toBe(true);
+      // Navigate
+      await router.navigate(['/dashboard']);
+      fixture.detectChanges();
+      expect(c.sidenavOpened()).toBe(false);
     });
   });
 

@@ -40,6 +40,7 @@
     .sidenav-header {
       justify-content: center;
       padding: 20px 0 16px;
+      gap: 0;
     }
 
     // Center icons inside list items
@@ -83,14 +84,14 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 20px 16px 16px;
+  padding: 20px 4px 16px 16px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   flex-shrink: 0;
 }
 
 .sidenav-logo {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
   object-fit: contain;
 }
@@ -100,7 +101,15 @@
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
+  flex: 1;
+  margin-top: 6px;
   color: var(--mat-toolbar-container-text-color, inherit);
+}
+
+.collapse-btn,
+.expand-btn {
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 // ── Nav list ─────────────────────────────────────────────────────────────────
@@ -109,13 +118,21 @@ mat-nav-list {
   padding-top: 8px;
 }
 
+// MDC renders hover/ripple with a rounded shape by default — flatten it
+::ng-deep .shell-sidenav {
+  .mdc-list-item,
+  .mdc-list-item::before,
+  .mdc-list-item .mat-mdc-list-item-ripple {
+    border-radius: 0 !important;
+  }
+}
+
 .sidenav-spacer {
   flex: 1;
 }
 
 a.active-link {
   background-color: rgba(0, 0, 0, 0.06);
-  border-radius: 4px;
 
   mat-icon {
     color: var(--mdc-list-list-item-leading-icon-color, inherit);
@@ -126,6 +143,12 @@ a.active-link {
 
 .logout-item {
   cursor: pointer;
+
+  // Angular Material overrides cursor on the inner ripple element
+  ::ng-deep .mat-mdc-list-item-ripple,
+  ::ng-deep .mdc-list-item__content {
+    cursor: pointer;
+  }
 
   &--busy {
     opacity: 0.5;

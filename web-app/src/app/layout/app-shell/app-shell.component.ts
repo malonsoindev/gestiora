@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -10,7 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { Subscription } from 'rxjs';
+import { Subscription, filter } from 'rxjs';
 import { LogoutUseCase } from '../../../core/application/auth/logout.use-case';
 import { SessionService } from '../../../core/application/auth/session.service';
 
@@ -45,12 +45,25 @@ export class AppShellComponent implements OnInit, OnDestroy {
 
   readonly isLoggingOut = signal(false);
 
-  /** true when viewport >= 1024px (full sidenav with labels) */
-  readonly isFull = signal(true);
-  /** true when viewport >= 600px but < 1024px (compact: icons only) */
-  readonly isCompact = signal(false);
-  /** true when viewport < 600px (mobile: sidenav hidden, hamburger shown) */
-  readonly isMobile = signal(false);
+  // ── Breakpoint state (driven by viewport) ────────────────────────────────
+  /** true when viewport >= 1024px */
+  private readonly bpFull = signal(true);
+  /** true when viewport >= 600px but < 1024px */
+  private readonly bpCompact = signal(false);
+  /** true when viewport < 600px */
+  private readonly bpMobile = signal(false);
+
+  // ── Manual collapse (only available in full bp mode) ─────────────────────
+  /** User has manually collapsed the sidenav to icon-only rail */
+  readonly isCollapsed = signal(false);
+
+  // ── Derived display modes ─────────────────────────────────────────────────
+  /** Sidenav shows full labels (bp full AND not manually collapsed) */
+  readonly isFull = computed(() => this.bpFull() && !this.isCollapsed());
+  /** Sidenav shows icons only (bp compact OR manually collapsed in bp full) */
+  readonly isCompact = computed(() => this.bpCompact() || (this.bpFull() && this.isCollapsed()));
+  /** Mobile: sidenav hidden behind hamburger */
+  readonly isMobile = computed(() => this.bpMobile());
 
   /** Whether the sidenav is currently open (controlled in mobile mode) */
   readonly sidenavOpened = signal(true);
@@ -64,11 +77,24 @@ export class AppShellComponent implements OnInit, OnDestroy {
         .subscribe(({ breakpoints }) => {
           const full = breakpoints[BREAKPOINT_FULL];
           const compact = breakpoints[BREAKPOINT_COMPACT];
-          this.isFull.set(full);
-          this.isCompact.set(!full && compact);
-          this.isMobile.set(!compact);
+          this.bpFull.set(full);
+          this.bpCompact.set(!full && compact);
+          this.bpMobile.set(!compact);
+          // When breakpoint changes, reset manual collapse
+          this.isCollapsed.set(false);
           // Auto-open on desktop/compact, auto-close on mobile
           this.sidenavOpened.set(compact);
+        }),
+    );
+
+    // Close sidenav automatically after navigation in mobile mode
+    this.bpSubscription.add(
+      this.router.events
+        .pipe(filter((e) => e instanceof NavigationEnd))
+        .subscribe(() => {
+          if (this.isMobile()) {
+            this.sidenavOpened.set(false);
+          }
         }),
     );
   }
@@ -79,6 +105,10 @@ export class AppShellComponent implements OnInit, OnDestroy {
 
   toggleSidenav(): void {
     this.sidenavOpened.set(!this.sidenavOpened());
+  }
+
+  toggleCollapse(): void {
+    this.isCollapsed.set(!this.isCollapsed());
   }
 
   onLogout(): void {
