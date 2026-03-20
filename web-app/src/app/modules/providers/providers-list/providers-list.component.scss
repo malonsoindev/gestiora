@@ -1,0 +1,50 @@
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.providers-container {
+  padding: 24px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 64px;
+}
+
+.providers-table {
+  width: 100%;
+}
+
+.no-data-cell {
+  text-align: center;
+  padding: 32px;
+  color: rgba(0 0 0 / 54%);
+}
+
+.status-chip {
+  font-size: 12px;
+  min-height: 24px;
+  padding: 0 8px;
+
+  &.status-active {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  &.status-inactive {
+    background-color: #fff3e0;
+    color: #e65100;
+  }
+
+  &.status-deleted {
+    background-color: #fce4ec;
+    color: #c62828;
+  }
+
+  &.status-draft {
+    background-color: #e3f2fd;
+    color: #1565c0;
+  }
+}

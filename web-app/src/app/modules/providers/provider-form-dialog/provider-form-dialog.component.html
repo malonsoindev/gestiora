@@ -1,0 +1,54 @@
+<h2 mat-dialog-title>{{ isEditMode ? 'Editar proveedor' : 'Nuevo proveedor' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="provider-form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Razón social *</mat-label>
+      <input matInput formControlName="razonSocial" autocomplete="organization" />
+      @if (form.controls.razonSocial.hasError('required') && form.controls.razonSocial.touched) {
+        <mat-error>La razón social es obligatoria</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>CIF / NIF</mat-label>
+      <input matInput formControlName="cif" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Dirección</mat-label>
+      <input matInput formControlName="direccion" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="half-width">
+      <mat-label>Población</mat-label>
+      <input matInput formControlName="poblacion" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="half-width">
+      <mat-label>Provincia</mat-label>
+      <input matInput formControlName="provincia" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>País</mat-label>
+      <input matInput formControlName="pais" />
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()" [disabled]="isSaving()">Cancelar</button>
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="onSubmit()"
+    [disabled]="isSaving()"
+  >
+    @if (isSaving()) {
+      <mat-spinner diameter="20" />
+    } @else {
+      {{ isEditMode ? 'Guardar' : 'Crear' }}
+    }
+  </button>
+</mat-dialog-actions>

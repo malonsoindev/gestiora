@@ -12,6 +12,8 @@ import { routes } from './app.routes';
 import { AUTH_PORT } from '../core/application/auth/auth.tokens';
 import { AuthAdapter } from '../infrastructure/api/auth.adapter';
 import { authInterceptor } from '../infrastructure/http/auth.interceptor';
+import { PROVIDERS_PORT } from '../core/application/providers/providers.tokens';
+import { ProvidersAdapter } from '../infrastructure/api/providers.adapter';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -20,5 +22,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     provideAnimations(),
     { provide: AUTH_PORT, useClass: AuthAdapter },
+    { provide: PROVIDERS_PORT, useClass: ProvidersAdapter },
   ],
 };

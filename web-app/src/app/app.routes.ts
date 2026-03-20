@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthLayoutComponent } from './layout/auth-layout/auth-layout';
+import { AppShellComponent } from './layout/app-shell/app-shell.component';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
 
@@ -20,12 +21,25 @@ export const routes: Routes = [
     ],
   },
   {
-    path: 'dashboard',
+    path: '',
+    component: AppShellComponent,
     canActivate: [authGuard],
-    loadComponent: () =>
-      import('./modules/dashboard/dashboard.component').then(
-        (m) => m.DashboardComponent,
-      ),
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./modules/dashboard/dashboard.component').then(
+            (m) => m.DashboardComponent,
+          ),
+      },
+      {
+        path: 'providers',
+        loadComponent: () =>
+          import('./modules/providers/providers-list/providers-list.component').then(
+            (m) => m.ProvidersListComponent,
+          ),
+      },
+    ],
   },
   { path: '**', redirectTo: 'login' },
 ];
