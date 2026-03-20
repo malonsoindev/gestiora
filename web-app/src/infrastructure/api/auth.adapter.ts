@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { IAuthPort } from '../../core/domain/auth/auth.port';
@@ -22,14 +22,7 @@ export class AuthAdapter implements IAuthPort {
   }
 
   logout(refreshToken: string): Observable<void> {
-    const accessToken = localStorage.getItem('accessToken');
-    const headers = accessToken
-      ? new HttpHeaders({ Authorization: `Bearer ${accessToken}` })
-      : undefined;
-    return this.http.post<void>(
-      `${this.baseUrl}/auth/logout`,
-      { refreshToken },
-      headers ? { headers } : {},
-    );
+    // The Authorization header is added automatically by authInterceptor.
+    return this.http.post<void>(`${this.baseUrl}/auth/logout`, { refreshToken });
   }
 }
