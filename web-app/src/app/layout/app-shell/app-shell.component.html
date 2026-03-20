@@ -1,9 +1,27 @@
-<mat-sidenav-container class="shell-container">
-  <mat-sidenav mode="side" opened class="shell-sidenav">
+<!-- Mobile toolbar: only visible on mobile, contains hamburger button -->
+@if (isMobile()) {
+  <mat-toolbar class="mobile-toolbar" color="primary">
+    <button mat-icon-button (click)="toggleSidenav()" aria-label="Abrir menú">
+      <mat-icon>menu</mat-icon>
+    </button>
+    <span class="mobile-title">Gestiora</span>
+  </mat-toolbar>
+}
+
+<mat-sidenav-container class="shell-container" [class.has-toolbar]="isMobile()">
+  <mat-sidenav
+    class="shell-sidenav"
+    [class.sidenav--compact]="isCompact()"
+    [mode]="sidenavMode()"
+    [opened]="sidenavOpened()"
+    (closedStart)="sidenavOpened.set(false)"
+  >
     <div class="sidenav-inner">
       <div class="sidenav-header">
         <img src="/logo_02.svg" alt="Gestiora" class="sidenav-logo" />
-        <span class="sidenav-title">Gestiora</span>
+        @if (isFull()) {
+          <span class="sidenav-title">Gestiora</span>
+        }
       </div>
 
       <mat-nav-list>
@@ -12,9 +30,13 @@
           routerLink="/dashboard"
           routerLinkActive="active-link"
           ariaCurrentWhenActive="page"
+          [matTooltip]="isCompact() ? 'Dashboard' : ''"
+          matTooltipPosition="right"
         >
           <mat-icon matListItemIcon>dashboard</mat-icon>
-          <span matListItemTitle>Dashboard</span>
+          @if (isFull()) {
+            <span matListItemTitle>Dashboard</span>
+          }
         </a>
 
         <a
@@ -22,9 +44,13 @@
           routerLink="/providers"
           routerLinkActive="active-link"
           ariaCurrentWhenActive="page"
+          [matTooltip]="isCompact() ? 'Proveedores' : ''"
+          matTooltipPosition="right"
         >
           <mat-icon matListItemIcon>business</mat-icon>
-          <span matListItemTitle>Proveedores</span>
+          @if (isFull()) {
+            <span matListItemTitle>Proveedores</span>
+          }
         </a>
       </mat-nav-list>
 
@@ -37,6 +63,8 @@
           class="logout-item"
           [class.logout-item--busy]="isLoggingOut()"
           [attr.aria-busy]="isLoggingOut()"
+          [matTooltip]="isCompact() ? 'Cerrar sesión' : ''"
+          matTooltipPosition="right"
           (click)="onLogout()"
         >
           @if (isLoggingOut()) {
@@ -44,7 +72,9 @@
           } @else {
             <mat-icon matListItemIcon>logout</mat-icon>
           }
-          <span matListItemTitle>Cerrar sesión</span>
+          @if (isFull()) {
+            <span matListItemTitle>Cerrar sesión</span>
+          }
         </mat-list-item>
       </mat-list>
     </div>

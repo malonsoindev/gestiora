@@ -1,23 +1,66 @@
 :host {
   display: flex;
+  flex-direction: column;
   height: 100%;
 }
 
+// Mobile top toolbar
+.mobile-toolbar {
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.mobile-title {
+  margin-left: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+// The sidenav container fills the remaining space below the mobile toolbar
 .shell-container {
   flex: 1;
   height: 100%;
+
+  &.has-toolbar {
+    height: calc(100% - 64px);
+  }
 }
+
+// ── Sidenav ───────────────────────────────────────────────────────────────────
 
 .shell-sidenav {
   width: 240px;
   border-right: 1px solid var(--mat-sidenav-container-divider-color, rgba(0, 0, 0, 0.12));
+  transition: width 0.2s ease;
+
+  // Compact mode: icon-only rail
+  &.sidenav--compact {
+    width: 64px;
+
+    .sidenav-header {
+      justify-content: center;
+      padding: 20px 0 16px;
+    }
+
+    // Center icons inside list items
+    ::ng-deep .mat-mdc-list-item-unscoped-content {
+      justify-content: center;
+    }
+
+    ::ng-deep .mdc-list-item__content {
+      justify-content: center;
+    }
+  }
 }
 
 .sidenav-inner {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden;
 }
+
+// ── Header ────────────────────────────────────────────────────────────────────
 
 .sidenav-header {
   display: flex;
@@ -25,19 +68,25 @@
   gap: 12px;
   padding: 20px 16px 16px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
 }
 
 .sidenav-logo {
   width: 32px;
   height: 32px;
+  flex-shrink: 0;
   object-fit: contain;
 }
 
 .sidenav-title {
   font-size: 1.1rem;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
   color: var(--mat-toolbar-container-text-color, inherit);
 }
+
+// ── Nav list ─────────────────────────────────────────────────────────────────
 
 mat-nav-list {
   padding-top: 8px;
@@ -56,6 +105,8 @@ a.active-link {
   }
 }
 
+// ── Logout ────────────────────────────────────────────────────────────────────
+
 .logout-item {
   cursor: pointer;
 
@@ -64,6 +115,8 @@ a.active-link {
     pointer-events: none;
   }
 }
+
+// ── Content area ─────────────────────────────────────────────────────────────
 
 .shell-content {
   display: flex;
