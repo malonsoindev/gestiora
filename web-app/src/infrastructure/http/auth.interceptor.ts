@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpInterceptorFn, HttpStatusCode } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { BehaviorSubject, throwError } from 'rxjs';
 import { catchError, filter, switchMap, take } from 'rxjs/operators';
 import { SessionService } from '../../core/application/auth/session.service';
 import { RefreshUseCase } from '../../core/application/auth/refresh.use-case';
@@ -80,7 +80,7 @@ function handle401(
   session: SessionService,
   refreshUseCase: RefreshUseCase,
   router: Router,
-): Observable<ReturnType<typeof next> extends Observable<infer T> ? T : never> {
+) {
   if (!isRefreshing) {
     isRefreshing = true;
     refreshToken$.next(null);
@@ -98,7 +98,7 @@ function handle401(
         void router.navigate(['/login']);
         return throwError(() => err);
       }),
-    ) as ReturnType<typeof handle401>;
+    );
   }
 
   // Another refresh is already in flight — queue this request
@@ -106,5 +106,5 @@ function handle401(
     filter((t): t is string => t !== null),
     take(1),
     switchMap((newToken) => next(addAuthHeader(req, newToken))),
-  ) as ReturnType<typeof handle401>;
+  );
 }
