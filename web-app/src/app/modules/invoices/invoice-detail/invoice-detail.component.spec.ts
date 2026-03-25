@@ -7,6 +7,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { InvoiceDetailComponent } from './invoice-detail.component';
 import { AttachInvoiceFileUseCase } from '../../../../core/application/invoices/attach-invoice-file.use-case';
 import { CreateManualInvoiceUseCase } from '../../../../core/application/invoices/create-manual-invoice.use-case';
+import { GetInvoiceFileUseCase } from '../../../../core/application/invoices/get-invoice-file.use-case';
 import { GetInvoiceUseCase } from '../../../../core/application/invoices/get-invoice.use-case';
 import { UpdateInvoiceUseCase } from '../../../../core/application/invoices/update-invoice.use-case';
 
@@ -26,11 +27,19 @@ const mockAttachInvoiceFile = {
   execute: vi.fn(),
 };
 
+const mockGetInvoiceFile = {
+  execute: vi.fn(),
+};
+
 const mockSnackBar = {
   open: vi.fn(),
 };
 
 describe('InvoiceDetailComponent', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   beforeEach(async () => {
     vi.clearAllMocks();
     mockGetInvoice.execute.mockReturnValue(
@@ -74,6 +83,7 @@ describe('InvoiceDetailComponent', () => {
       }),
     );
     mockCreateManualInvoice.execute.mockReturnValue(of({ invoiceId: 'inv-2' }));
+    mockGetInvoiceFile.execute.mockReturnValue(of(new Blob(['pdf-content'], { type: 'application/pdf' })));
     mockAttachInvoiceFile.execute.mockReturnValue(
       of({
         invoiceId: 'inv-1',
@@ -99,6 +109,7 @@ describe('InvoiceDetailComponent', () => {
         provideRouter([]),
         { provide: AttachInvoiceFileUseCase, useValue: mockAttachInvoiceFile },
         { provide: CreateManualInvoiceUseCase, useValue: mockCreateManualInvoice },
+        { provide: GetInvoiceFileUseCase, useValue: mockGetInvoiceFile },
         { provide: GetInvoiceUseCase, useValue: mockGetInvoice },
         { provide: UpdateInvoiceUseCase, useValue: mockUpdateInvoice },
         { provide: MatSnackBar, useValue: mockSnackBar },
@@ -114,6 +125,9 @@ describe('InvoiceDetailComponent', () => {
         },
       ],
     }).compileComponents();
+
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
   });
 
   it('should create', () => {
@@ -238,11 +252,32 @@ describe('InvoiceDetailComponent', () => {
     fixture.componentInstance.attachSourceFile(file);
 
     expect(mockAttachInvoiceFile.execute).toHaveBeenCalledWith('inv-1', file);
+    expect(mockGetInvoiceFile.execute).toHaveBeenCalledWith('inv-1');
     expect(mockSnackBar.open).toHaveBeenCalledWith(
       'Documento adjuntado correctamente.',
       'Cerrar',
       expect.objectContaining({ duration: 3000 }),
     );
+  });
+
+  it('should download attached pdf from viewer action', () => {
+    const fixture = TestBed.createComponent(InvoiceDetailComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.attachedFile.set({
+      storageKey: 'documents/inv-1.pdf',
+      filename: 'factura.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 2048,
+      checksum: 'abc123',
+    });
+
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+
+    fixture.componentInstance.downloadAttachedFile();
+
+    expect(mockGetInvoiceFile.execute).toHaveBeenCalledWith('inv-1');
+    expect(clickSpy).toHaveBeenCalledOnce();
   });
 
   it('should not attach file in create mode', () => {
@@ -269,4 +304,24 @@ describe('InvoiceDetailComponent', () => {
       expect.objectContaining({ duration: 3500 }),
     );
   });
+
+  it('should toggle replace mode for attached file', () => {
+    const fixture = TestBed.createComponent(InvoiceDetailComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.attachedFile.set({
+      storageKey: 'documents/inv-1.pdf',
+      filename: 'factura.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 2048,
+      checksum: 'abc123',
+    });
+
+    fixture.componentInstance.beginReplaceAttachedFile();
+    expect(fixture.componentInstance.isReplacingAttachedFile()).toBe(true);
+
+    fixture.componentInstance.cancelReplaceAttachedFile();
+    expect(fixture.componentInstance.isReplacingAttachedFile()).toBe(false);
+  });
+
 });

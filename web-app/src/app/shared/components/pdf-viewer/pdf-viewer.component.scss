@@ -1,0 +1,37 @@
+.pdf-viewer {
+  border: 1px solid rgba(0 0 0 / 12%);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pdf-viewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid rgba(0 0 0 / 12%);
+
+  h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+}
+
+.pdf-state {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0 0 0 / 65%);
+  padding: 16px;
+  text-align: center;
+}
+
+.pdf-frame {
+  border: 0;
+  width: 100%;
+  height: 540px;
+  display: block;
+}

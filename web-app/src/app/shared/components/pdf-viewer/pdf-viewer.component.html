@@ -1,0 +1,20 @@
+<div class="pdf-viewer">
+  <div class="pdf-viewer-header">
+    <h4>{{ title() }}</h4>
+
+    <button mat-stroked-button (click)="onDownload()" [disabled]="!hasFile() || loading()">
+      <mat-icon>download</mat-icon>
+      Descargar PDF
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="pdf-state">Cargando visor de documento...</div>
+  } @else if (!hasFile()) {
+    <div class="pdf-state">No hay documento PDF disponible para visualizar.</div>
+  } @else if (!safeSrc()) {
+    <div class="pdf-state">No se pudo preparar la visualización del PDF.</div>
+  } @else {
+    <iframe class="pdf-frame" [src]="safeSrc()" title="Visor PDF"></iframe>
+  }
+</div>

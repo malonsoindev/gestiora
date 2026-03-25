@@ -1,11 +1,23 @@
 <div class="invoice-detail-page">
   <div class="detail-header">
-    <a mat-stroked-button routerLink="/invoices">
-      <mat-icon>arrow_back</mat-icon>
-      Volver al listado
-    </a>
+    <div class="header-left">
+      <a mat-stroked-button routerLink="/invoices">
+        <mat-icon>arrow_back</mat-icon>
+        Volver al listado
+      </a>
+    </div>
 
     <h2>{{ isCreateMode() ? 'Nueva factura' : 'Factura ' + invoiceId() }}</h2>
+
+    <div class="header-right">
+      <app-toolbar-action-button
+        icon="save"
+        [label]="isCreateMode() ? 'Crear factura' : 'Guardar factura'"
+        [tooltip]="isCreateMode() ? 'Crear factura' : 'Guardar factura'"
+        [disabled]="isSaving() || form.invalid || hasTotalsMismatch()"
+        (action)="saveInvoice()"
+      />
+    </div>
   </div>
 
   @if (isLoading()) {
@@ -155,6 +167,16 @@
       <mat-card-content>
         <div class="card-section-header">
           <h3 class="section-title">Documento fuente (PDF)</h3>
+
+          @if (attachedFile() && !isReplacingAttachedFile()) {
+            <app-toolbar-action-button
+              icon="autorenew"
+              label="Vincular nuevo documento"
+              tooltip="Vincular nuevo documento"
+              [disabled]="isLoadingFilePreview() || isUploadingFile()"
+              (action)="beginReplaceAttachedFile()"
+            />
+          }
         </div>
 
         <p class="document-help-text">
@@ -171,32 +193,39 @@
           <p class="attached-file-label">No hay documento adjunto.</p>
         }
 
-        <div class="file-upload-row">
-          <input
-            type="file"
-            accept="application/pdf"
-            [disabled]="isCreateMode() || isUploadingFile()"
-            (change)="onFileSelected($event)"
-          />
+        @if (!attachedFile() || isReplacingAttachedFile()) {
+          <div class="file-upload-row">
+            <input
+              type="file"
+              accept="application/pdf"
+              [disabled]="isCreateMode() || isUploadingFile()"
+              (change)="onFileSelected($event)"
+            />
 
-          @if (isCreateMode()) {
-            <p class="file-upload-hint">Guarda la factura para habilitar el anexo de PDF.</p>
-          } @else if (isUploadingFile()) {
-            <p class="file-upload-hint">Adjuntando documento...</p>
-          }
-        </div>
+            @if (isCreateMode()) {
+              <p class="file-upload-hint">Guarda la factura para habilitar el anexo de PDF.</p>
+            } @else if (isUploadingFile()) {
+              <p class="file-upload-hint">Adjuntando documento...</p>
+            }
+
+            @if (attachedFile() && isReplacingAttachedFile()) {
+              <button mat-button type="button" (click)="cancelReplaceAttachedFile()">Cancelar</button>
+            }
+          </div>
+        }
+
+        @if (attachedFile()) {
+          <div class="file-viewer-container">
+            <app-pdf-viewer
+              title="Visor de documento fuente"
+              [loading]="isLoadingFilePreview()"
+              [hasFile]="true"
+              [src]="filePreviewUrl()"
+              (download)="downloadAttachedFile()"
+            />
+          </div>
+        }
       </mat-card-content>
     </mat-card>
-
-    <div class="save-actions">
-      <button
-        mat-flat-button
-        class="save-button"
-        (click)="saveInvoice()"
-        [disabled]="isSaving() || form.invalid || hasTotalsMismatch()"
-      >
-        {{ isSaving() ? 'Guardando...' : (isCreateMode() ? 'Crear factura' : 'Guardar cambios') }}
-      </button>
-    </div>
   }
 </div>

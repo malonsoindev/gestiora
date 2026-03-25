@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   AbstractControl,
@@ -18,8 +18,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AttachInvoiceFileUseCase } from '../../../../core/application/invoices/attach-invoice-file.use-case';
 import { CreateManualInvoiceUseCase } from '../../../../core/application/invoices/create-manual-invoice.use-case';
+import { GetInvoiceFileUseCase } from '../../../../core/application/invoices/get-invoice-file.use-case';
 import { GetInvoiceUseCase } from '../../../../core/application/invoices/get-invoice.use-case';
 import { UpdateInvoiceUseCase } from '../../../../core/application/invoices/update-invoice.use-case';
+import { PdfViewerComponent } from '../../../shared/components/pdf-viewer/pdf-viewer.component';
 import { ToolbarActionButtonComponent } from '../../../shared/components/toolbar-action-button/toolbar-action-button.component';
 import {
   FileRef,
@@ -39,18 +41,20 @@ import {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    PdfViewerComponent,
     ToolbarActionButtonComponent,
   ],
   templateUrl: './invoice-detail.component.html',
   styleUrl: './invoice-detail.component.scss',
 })
-export class InvoiceDetailComponent implements OnInit {
+export class InvoiceDetailComponent implements OnInit, OnDestroy {
   private readonly isoDateValidator = this.createIsoDateValidator();
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly attachInvoiceFileUseCase = inject(AttachInvoiceFileUseCase);
   private readonly createManualInvoiceUseCase = inject(CreateManualInvoiceUseCase);
+  private readonly getInvoiceFileUseCase = inject(GetInvoiceFileUseCase);
   private readonly getInvoiceUseCase = inject(GetInvoiceUseCase);
   private readonly updateInvoiceUseCase = inject(UpdateInvoiceUseCase);
   private readonly formBuilder = inject(FormBuilder);
@@ -59,9 +63,12 @@ export class InvoiceDetailComponent implements OnInit {
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
   readonly isUploadingFile = signal(false);
+  readonly isLoadingFilePreview = signal(false);
+  readonly isReplacingAttachedFile = signal(false);
   readonly isCreateMode = signal(false);
   readonly invoiceId = signal('');
   readonly attachedFile = signal<FileRef | null>(null);
+  readonly filePreviewUrl = signal<string | null>(null);
 
   readonly form = this.formBuilder.group({
     providerId: [{ value: '', disabled: true }, [Validators.required]],
@@ -102,6 +109,10 @@ export class InvoiceDetailComponent implements OnInit {
 
     this.invoiceId.set(invoiceId);
     this.loadInvoice(invoiceId);
+  }
+
+  ngOnDestroy(): void {
+    this.clearPreviewUrl();
   }
 
   private loadInvoice(invoiceId: string): void {
@@ -229,7 +240,13 @@ export class InvoiceDetailComponent implements OnInit {
   }
 
   private patchInvoice(invoice: InvoiceDetail): void {
+    this.isReplacingAttachedFile.set(false);
     this.attachedFile.set(invoice.fileRef ?? null);
+    if (invoice.fileRef) {
+      this.loadFilePreview(invoice.invoiceId);
+    } else {
+      this.clearPreviewUrl();
+    }
 
     this.form.patchValue({
       providerId: invoice.providerId,
@@ -244,7 +261,9 @@ export class InvoiceDetailComponent implements OnInit {
   }
 
   private enableCreateModeDefaults(): void {
+    this.isReplacingAttachedFile.set(false);
     this.attachedFile.set(null);
+    this.clearPreviewUrl();
     this.form.controls.providerId.enable();
     this.form.controls.status.setValue('DRAFT');
     this.form.controls.numeroFactura.setValue('');
@@ -314,6 +333,14 @@ export class InvoiceDetailComponent implements OnInit {
     }
   }
 
+  beginReplaceAttachedFile(): void {
+    this.isReplacingAttachedFile.set(true);
+  }
+
+  cancelReplaceAttachedFile(): void {
+    this.isReplacingAttachedFile.set(false);
+  }
+
   attachSourceFile(file: File): void {
     if (this.isCreateMode()) {
       this.snackBar.open('Guarda la factura antes de adjuntar el PDF.', 'Cerrar', {
@@ -343,6 +370,8 @@ export class InvoiceDetailComponent implements OnInit {
     this.attachInvoiceFileUseCase.execute(invoiceId, file).subscribe({
       next: (invoice) => {
         this.attachedFile.set(invoice.fileRef ?? null);
+        this.isReplacingAttachedFile.set(false);
+        this.loadFilePreview(invoiceId);
         this.isUploadingFile.set(false);
         this.snackBar.open('Documento adjuntado correctamente.', 'Cerrar', {
           duration: 3000,
@@ -372,6 +401,65 @@ export class InvoiceDetailComponent implements OnInit {
     }
 
     return `${(sizeKb / 1024).toFixed(2)} MB`;
+  }
+
+  downloadAttachedFile(): void {
+    const invoiceId = this.invoiceId();
+    if (invoiceId === '' || !this.attachedFile()) {
+      return;
+    }
+
+    this.getInvoiceFileUseCase.execute(invoiceId).subscribe({
+      next: (blob) => {
+        const filename = this.attachedFile()?.filename || `${invoiceId}.pdf`;
+        this.downloadBlob(blob, filename);
+      },
+      error: () => {
+        this.snackBar.open('No se pudo descargar el documento.', 'Cerrar', {
+          duration: 4000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+        });
+      },
+    });
+  }
+
+  private loadFilePreview(invoiceId: string): void {
+    this.isLoadingFilePreview.set(true);
+    this.getInvoiceFileUseCase.execute(invoiceId).subscribe({
+      next: (blob) => {
+        this.setPreviewBlob(blob);
+        this.isLoadingFilePreview.set(false);
+      },
+      error: () => {
+        this.clearPreviewUrl();
+        this.isLoadingFilePreview.set(false);
+      },
+    });
+  }
+
+  private setPreviewBlob(blob: Blob): void {
+    this.clearPreviewUrl();
+    this.filePreviewUrl.set(URL.createObjectURL(blob));
+  }
+
+  private clearPreviewUrl(): void {
+    const currentUrl = this.filePreviewUrl();
+    if (!currentUrl) {
+      return;
+    }
+
+    URL.revokeObjectURL(currentUrl);
+    this.filePreviewUrl.set(null);
+  }
+
+  private downloadBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   private createIsoDateValidator(): ValidatorFn {
