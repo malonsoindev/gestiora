@@ -16,11 +16,13 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { AttachInvoiceFileUseCase } from '../../../../core/application/invoices/attach-invoice-file.use-case';
 import { CreateManualInvoiceUseCase } from '../../../../core/application/invoices/create-manual-invoice.use-case';
 import { GetInvoiceUseCase } from '../../../../core/application/invoices/get-invoice.use-case';
 import { UpdateInvoiceUseCase } from '../../../../core/application/invoices/update-invoice.use-case';
 import { ToolbarActionButtonComponent } from '../../../shared/components/toolbar-action-button/toolbar-action-button.component';
 import {
+  FileRef,
   InvoiceDetail,
   InvoiceMovement,
   InvoiceUpdateRequest,
@@ -47,6 +49,7 @@ export class InvoiceDetailComponent implements OnInit {
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly attachInvoiceFileUseCase = inject(AttachInvoiceFileUseCase);
   private readonly createManualInvoiceUseCase = inject(CreateManualInvoiceUseCase);
   private readonly getInvoiceUseCase = inject(GetInvoiceUseCase);
   private readonly updateInvoiceUseCase = inject(UpdateInvoiceUseCase);
@@ -55,8 +58,10 @@ export class InvoiceDetailComponent implements OnInit {
 
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
+  readonly isUploadingFile = signal(false);
   readonly isCreateMode = signal(false);
   readonly invoiceId = signal('');
+  readonly attachedFile = signal<FileRef | null>(null);
 
   readonly form = this.formBuilder.group({
     providerId: [{ value: '', disabled: true }, [Validators.required]],
@@ -224,6 +229,8 @@ export class InvoiceDetailComponent implements OnInit {
   }
 
   private patchInvoice(invoice: InvoiceDetail): void {
+    this.attachedFile.set(invoice.fileRef ?? null);
+
     this.form.patchValue({
       providerId: invoice.providerId,
       status: invoice.status,
@@ -237,6 +244,7 @@ export class InvoiceDetailComponent implements OnInit {
   }
 
   private enableCreateModeDefaults(): void {
+    this.attachedFile.set(null);
     this.form.controls.providerId.enable();
     this.form.controls.status.setValue('DRAFT');
     this.form.controls.numeroFactura.setValue('');
@@ -289,6 +297,81 @@ export class InvoiceDetailComponent implements OnInit {
 
   private readStringFromControl(value: unknown): string {
     return typeof value === 'string' ? value : '';
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.item(0);
+
+    if (!file) {
+      return;
+    }
+
+    this.attachSourceFile(file);
+
+    if (input) {
+      input.value = '';
+    }
+  }
+
+  attachSourceFile(file: File): void {
+    if (this.isCreateMode()) {
+      this.snackBar.open('Guarda la factura antes de adjuntar el PDF.', 'Cerrar', {
+        duration: 3500,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+      });
+      return;
+    }
+
+    const invoiceId = this.invoiceId();
+    if (invoiceId === '') {
+      return;
+    }
+
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
+      this.snackBar.open('Solo se permiten archivos PDF.', 'Cerrar', {
+        duration: 3500,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+      });
+      return;
+    }
+
+    this.isUploadingFile.set(true);
+    this.attachInvoiceFileUseCase.execute(invoiceId, file).subscribe({
+      next: (invoice) => {
+        this.attachedFile.set(invoice.fileRef ?? null);
+        this.isUploadingFile.set(false);
+        this.snackBar.open('Documento adjuntado correctamente.', 'Cerrar', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+        });
+      },
+      error: () => {
+        this.isUploadingFile.set(false);
+        this.snackBar.open('No se pudo adjuntar el documento.', 'Cerrar', {
+          duration: 4000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+        });
+      },
+    });
+  }
+
+  formatFileSize(sizeBytes: number): string {
+    if (sizeBytes < 1024) {
+      return `${sizeBytes} B`;
+    }
+
+    const sizeKb = sizeBytes / 1024;
+    if (sizeKb < 1024) {
+      return `${sizeKb.toFixed(1)} KB`;
+    }
+
+    return `${(sizeKb / 1024).toFixed(2)} MB`;
   }
 
   private createIsoDateValidator(): ValidatorFn {

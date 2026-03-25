@@ -19,10 +19,19 @@ export interface InvoiceMovement {
   status?: 'PROPOSED' | 'CONFIRMED' | 'REJECTED';
 }
 
+export interface FileRef {
+  storageKey: string;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  checksum: string;
+}
+
 export interface InvoiceDetail {
   invoiceId: string;
   providerId: string;
   status: InvoiceStatus;
+  fileRef?: FileRef;
   createdAt: string;
   updatedAt: string;
   numeroFactura?: string;

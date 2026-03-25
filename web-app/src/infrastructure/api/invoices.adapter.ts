@@ -54,6 +54,13 @@ export class InvoicesAdapter implements IInvoicesPort {
     return this.http.get<InvoiceDetail>(`${this.baseUrl}/${invoiceId}`);
   }
 
+  attachInvoiceFile(invoiceId: string, file: File): Observable<InvoiceDetail> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.put<InvoiceDetail>(`${this.baseUrl}/${invoiceId}/file`, formData);
+  }
+
   updateInvoice(invoiceId: string, request: InvoiceUpdateRequest): Observable<InvoiceDetail> {
     return this.http.put<InvoiceDetail>(`${this.baseUrl}/${invoiceId}/invoice`, request);
   }

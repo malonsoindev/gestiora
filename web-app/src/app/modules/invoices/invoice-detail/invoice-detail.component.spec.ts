@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { InvoiceDetailComponent } from './invoice-detail.component';
+import { AttachInvoiceFileUseCase } from '../../../../core/application/invoices/attach-invoice-file.use-case';
 import { CreateManualInvoiceUseCase } from '../../../../core/application/invoices/create-manual-invoice.use-case';
 import { GetInvoiceUseCase } from '../../../../core/application/invoices/get-invoice.use-case';
 import { UpdateInvoiceUseCase } from '../../../../core/application/invoices/update-invoice.use-case';
@@ -18,6 +19,10 @@ const mockUpdateInvoice = {
 };
 
 const mockCreateManualInvoice = {
+  execute: vi.fn(),
+};
+
+const mockAttachInvoiceFile = {
   execute: vi.fn(),
 };
 
@@ -69,6 +74,22 @@ describe('InvoiceDetailComponent', () => {
       }),
     );
     mockCreateManualInvoice.execute.mockReturnValue(of({ invoiceId: 'inv-2' }));
+    mockAttachInvoiceFile.execute.mockReturnValue(
+      of({
+        invoiceId: 'inv-1',
+        providerId: 'prov-1',
+        status: 'DRAFT',
+        createdAt: '2026-03-24T10:30:00.000Z',
+        updatedAt: '2026-03-24T12:00:00.000Z',
+        fileRef: {
+          storageKey: 'documents/inv-1.pdf',
+          filename: 'factura.pdf',
+          mimeType: 'application/pdf',
+          sizeBytes: 2048,
+          checksum: 'abc123',
+        },
+      }),
+    );
     mockSnackBar.open.mockReset();
 
     await TestBed.configureTestingModule({
@@ -76,6 +97,7 @@ describe('InvoiceDetailComponent', () => {
       providers: [
         provideAnimations(),
         provideRouter([]),
+        { provide: AttachInvoiceFileUseCase, useValue: mockAttachInvoiceFile },
         { provide: CreateManualInvoiceUseCase, useValue: mockCreateManualInvoice },
         { provide: GetInvoiceUseCase, useValue: mockGetInvoice },
         { provide: UpdateInvoiceUseCase, useValue: mockUpdateInvoice },
@@ -206,5 +228,45 @@ describe('InvoiceDetailComponent', () => {
 
     expect(mockUpdateInvoice.execute).not.toHaveBeenCalled();
     expect(mockCreateManualInvoice.execute).not.toHaveBeenCalled();
+  });
+
+  it('should attach pdf file for existing invoice', () => {
+    const fixture = TestBed.createComponent(InvoiceDetailComponent);
+    fixture.detectChanges();
+
+    const file = new File(['pdf'], 'factura.pdf', { type: 'application/pdf' });
+    fixture.componentInstance.attachSourceFile(file);
+
+    expect(mockAttachInvoiceFile.execute).toHaveBeenCalledWith('inv-1', file);
+    expect(mockSnackBar.open).toHaveBeenCalledWith(
+      'Documento adjuntado correctamente.',
+      'Cerrar',
+      expect.objectContaining({ duration: 3000 }),
+    );
+  });
+
+  it('should not attach file in create mode', () => {
+    TestBed.overrideProvider(ActivatedRoute, {
+      useValue: {
+        snapshot: {
+          paramMap: {
+            get: () => null,
+          },
+        },
+      },
+    });
+
+    const fixture = TestBed.createComponent(InvoiceDetailComponent);
+    fixture.detectChanges();
+
+    const file = new File(['pdf'], 'factura.pdf', { type: 'application/pdf' });
+    fixture.componentInstance.attachSourceFile(file);
+
+    expect(mockAttachInvoiceFile.execute).not.toHaveBeenCalled();
+    expect(mockSnackBar.open).toHaveBeenCalledWith(
+      'Guarda la factura antes de adjuntar el PDF.',
+      'Cerrar',
+      expect.objectContaining({ duration: 3500 }),
+    );
   });
 });

@@ -11,6 +11,7 @@ export interface IInvoicesPort {
   getInvoices(params: InvoiceListParams): Observable<InvoiceListResponse>;
   createManualInvoice(request: CreateManualInvoiceRequest): Observable<CreateManualInvoiceResponse>;
   getInvoice(invoiceId: string): Observable<InvoiceDetail>;
+  attachInvoiceFile(invoiceId: string, file: File): Observable<InvoiceDetail>;
   updateInvoice(invoiceId: string, request: InvoiceUpdateRequest): Observable<InvoiceDetail>;
   deleteInvoice(invoiceId: string): Observable<void>;
   getInvoiceFile(invoiceId: string): Observable<Blob>;

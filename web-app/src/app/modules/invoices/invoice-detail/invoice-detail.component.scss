@@ -111,6 +111,30 @@
   color: #c62828;
 }
 
+.document-help-text {
+  margin: 0 0 12px;
+  color: rgba(0 0 0 / 68%);
+}
+
+.attached-file-label {
+  margin: 0 0 10px;
+}
+
+.file-size {
+  color: rgba(0 0 0 / 68%);
+}
+
+.file-upload-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-upload-hint {
+  margin: 0;
+  color: rgba(0 0 0 / 68%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .invoice-detail-page > .detail-header,
   .invoice-detail-page > mat-card,

@@ -151,6 +151,43 @@
       </mat-card-content>
     </mat-card>
 
+    <mat-card>
+      <mat-card-content>
+        <div class="card-section-header">
+          <h3 class="section-title">Documento fuente (PDF)</h3>
+        </div>
+
+        <p class="document-help-text">
+          Este documento es la fuente de verdad para la factura y será el archivo que se descargue o
+          visualice desde las acciones del listado.
+        </p>
+
+        @if (attachedFile()) {
+          <p class="attached-file-label">
+            Archivo actual: <strong>{{ attachedFile()?.filename }}</strong>
+            <span class="file-size">({{ formatFileSize(attachedFile()?.sizeBytes ?? 0) }})</span>
+          </p>
+        } @else {
+          <p class="attached-file-label">No hay documento adjunto.</p>
+        }
+
+        <div class="file-upload-row">
+          <input
+            type="file"
+            accept="application/pdf"
+            [disabled]="isCreateMode() || isUploadingFile()"
+            (change)="onFileSelected($event)"
+          />
+
+          @if (isCreateMode()) {
+            <p class="file-upload-hint">Guarda la factura para habilitar el anexo de PDF.</p>
+          } @else if (isUploadingFile()) {
+            <p class="file-upload-hint">Adjuntando documento...</p>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+
     <div class="save-actions">
       <button
         mat-flat-button

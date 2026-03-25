@@ -154,6 +154,22 @@ describe('InvoicesAdapter', () => {
     });
   });
 
+  describe('attachInvoiceFile', () => {
+    it('should PUT /api/documents/:id/file with multipart payload', () => {
+      const file = new File(['pdf-content'], 'invoice.pdf', { type: 'application/pdf' });
+
+      adapter.attachInvoiceFile('inv-1', file).subscribe();
+
+      const req = controller.expectOne(`${BASE}/inv-1/file`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body instanceof FormData).toBe(true);
+
+      const formData = req.request.body as FormData;
+      expect(formData.get('file')).toBe(file);
+      req.flush(mockDetail);
+    });
+  });
+
   describe('updateInvoice', () => {
     it('should PUT /api/documents/:id/invoice with request body', () => {
       const request: InvoiceUpdateRequest = {

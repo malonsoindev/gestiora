@@ -16,6 +16,7 @@ const mockPort = {
   getInvoices: vi.fn(),
   createManualInvoice: vi.fn(),
   getInvoice: vi.fn(),
+  attachInvoiceFile: vi.fn(),
   updateInvoice: vi.fn(),
   deleteInvoice: vi.fn(),
   getInvoiceFile: vi.fn(),
