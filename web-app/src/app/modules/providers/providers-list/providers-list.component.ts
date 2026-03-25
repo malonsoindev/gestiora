@@ -6,7 +6,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { filter, switchMap } from 'rxjs/operators';
 import { GetProvidersUseCase } from '../../../../core/application/providers/get-providers.use-case';
@@ -22,12 +21,12 @@ import {
   ProviderFormDialogData,
 } from '../provider-form-dialog/provider-form-dialog.component';
 import { ToolbarActionButtonComponent } from '../../../shared/components/toolbar-action-button/toolbar-action-button.component';
+import { SectionToolbarComponent } from '../../../shared/components/section-toolbar/section-toolbar.component';
 
 @Component({
   selector: 'app-providers-list',
   standalone: true,
   imports: [
-    MatToolbarModule,
     MatButtonModule,
     MatIconModule,
     MatTableModule,
@@ -36,6 +35,7 @@ import { ToolbarActionButtonComponent } from '../../../shared/components/toolbar
     MatProgressSpinnerModule,
     MatTooltipModule,
     ToolbarActionButtonComponent,
+    SectionToolbarComponent,
   ],
   templateUrl: './providers-list.component.html',
   styleUrl: './providers-list.component.scss',

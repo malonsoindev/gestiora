@@ -1,7 +1,5 @@
-<mat-toolbar color="primary">
-  <span>Proveedores</span>
-  <span class="toolbar-spacer"></span>
-  <div class="toolbar-actions">
+<app-section-toolbar title="Proveedores">
+  <div toolbar-actions class="providers-toolbar-actions">
     <app-toolbar-action-button
       icon="refresh"
       label="Refrescar lista"
@@ -17,7 +15,7 @@
       (action)="openCreateDialog()"
     />
   </div>
-</mat-toolbar>
+</app-section-toolbar>
 
 <div class="providers-container">
   @if (isLoading()) {
