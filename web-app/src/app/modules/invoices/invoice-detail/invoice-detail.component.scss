@@ -1,0 +1,132 @@
+:host {
+  display: block;
+}
+
+.invoice-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.invoice-detail-page > .detail-header {
+  animation: detail-fade-in 360ms ease-out;
+}
+
+.invoice-detail-page > mat-card {
+  animation: detail-fade-in 420ms ease-out;
+}
+
+.invoice-detail-page > mat-card:nth-of-type(2) {
+  animation-delay: 90ms;
+  animation-fill-mode: both;
+}
+
+.invoice-detail-page > .save-actions {
+  animation: detail-fade-in 500ms ease-out;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+}
+
+.header-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 0;
+}
+
+.card-section-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  app-toolbar-action-button {
+    flex-shrink: 0;
+  }
+}
+
+.section-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.movements-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.movement-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) minmax(100px, 1fr) minmax(120px, 1fr) minmax(120px, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.save-actions {
+  position: sticky;
+  bottom: 16px;
+  display: flex;
+  justify-content: flex-end;
+  z-index: 2;
+}
+
+.save-button.mat-mdc-unelevated-button {
+  background-color: var(--primary) !important;
+  color: var(--white) !important;
+  border: 1px solid rgba(255 255 255 / 35%);
+  box-shadow: 0 4px 12px rgba(0 0 0 / 18%);
+
+  &:hover:not(:disabled) {
+    background-color: var(--primary-dark) !important;
+  }
+
+  &:disabled {
+    opacity: 0.65;
+  }
+}
+
+.empty-movements {
+  margin: 0;
+  color: rgba(0 0 0 / 60%);
+}
+
+.validation-message {
+  margin: 8px 0 0;
+  color: #c62828;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .invoice-detail-page > .detail-header,
+  .invoice-detail-page > mat-card,
+  .invoice-detail-page > .save-actions {
+    animation: none;
+  }
+}
+
+@keyframes detail-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -6,6 +6,7 @@ import {
   InvoiceListParams,
   InvoiceListResponse,
 } from '../../core/domain/invoices/invoice-list-params.model';
+import { InvoiceDetail, InvoiceUpdateRequest } from '../../core/domain/invoices/invoice.model';
 
 @Injectable()
 export class InvoicesAdapter implements IInvoicesPort {
@@ -38,5 +39,19 @@ export class InvoicesAdapter implements IInvoicesPort {
     }
 
     return this.http.get<InvoiceListResponse>(this.baseUrl, { params: httpParams });
+  }
+
+  getInvoice(invoiceId: string): Observable<InvoiceDetail> {
+    return this.http.get<InvoiceDetail>(`${this.baseUrl}/${invoiceId}`);
+  }
+
+  updateInvoice(invoiceId: string, request: InvoiceUpdateRequest): Observable<InvoiceDetail> {
+    return this.http.put<InvoiceDetail>(`${this.baseUrl}/${invoiceId}/invoice`, request);
+  }
+
+  getInvoiceFile(invoiceId: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${invoiceId}/file`, {
+      responseType: 'blob',
+    });
   }
 }

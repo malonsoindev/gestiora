@@ -14,6 +14,14 @@
   .mat-column-createdAt {
     min-width: 220px;
   }
+
+  .mat-column-actions {
+    width: 132px;
+    min-width: 132px;
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 8px;
+  }
 }
 
 .no-data-cell {

@@ -1,0 +1,127 @@
+<div class="invoice-detail-page">
+  <div class="detail-header">
+    <a mat-stroked-button routerLink="/invoices">
+      <mat-icon>arrow_back</mat-icon>
+      Volver al listado
+    </a>
+
+    <h2>Factura {{ invoiceId() }}</h2>
+  </div>
+
+  @if (isLoading()) {
+    <mat-card>
+      <mat-card-content>Cargando factura...</mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-card>
+      <mat-card-content>
+        <div class="card-section-header">
+          <h3 class="section-title">Cabecera</h3>
+        </div>
+
+        <form [formGroup]="form" class="header-form" novalidate>
+          <mat-form-field appearance="outline">
+            <mat-label>ID proveedor</mat-label>
+            <input matInput formControlName="providerId" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Estado</mat-label>
+            <input matInput formControlName="status" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Número factura</mat-label>
+            <input matInput formControlName="numeroFactura" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha operación</mat-label>
+            <input matInput formControlName="fechaOperacion" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha vencimiento</mat-label>
+            <input matInput formControlName="fechaVencimiento" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Base imponible</mat-label>
+            <input matInput type="number" formControlName="baseImponible" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>IVA</mat-label>
+            <input matInput type="number" formControlName="iva" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Total</mat-label>
+            <input matInput type="number" formControlName="total" />
+          </mat-form-field>
+        </form>
+
+        @if (hasTotalsMismatch()) {
+          <p class="validation-message">La suma de movimientos debe coincidir con el total.</p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-content>
+        <div class="card-section-header">
+          <h3 class="section-title">Movimientos</h3>
+          <app-toolbar-action-button
+            icon="add"
+            label="Añadir movimiento"
+            tooltip="Añadir movimiento"
+            (action)="addMovement()"
+          />
+        </div>
+
+        <div [formGroup]="form">
+          <div class="movements-grid" formArrayName="movements">
+            @for (movementGroup of movementForms(); track $index; let i = $index) {
+              <div class="movement-row" [formGroupName]="i">
+                <mat-form-field appearance="outline">
+                  <mat-label>Concepto</mat-label>
+                  <input matInput formControlName="concepto" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Cantidad</mat-label>
+                  <input matInput type="number" formControlName="cantidad" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Precio</mat-label>
+                  <input matInput type="number" formControlName="precio" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Total</mat-label>
+                  <input matInput type="number" formControlName="total" />
+                </mat-form-field>
+
+                <button mat-icon-button color="warn" matTooltip="Eliminar movimiento" (click)="removeMovement(i)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <div class="save-actions">
+      <button
+        mat-flat-button
+        class="save-button"
+        (click)="saveInvoice()"
+        [disabled]="isSaving() || form.invalid || hasTotalsMismatch()"
+      >
+        {{ isSaving() ? 'Guardando...' : 'Guardar cambios' }}
+      </button>
+    </div>
+  }
+</div>

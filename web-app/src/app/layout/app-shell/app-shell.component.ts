@@ -67,6 +67,8 @@ export class AppShellComponent implements OnInit, OnDestroy {
 
   /** Whether the sidenav is currently open (controlled in mobile mode) */
   readonly sidenavOpened = signal(true);
+  readonly routeEntering = signal(false);
+  private routeAnimationToken = 0;
 
   readonly sidenavMode = computed(() => (this.isMobile() ? 'over' : 'side'));
 
@@ -109,6 +111,33 @@ export class AppShellComponent implements OnInit, OnDestroy {
 
   toggleCollapse(): void {
     this.isCollapsed.set(!this.isCollapsed());
+  }
+
+  onRouteActivate(): void {
+    this.routeAnimationToken += 1;
+    const currentToken = this.routeAnimationToken;
+    this.routeEntering.set(false);
+
+    const run = () => {
+      if (this.routeAnimationToken === currentToken) {
+        this.routeEntering.set(true);
+      }
+    };
+
+    this.deferToNextPaint(() => this.deferToNextPaint(run));
+  }
+
+  onRouteAnimationEnd(): void {
+    this.routeEntering.set(false);
+  }
+
+  private deferToNextPaint(callback: () => void): void {
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => callback());
+      return;
+    }
+
+    setTimeout(() => callback(), 0);
   }
 
   onLogout(): void {

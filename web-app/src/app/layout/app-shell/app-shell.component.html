@@ -124,6 +124,12 @@
   </mat-sidenav>
 
   <mat-sidenav-content class="shell-content">
-    <router-outlet />
+    <div
+      class="route-content"
+      [class.route-content--fade-in]="routeEntering()"
+      (animationend)="onRouteAnimationEnd()"
+    >
+      <router-outlet (activate)="onRouteActivate()" />
+    </div>
   </mat-sidenav-content>
 </mat-sidenav-container>

@@ -9,6 +9,7 @@ import {
   InvoiceListParams,
   InvoiceListResponse,
 } from '../../core/domain/invoices/invoice-list-params.model';
+import { InvoiceDetail, InvoiceUpdateRequest } from '../../core/domain/invoices/invoice.model';
 
 const BASE = '/api/documents';
 
@@ -17,6 +18,12 @@ const mockSummary = {
   providerId: 'prov-1',
   status: 'DRAFT' as const,
   createdAt: '2026-03-24T10:30:00.000Z',
+};
+
+const mockDetail: InvoiceDetail = {
+  ...mockSummary,
+  updatedAt: '2026-03-24T11:00:00.000Z',
+  numeroFactura: 'F-001',
 };
 
 describe('InvoicesAdapter', () => {
@@ -95,6 +102,82 @@ describe('InvoicesAdapter', () => {
 
       controller.expectOne(BASE).flush(mockResponse);
       expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe('getInvoice', () => {
+    it('should GET /api/documents/:id', () => {
+      adapter.getInvoice('inv-1').subscribe();
+
+      const req = controller.expectOne(`${BASE}/inv-1`);
+      expect(req.request.method).toBe('GET');
+      req.flush(mockDetail);
+    });
+
+    it('should return the InvoiceDetail from the server', () => {
+      let result: InvoiceDetail | undefined;
+
+      adapter.getInvoice('inv-1').subscribe((invoice) => (result = invoice));
+
+      controller.expectOne(`${BASE}/inv-1`).flush(mockDetail);
+      expect(result).toEqual(mockDetail);
+    });
+  });
+
+  describe('updateInvoice', () => {
+    it('should PUT /api/documents/:id/invoice with request body', () => {
+      const request: InvoiceUpdateRequest = {
+        numeroFactura: 'F-002',
+        total: 121,
+        movements: [
+          {
+            concepto: 'Servicio',
+            cantidad: 1,
+            precio: 100,
+            iva: 21,
+            total: 121,
+          },
+        ],
+      };
+
+      adapter.updateInvoice('inv-1', request).subscribe();
+
+      const req = controller.expectOne(`${BASE}/inv-1/invoice`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual(request);
+      req.flush(mockDetail);
+    });
+
+    it('should return updated InvoiceDetail', () => {
+      let result: InvoiceDetail | undefined;
+
+      adapter.updateInvoice('inv-1', {}).subscribe((invoice) => (result = invoice));
+
+      controller.expectOne(`${BASE}/inv-1/invoice`).flush(mockDetail);
+      expect(result).toEqual(mockDetail);
+    });
+  });
+
+  describe('getInvoiceFile', () => {
+    it('should GET /api/documents/:id/file as blob', () => {
+      const fileBlob = new Blob(['pdf-content'], { type: 'application/pdf' });
+
+      adapter.getInvoiceFile('inv-1').subscribe();
+
+      const req = controller.expectOne(`${BASE}/inv-1/file`);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.responseType).toBe('blob');
+      req.flush(fileBlob);
+    });
+
+    it('should return the file blob from the server', () => {
+      const fileBlob = new Blob(['pdf-content'], { type: 'application/pdf' });
+      let result: Blob | undefined;
+
+      adapter.getInvoiceFile('inv-1').subscribe((blob) => (result = blob));
+
+      controller.expectOne(`${BASE}/inv-1/file`).flush(fileBlob);
+      expect(result).toEqual(fileBlob);
     });
   });
 });

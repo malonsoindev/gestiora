@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 import { GetInvoicesUseCase } from '../../../../core/application/invoices/get-invoices.use-case';
+import { GetInvoiceFileUseCase } from '../../../../core/application/invoices/get-invoice-file.use-case';
 import { InvoiceListParams } from '../../../../core/domain/invoices/invoice-list-params.model';
 import { InvoiceSummary } from '../../../../core/domain/invoices/invoice.model';
 import { InvoiceListViewComponent } from '../invoice-list-view/invoice-list-view.component';
@@ -14,6 +15,7 @@ import { InvoiceListViewComponent } from '../invoice-list-view/invoice-list-view
 })
 export class InvoicesListComponent implements OnInit {
   private readonly getInvoicesUseCase = inject(GetInvoicesUseCase);
+  private readonly getInvoiceFileUseCase = inject(GetInvoiceFileUseCase);
 
   readonly invoices = signal<InvoiceSummary[]>([]);
   readonly totalInvoices = signal(0);
@@ -56,6 +58,21 @@ export class InvoicesListComponent implements OnInit {
 
   openCreateInvoice(): void {}
 
+  downloadInvoiceDocument(invoice: InvoiceSummary): void {
+    this.getInvoiceFileUseCase.execute(invoice.invoiceId).subscribe({
+      next: (blob) => {
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${invoice.invoiceId}.pdf`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(downloadUrl), 60000);
+      },
+    });
+  }
+
+  deleteInvoice(_invoice: InvoiceSummary): void {}
+
   private loadInvoices(): void {
     const params: InvoiceListParams = {
       page: this.currentPage,
@@ -66,14 +83,28 @@ export class InvoicesListComponent implements OnInit {
     this.getInvoicesUseCase.execute(params).subscribe({
       next: (response) => {
         this.invoices.set(
-          [...response.items].sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-          ),
+          [...response.items].sort((a, b) => this.compareByDateDesc(a, b)),
         );
         this.totalInvoices.set(response.total ?? 0);
         this.isLoading.set(false);
       },
       error: () => this.isLoading.set(false),
     });
+  }
+
+  private compareByDateDesc(a: InvoiceSummary, b: InvoiceSummary): number {
+    const aTime = this.parseDateToEpoch(a.createdAt);
+    const bTime = this.parseDateToEpoch(b.createdAt);
+
+    if (aTime !== bTime) {
+      return bTime - aTime;
+    }
+
+    return a.invoiceId.localeCompare(b.invoiceId, 'es', { sensitivity: 'base' });
+  }
+
+  private parseDateToEpoch(value: string): number {
+    const time = new Date(value).getTime();
+    return Number.isNaN(time) ? 0 : time;
   }
 }

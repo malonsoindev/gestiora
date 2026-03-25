@@ -40,6 +40,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'invoices/:invoiceId',
+        loadComponent: () =>
+          import('./modules/invoices/invoice-detail/invoice-detail.component').then(
+            (m) => m.InvoiceDetailComponent,
+          ),
+      },
+      {
         path: 'invoices',
         loadComponent: () =>
           import('./modules/invoices/invoices-list/invoices-list.component').then(

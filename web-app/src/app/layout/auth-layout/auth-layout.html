@@ -1,3 +1,9 @@
 <div class="auth-wrapper">
-  <router-outlet />
+  <div
+    class="route-content"
+    [class.route-content--fade-in]="routeEntering()"
+    (animationend)="onRouteAnimationEnd()"
+  >
+    <router-outlet (activate)="onRouteActivate()" />
+  </div>
 </div>
