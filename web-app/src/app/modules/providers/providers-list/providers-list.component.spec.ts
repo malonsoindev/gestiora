@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
+import { PageEvent } from '@angular/material/paginator';
 import { ProvidersListComponent } from './providers-list.component';
 import { GetProvidersUseCase } from '../../../../core/application/providers/get-providers.use-case';
 import { DeleteProviderUseCase } from '../../../../core/application/providers/delete-provider.use-case';
@@ -93,6 +94,44 @@ describe('ProvidersListComponent', () => {
       fixture.componentInstance.refreshProviders();
 
       expect(mockGetProviders.execute.mock.calls.length).toBeGreaterThan(initialCalls);
+    });
+  });
+
+  describe('onSearchChange', () => {
+    it('should reload providers with q and reset page to 1', () => {
+      const fixture = TestBed.createComponent(ProvidersListComponent);
+      fixture.detectChanges();
+
+      const pageEvent: PageEvent = {
+        pageIndex: 2,
+        pageSize: 10,
+        length: 20,
+        previousPageIndex: 1,
+      };
+      fixture.componentInstance.onPageChange(pageEvent);
+
+      fixture.componentInstance.onSearchChange('proveedor');
+      const lastCall = mockGetProviders.execute.mock.calls.at(-1)?.[0] as {
+        page: number;
+        pageSize: number;
+        q?: string;
+      };
+
+      expect(lastCall.page).toBe(1);
+      expect(lastCall.pageSize).toBe(10);
+      expect(lastCall.q).toBe('proveedor');
+    });
+
+    it('should send q as undefined for blank search term', () => {
+      const fixture = TestBed.createComponent(ProvidersListComponent);
+      fixture.detectChanges();
+
+      fixture.componentInstance.onSearchChange('   ');
+      const lastCall = mockGetProviders.execute.mock.calls.at(-1)?.[0] as {
+        q?: string;
+      };
+
+      expect(lastCall.q).toBeUndefined();
     });
   });
 

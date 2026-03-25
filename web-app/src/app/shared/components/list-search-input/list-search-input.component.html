@@ -1,0 +1,24 @@
+<mat-form-field appearance="outline" class="search-field">
+  <mat-label>{{ label() }}</mat-label>
+  <input
+    #searchInput
+    matInput
+    [value]="value()"
+    [placeholder]="placeholder()"
+    [matTooltip]="tooltip()"
+    (input)="onInput($event)"
+  />
+
+  @if (searchInput.value) {
+    <button
+      mat-icon-button
+      matSuffix
+      aria-label="Limpiar búsqueda"
+      (click)="clear(searchInput)"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+  } @else {
+    <mat-icon matSuffix>search</mat-icon>
+  }
+</mat-form-field>

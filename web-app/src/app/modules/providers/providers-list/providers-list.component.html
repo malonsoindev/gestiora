@@ -1,84 +1,12 @@
-<app-section-toolbar title="Proveedores">
-  <div toolbar-actions class="providers-toolbar-actions">
-    <app-toolbar-action-button
-      icon="refresh"
-      label="Refrescar lista"
-      tooltip="Refrescar lista"
-      [disabled]="isLoading()"
-      (action)="refreshProviders()"
-    />
-
-    <app-toolbar-action-button
-      icon="add"
-      label="Nuevo proveedor"
-      tooltip="Nuevo proveedor"
-      (action)="openCreateDialog()"
-    />
-  </div>
-</app-section-toolbar>
-
-<div class="providers-container">
-  @if (isLoading()) {
-    <div class="loading-container">
-      <mat-spinner diameter="48" />
-    </div>
-  } @else {
-    <mat-table [dataSource]="providers()" class="providers-table">
-      <!-- Razón Social Column -->
-      <ng-container matColumnDef="razonSocial">
-        <mat-header-cell *matHeaderCellDef>Razón social</mat-header-cell>
-        <mat-cell *matCellDef="let row">{{ row.razonSocial }}</mat-cell>
-      </ng-container>
-
-      <!-- Status Column -->
-      <ng-container matColumnDef="status">
-        <mat-header-cell *matHeaderCellDef>Estado</mat-header-cell>
-        <mat-cell *matCellDef="let row">
-          <mat-chip [class]="'status-chip status-' + row.status.toLowerCase()">
-            {{ row.status }}
-          </mat-chip>
-        </mat-cell>
-      </ng-container>
-
-      <!-- Actions Column -->
-      <ng-container matColumnDef="actions">
-        <mat-header-cell *matHeaderCellDef>Acciones</mat-header-cell>
-        <mat-cell *matCellDef="let row">
-          <button
-            mat-icon-button
-            matTooltip="Editar"
-            (click)="openEditDialog(row)"
-          >
-            <mat-icon>edit</mat-icon>
-          </button>
-          <button
-            mat-icon-button
-            color="warn"
-            matTooltip="Eliminar"
-            (click)="deleteProvider(row.providerId, row.razonSocial)"
-          >
-            <mat-icon>delete</mat-icon>
-          </button>
-        </mat-cell>
-      </ng-container>
-
-      <mat-header-row *matHeaderRowDef="displayedColumns" />
-      <mat-row *matRowDef="let row; columns: displayedColumns;" />
-
-      <!-- Empty state -->
-      <tr class="mat-row" *matNoDataRow>
-        <td class="mat-cell no-data-cell" [attr.colspan]="displayedColumns.length">
-          No hay proveedores registrados.
-        </td>
-      </tr>
-    </mat-table>
-
-    <mat-paginator
-      [length]="totalProviders()"
-      [pageSize]="10"
-      [pageSizeOptions]="[10, 25, 50]"
-      (page)="onPageChange($event)"
-      showFirstLastButtons
-    />
-  }
-</div>
+<app-provider-list-view
+  [providers]="providers()"
+  [totalProviders]="totalProviders()"
+  [isLoading]="isLoading()"
+  [searchTerm]="searchTerm()"
+  (searchChange)="onSearchChange($event)"
+  (refresh)="refreshProviders()"
+  (create)="openCreateDialog()"
+  (edit)="openEditDialog($event)"
+  (delete)="onDeleteRequested($event)"
+  (pageChange)="onPageChange($event)"
+/>

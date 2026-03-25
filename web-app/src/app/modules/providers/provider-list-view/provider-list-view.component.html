@@ -1,0 +1,71 @@
+<app-filterable-list-layout
+  title="Proveedores"
+  searchLabel="Buscar proveedor"
+  searchPlaceholder="Razón social, CIF, dirección, población..."
+  searchTooltip="Buscar proveedores"
+  [searchTerm]="searchTerm()"
+  [isLoading]="isLoading()"
+  createLabel="Nuevo proveedor"
+  createTooltip="Nuevo proveedor"
+  (searchChange)="onSearchChange($event)"
+  (refresh)="onRefresh()"
+  (create)="onCreate()"
+>
+  <div list-content>
+    <mat-table [dataSource]="providers()" class="providers-table">
+      <ng-container matColumnDef="razonSocial">
+        <mat-header-cell *matHeaderCellDef>Razón social</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.razonSocial }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <mat-header-cell *matHeaderCellDef>Estado</mat-header-cell>
+        <mat-cell *matCellDef="let row">
+          <mat-chip [class]="'status-chip status-' + row.status.toLowerCase()">
+            {{ row.status }}
+          </mat-chip>
+        </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <mat-header-cell *matHeaderCellDef>Acciones</mat-header-cell>
+        <mat-cell *matCellDef="let row">
+          <button
+            mat-icon-button
+            matTooltip="Editar"
+            (click)="onEdit(row)"
+          >
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button
+            mat-icon-button
+            color="warn"
+            matTooltip="Eliminar"
+            (click)="onDelete(row)"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="displayedColumns" />
+      <mat-row *matRowDef="let row; columns: displayedColumns;" />
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell no-data-cell" [attr.colspan]="displayedColumns.length">
+          No hay proveedores registrados.
+        </td>
+      </tr>
+    </mat-table>
+  </div>
+
+  <div list-pagination>
+    <mat-paginator
+      [length]="totalProviders()"
+      [pageSize]="10"
+      [pageSizeOptions]="[10, 25, 50]"
+      (page)="onPageChange($event)"
+      showFirstLastButtons
+    />
+  </div>
+</app-filterable-list-layout>

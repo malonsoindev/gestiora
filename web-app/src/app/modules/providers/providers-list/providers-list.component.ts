@@ -1,12 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { PageEvent } from '@angular/material/paginator';
 import { filter, switchMap } from 'rxjs/operators';
 import { GetProvidersUseCase } from '../../../../core/application/providers/get-providers.use-case';
 import { DeleteProviderUseCase } from '../../../../core/application/providers/delete-provider.use-case';
@@ -20,23 +14,12 @@ import {
   ProviderFormDialogComponent,
   ProviderFormDialogData,
 } from '../provider-form-dialog/provider-form-dialog.component';
-import { ToolbarActionButtonComponent } from '../../../shared/components/toolbar-action-button/toolbar-action-button.component';
-import { SectionToolbarComponent } from '../../../shared/components/section-toolbar/section-toolbar.component';
+import { ProviderListViewComponent } from '../provider-list-view/provider-list-view.component';
 
 @Component({
   selector: 'app-providers-list',
   standalone: true,
-  imports: [
-    MatButtonModule,
-    MatIconModule,
-    MatTableModule,
-    MatChipsModule,
-    MatPaginatorModule,
-    MatProgressSpinnerModule,
-    MatTooltipModule,
-    ToolbarActionButtonComponent,
-    SectionToolbarComponent,
-  ],
+  imports: [ProviderListViewComponent],
   templateUrl: './providers-list.component.html',
   styleUrl: './providers-list.component.scss',
 })
@@ -45,10 +28,10 @@ export class ProvidersListComponent implements OnInit {
   private readonly deleteProviderUseCase = inject(DeleteProviderUseCase);
   private readonly dialog = inject(MatDialog);
 
-  readonly displayedColumns = ['razonSocial', 'status', 'actions'];
   readonly providers = signal<ProviderSummary[]>([]);
   readonly totalProviders = signal(0);
   readonly isLoading = signal(false);
+  readonly searchTerm = signal('');
 
   private currentPage = 1;
   private readonly pageSize = 10;
@@ -64,6 +47,16 @@ export class ProvidersListComponent implements OnInit {
 
   refreshProviders(): void {
     this.loadProviders();
+  }
+
+  onSearchChange(term: string): void {
+    this.searchTerm.set(term);
+    this.currentPage = 1;
+    this.loadProviders();
+  }
+
+  onDeleteRequested(provider: ProviderSummary): void {
+    this.deleteProvider(provider.providerId, provider.razonSocial);
   }
 
   openCreateDialog(): void {
@@ -114,6 +107,7 @@ export class ProvidersListComponent implements OnInit {
     const params: ProviderListParams = {
       page: this.currentPage,
       pageSize: this.pageSize,
+      q: this.searchTerm().trim() === '' ? undefined : this.searchTerm().trim(),
     };
     this.isLoading.set(true);
     this.getProvidersUseCase.execute(params).subscribe({

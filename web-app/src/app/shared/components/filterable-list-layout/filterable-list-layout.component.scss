@@ -1,0 +1,20 @@
+.layout-toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.layout-container {
+  padding: 24px;
+}
+
+.layout-search {
+  margin-bottom: 12px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 64px;
+}

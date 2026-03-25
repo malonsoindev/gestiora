@@ -1,0 +1,39 @@
+<app-section-toolbar [title]="title()">
+  <div toolbar-actions class="layout-toolbar-actions">
+    <app-toolbar-action-button
+      icon="refresh"
+      label="Refrescar lista"
+      [tooltip]="refreshTooltip()"
+      [disabled]="isLoading()"
+      (action)="onRefresh()"
+    />
+
+    <app-toolbar-action-button
+      icon="add"
+      [label]="createLabel()"
+      [tooltip]="createTooltip()"
+      (action)="onCreate()"
+    />
+  </div>
+</app-section-toolbar>
+
+<div class="layout-container">
+  <div class="layout-search">
+    <app-list-search-input
+      [label]="searchLabel()"
+      [placeholder]="searchPlaceholder()"
+      [tooltip]="searchTooltip()"
+      [value]="searchTerm()"
+      (searchChange)="onSearchChange($event)"
+    />
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="48" />
+    </div>
+  } @else {
+    <ng-content select="[list-content]" />
+    <ng-content select="[list-pagination]" />
+  }
+</div>
