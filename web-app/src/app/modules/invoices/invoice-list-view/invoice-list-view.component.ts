@@ -27,6 +27,7 @@ import { FilterableListLayoutComponent } from '../../../shared/components/filter
 })
 export class InvoiceListViewComponent {
   readonly invoices = input<InvoiceSummary[]>([]);
+  readonly deletingInvoiceIds = input<string[]>([]);
   readonly totalInvoices = input(0);
   readonly isLoading = input(false);
   readonly searchTerm = input('');
@@ -69,6 +70,10 @@ export class InvoiceListViewComponent {
 
   onDelete(invoice: InvoiceSummary): void {
     this.delete.emit(invoice);
+  }
+
+  isDeleting(invoiceId: string): boolean {
+    return this.deletingInvoiceIds().includes(invoiceId);
   }
 
   getStatusLabel(status: InvoiceSummary['status']): string {

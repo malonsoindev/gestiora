@@ -90,4 +90,26 @@ describe('InvoiceListViewComponent', () => {
     expect(downloadSpy).toHaveBeenCalledOnce();
     expect(deleteSpy).toHaveBeenCalledOnce();
   });
+
+  it('should disable delete action when invoice is being deleted', () => {
+    const fixture = TestBed.createComponent(InvoiceListViewComponent);
+
+    fixture.componentRef.setInput('invoices', [
+      {
+        invoiceId: 'inv-1',
+        providerId: 'prov-1',
+        status: 'DRAFT',
+        createdAt: '2026-03-24T10:30:00.000Z',
+      },
+    ]);
+    fixture.componentRef.setInput('deletingInvoiceIds', ['inv-1']);
+
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    const buttons = Array.from(el.querySelectorAll('button')) as HTMLButtonElement[];
+    const deleteButton = buttons.find((button) => button.textContent?.includes('delete'));
+
+    expect(deleteButton?.disabled).toBe(true);
+  });
 });

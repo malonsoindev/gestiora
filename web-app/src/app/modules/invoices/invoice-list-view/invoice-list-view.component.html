@@ -54,7 +54,13 @@
             <mat-icon>download</mat-icon>
           </button>
 
-          <button mat-icon-button color="warn" matTooltip="Eliminar" (click)="onDelete(row)">
+          <button
+            mat-icon-button
+            color="warn"
+            [disabled]="isDeleting(row.invoiceId)"
+            [matTooltip]="isDeleting(row.invoiceId) ? 'Eliminando...' : 'Eliminar'"
+            (click)="onDelete(row)"
+          >
             <mat-icon>delete</mat-icon>
           </button>
         </mat-cell>

@@ -58,6 +58,10 @@ export class InvoicesAdapter implements IInvoicesPort {
     return this.http.put<InvoiceDetail>(`${this.baseUrl}/${invoiceId}/invoice`, request);
   }
 
+  deleteInvoice(invoiceId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${invoiceId}`);
+  }
+
   getInvoiceFile(invoiceId: string): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/${invoiceId}/file`, {
       responseType: 'blob',

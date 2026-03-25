@@ -2,10 +2,13 @@ import { TestBed } from '@angular/core/testing';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, Router } from '@angular/router';
 import { PageEvent } from '@angular/material/paginator';
-import { of } from 'rxjs';
+import { NEVER, of } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { InvoicesListComponent } from './invoices-list.component';
 import { GetInvoicesUseCase } from '../../../../core/application/invoices/get-invoices.use-case';
 import { GetInvoiceFileUseCase } from '../../../../core/application/invoices/get-invoice-file.use-case';
+import { DeleteInvoiceUseCase } from '../../../../core/application/invoices/delete-invoice.use-case';
 import { InvoiceListResponse } from '../../../../core/domain/invoices/invoice-list-params.model';
 
 const mockListResponse: InvoiceListResponse = {
@@ -30,12 +33,16 @@ const mockListResponse: InvoiceListResponse = {
 
 const mockGetInvoices = { execute: vi.fn() };
 const mockGetInvoiceFile = { execute: vi.fn() };
+const mockDeleteInvoice = { execute: vi.fn() };
+const mockDialog = { open: vi.fn() };
+const mockSnackBar = { open: vi.fn() };
 
 describe('InvoicesListComponent', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     mockGetInvoices.execute.mockReturnValue(of(mockListResponse));
     mockGetInvoiceFile.execute.mockReturnValue(of(new Blob(['pdf'], { type: 'application/pdf' })));
+    mockDeleteInvoice.execute.mockReturnValue(of(undefined));
 
     await TestBed.configureTestingModule({
       imports: [InvoicesListComponent],
@@ -44,6 +51,9 @@ describe('InvoicesListComponent', () => {
         provideRouter([]),
         { provide: GetInvoicesUseCase, useValue: mockGetInvoices },
         { provide: GetInvoiceFileUseCase, useValue: mockGetInvoiceFile },
+        { provide: DeleteInvoiceUseCase, useValue: mockDeleteInvoice },
+        { provide: MatDialog, useValue: mockDialog },
+        { provide: MatSnackBar, useValue: mockSnackBar },
       ],
     }).compileComponents();
   });
@@ -170,5 +180,68 @@ describe('InvoicesListComponent', () => {
     fixture.componentInstance.openCreateInvoice();
 
     expect(navigateSpy).toHaveBeenCalledWith(['/invoices/new']);
+  });
+
+  it('should open confirm dialog before deleting invoice', () => {
+    const mockAfterClosed = { afterClosed: vi.fn(() => of(false)) };
+    mockDialog.open.mockReturnValue(mockAfterClosed);
+
+    const fixture = TestBed.createComponent(InvoicesListComponent);
+    fixture.detectChanges();
+
+    const invoice = fixture.componentInstance.invoices()[0];
+    expect(invoice).toBeDefined();
+    if (!invoice) {
+      return;
+    }
+
+    fixture.componentInstance.deleteInvoice(invoice);
+
+    expect(mockDialog.open).toHaveBeenCalledOnce();
+    expect(mockDeleteInvoice.execute).not.toHaveBeenCalled();
+  });
+
+  it('should delete invoice when confirm dialog returns true', () => {
+    const mockAfterClosed = { afterClosed: vi.fn(() => of(true)) };
+    mockDialog.open.mockReturnValue(mockAfterClosed);
+
+    const fixture = TestBed.createComponent(InvoicesListComponent);
+    fixture.detectChanges();
+
+    const invoice = fixture.componentInstance.invoices()[0];
+    expect(invoice).toBeDefined();
+    if (!invoice) {
+      return;
+    }
+
+    fixture.componentInstance.deleteInvoice(invoice);
+
+    expect(mockDeleteInvoice.execute).toHaveBeenCalledWith(invoice.invoiceId);
+    expect(mockSnackBar.open).toHaveBeenCalledWith(
+      'Factura eliminada correctamente.',
+      'Cerrar',
+      expect.objectContaining({ duration: 3000 }),
+    );
+  });
+
+  it('should avoid duplicate delete request while invoice is deleting', () => {
+    const mockAfterClosed = { afterClosed: vi.fn(() => of(true)) };
+    mockDialog.open.mockReturnValue(mockAfterClosed);
+    mockDeleteInvoice.execute.mockReturnValue(NEVER);
+
+    const fixture = TestBed.createComponent(InvoicesListComponent);
+    fixture.detectChanges();
+
+    const invoice = fixture.componentInstance.invoices()[0];
+    expect(invoice).toBeDefined();
+    if (!invoice) {
+      return;
+    }
+
+    fixture.componentInstance.deleteInvoice(invoice);
+    fixture.componentInstance.deleteInvoice(invoice);
+
+    expect(mockDeleteInvoice.execute).toHaveBeenCalledTimes(1);
+    expect(fixture.componentInstance.deletingInvoiceIds()).toContain(invoice.invoiceId);
   });
 });

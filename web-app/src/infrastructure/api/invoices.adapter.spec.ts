@@ -188,6 +188,16 @@ describe('InvoicesAdapter', () => {
     });
   });
 
+  describe('deleteInvoice', () => {
+    it('should DELETE /api/documents/:id', () => {
+      adapter.deleteInvoice('inv-1').subscribe();
+
+      const req = controller.expectOne(`${BASE}/inv-1`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null, { status: 204, statusText: 'No Content' });
+    });
+  });
+
   describe('getInvoiceFile', () => {
     it('should GET /api/documents/:id/file as blob', () => {
       const fileBlob = new Blob(['pdf-content'], { type: 'application/pdf' });

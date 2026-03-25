@@ -1,10 +1,18 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { PageEvent } from '@angular/material/paginator';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { filter, finalize, switchMap } from 'rxjs/operators';
 import { GetInvoicesUseCase } from '../../../../core/application/invoices/get-invoices.use-case';
 import { GetInvoiceFileUseCase } from '../../../../core/application/invoices/get-invoice-file.use-case';
+import { DeleteInvoiceUseCase } from '../../../../core/application/invoices/delete-invoice.use-case';
 import { InvoiceListParams } from '../../../../core/domain/invoices/invoice-list-params.model';
 import { InvoiceSummary } from '../../../../core/domain/invoices/invoice.model';
+import {
+  ConfirmDialogComponent,
+  ConfirmDialogData,
+} from '../../providers/confirm-dialog/confirm-dialog.component';
 import { InvoiceListViewComponent } from '../invoice-list-view/invoice-list-view.component';
 
 @Component({
@@ -17,9 +25,13 @@ import { InvoiceListViewComponent } from '../invoice-list-view/invoice-list-view
 export class InvoicesListComponent implements OnInit {
   private readonly getInvoicesUseCase = inject(GetInvoicesUseCase);
   private readonly getInvoiceFileUseCase = inject(GetInvoiceFileUseCase);
+  private readonly deleteInvoiceUseCase = inject(DeleteInvoiceUseCase);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
 
   readonly invoices = signal<InvoiceSummary[]>([]);
+  readonly deletingInvoiceIds = signal<string[]>([]);
   readonly totalInvoices = signal(0);
   readonly isLoading = signal(false);
   readonly searchTerm = signal('');
@@ -75,7 +87,59 @@ export class InvoicesListComponent implements OnInit {
     });
   }
 
-  deleteInvoice(_invoice: InvoiceSummary): void {}
+  deleteInvoice(invoice: InvoiceSummary): void {
+    if (this.deletingInvoiceIds().includes(invoice.invoiceId)) {
+      return;
+    }
+
+    const data: ConfirmDialogData = {
+      title: 'Eliminar factura',
+      message: `¿Estás seguro de que deseas eliminar la factura "${invoice.invoiceId}"? Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      cancelLabel: 'Cancelar',
+    };
+
+    this.dialog
+      .open(ConfirmDialogComponent, { data })
+      .afterClosed()
+      .pipe(
+        filter((confirmed: boolean) => confirmed === true),
+        switchMap(() => {
+          this.markDeleting(invoice.invoiceId, true);
+          return this.deleteInvoiceUseCase.execute(invoice.invoiceId).pipe(
+            finalize(() => this.markDeleting(invoice.invoiceId, false)),
+          );
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.snackBar.open('Factura eliminada correctamente.', 'Cerrar', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+          });
+          this.loadInvoices();
+        },
+        error: () => {
+          this.snackBar.open('No se pudo eliminar la factura.', 'Cerrar', {
+            duration: 4000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+          });
+        },
+      });
+  }
+
+  private markDeleting(invoiceId: string, deleting: boolean): void {
+    if (deleting) {
+      if (!this.deletingInvoiceIds().includes(invoiceId)) {
+        this.deletingInvoiceIds.set([...this.deletingInvoiceIds(), invoiceId]);
+      }
+      return;
+    }
+
+    this.deletingInvoiceIds.set(this.deletingInvoiceIds().filter((id) => id !== invoiceId));
+  }
 
   private loadInvoices(): void {
     const params: InvoiceListParams = {
