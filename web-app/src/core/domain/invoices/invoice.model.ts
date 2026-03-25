@@ -43,3 +43,14 @@ export interface InvoiceUpdateRequest {
   total?: number;
   movements?: InvoiceMovement[];
 }
+
+export interface CreateManualInvoiceRequest {
+  providerId: string;
+  invoice: InvoiceUpdateRequest & {
+    movements: InvoiceMovement[];
+  };
+}
+
+export interface CreateManualInvoiceResponse {
+  invoiceId: string;
+}

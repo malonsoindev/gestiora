@@ -1,10 +1,13 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
+  AbstractControl,
   FormArray,
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
   Validators,
 } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,6 +16,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { CreateManualInvoiceUseCase } from '../../../../core/application/invoices/create-manual-invoice.use-case';
 import { GetInvoiceUseCase } from '../../../../core/application/invoices/get-invoice.use-case';
 import { UpdateInvoiceUseCase } from '../../../../core/application/invoices/update-invoice.use-case';
 import { ToolbarActionButtonComponent } from '../../../shared/components/toolbar-action-button/toolbar-action-button.component';
@@ -39,7 +43,11 @@ import {
   styleUrl: './invoice-detail.component.scss',
 })
 export class InvoiceDetailComponent implements OnInit {
+  private readonly isoDateValidator = this.createIsoDateValidator();
+
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly createManualInvoiceUseCase = inject(CreateManualInvoiceUseCase);
   private readonly getInvoiceUseCase = inject(GetInvoiceUseCase);
   private readonly updateInvoiceUseCase = inject(UpdateInvoiceUseCase);
   private readonly formBuilder = inject(FormBuilder);
@@ -47,14 +55,15 @@ export class InvoiceDetailComponent implements OnInit {
 
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
+  readonly isCreateMode = signal(false);
   readonly invoiceId = signal('');
 
   readonly form = this.formBuilder.group({
     providerId: [{ value: '', disabled: true }, [Validators.required]],
     status: [{ value: '', disabled: true }, [Validators.required]],
     numeroFactura: ['', [Validators.required]],
-    fechaOperacion: ['', [Validators.required]],
-    fechaVencimiento: [''],
+    fechaOperacion: ['', [Validators.required, this.isoDateValidator]],
+    fechaVencimiento: ['', [this.isoDateValidator]],
     baseImponible: [0, [Validators.required, Validators.min(0)]],
     iva: [0, [Validators.required, Validators.min(0)]],
     total: [0, [Validators.required, Validators.min(0)]],
@@ -81,6 +90,8 @@ export class InvoiceDetailComponent implements OnInit {
   ngOnInit(): void {
     const invoiceId = this.route.snapshot.paramMap.get('invoiceId');
     if (!invoiceId) {
+      this.isCreateMode.set(true);
+      this.enableCreateModeDefaults();
       return;
     }
 
@@ -108,11 +119,6 @@ export class InvoiceDetailComponent implements OnInit {
       return;
     }
 
-    const invoiceId = this.invoiceId();
-    if (invoiceId === '') {
-      return;
-    }
-
     const request: InvoiceUpdateRequest = {
       numeroFactura: this.form.controls.numeroFactura.value ?? '',
       fechaOperacion: this.form.controls.fechaOperacion.value ?? '',
@@ -131,6 +137,57 @@ export class InvoiceDetailComponent implements OnInit {
       })),
     };
 
+    if (this.isCreateMode()) {
+      const providerId = this.readStringFromControl(this.form.controls.providerId.value).trim();
+      if (providerId === '') {
+        this.form.controls.providerId.markAsTouched();
+        return;
+      }
+
+      this.createInvoice(providerId, request);
+      return;
+    }
+
+    const invoiceId = this.invoiceId();
+    if (invoiceId === '') {
+      return;
+    }
+
+    this.updateInvoice(invoiceId, request);
+  }
+
+  private createInvoice(providerId: string, request: InvoiceUpdateRequest): void {
+    this.isSaving.set(true);
+    this.createManualInvoiceUseCase
+      .execute({
+        providerId,
+        invoice: {
+          ...request,
+          movements: request.movements ?? [],
+        },
+      })
+      .subscribe({
+        next: (response) => {
+          this.isSaving.set(false);
+          this.snackBar.open('Factura creada correctamente.', 'Cerrar', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+          });
+          this.router.navigate(['/invoices', response.invoiceId]).catch(() => undefined);
+        },
+        error: () => {
+          this.isSaving.set(false);
+          this.snackBar.open('No se pudo crear la factura.', 'Cerrar', {
+            duration: 4000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+          });
+        },
+      });
+  }
+
+  private updateInvoice(invoiceId: string, request: InvoiceUpdateRequest): void {
     this.isSaving.set(true);
     this.updateInvoiceUseCase.execute(invoiceId, request).subscribe({
       next: (invoice) => {
@@ -159,6 +216,10 @@ export class InvoiceDetailComponent implements OnInit {
   }
 
   removeMovement(index: number): void {
+    if (this.movementsArray.length <= 1) {
+      return;
+    }
+
     this.movementsArray.removeAt(index);
   }
 
@@ -173,6 +234,18 @@ export class InvoiceDetailComponent implements OnInit {
       iva: this.parseNumber(invoice.iva),
       total: this.parseNumber(invoice.total),
     });
+  }
+
+  private enableCreateModeDefaults(): void {
+    this.form.controls.providerId.enable();
+    this.form.controls.status.setValue('DRAFT');
+    this.form.controls.numeroFactura.setValue('');
+    this.form.controls.fechaOperacion.setValue('');
+    this.form.controls.fechaVencimiento.setValue('');
+    this.form.controls.baseImponible.setValue(0);
+    this.form.controls.iva.setValue(0);
+    this.form.controls.total.setValue(0);
+    this.setMovements([]);
   }
 
   private setMovements(movements: InvoiceMovement[]): void {
@@ -212,5 +285,39 @@ export class InvoiceDetailComponent implements OnInit {
   private parseOptionalNumber(value: unknown): number | undefined {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  private readStringFromControl(value: unknown): string {
+    return typeof value === 'string' ? value : '';
+  }
+
+  private createIsoDateValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const rawValue = control.value;
+      if (rawValue === null || rawValue === undefined || rawValue === '') {
+        return null;
+      }
+
+      if (typeof rawValue !== 'string') {
+        return { invalidDate: true };
+      }
+
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(rawValue);
+      if (!match) {
+        return { invalidDate: true };
+      }
+
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+
+      const utcDate = new Date(Date.UTC(year, month - 1, day));
+      const isValid =
+        utcDate.getUTCFullYear() === year &&
+        utcDate.getUTCMonth() === month - 1 &&
+        utcDate.getUTCDate() === day;
+
+      return isValid ? null : { invalidDate: true };
+    };
   }
 }

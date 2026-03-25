@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
+import { Router } from '@angular/router';
 import { GetInvoicesUseCase } from '../../../../core/application/invoices/get-invoices.use-case';
 import { GetInvoiceFileUseCase } from '../../../../core/application/invoices/get-invoice-file.use-case';
 import { InvoiceListParams } from '../../../../core/domain/invoices/invoice-list-params.model';
@@ -16,6 +17,7 @@ import { InvoiceListViewComponent } from '../invoice-list-view/invoice-list-view
 export class InvoicesListComponent implements OnInit {
   private readonly getInvoicesUseCase = inject(GetInvoicesUseCase);
   private readonly getInvoiceFileUseCase = inject(GetInvoiceFileUseCase);
+  private readonly router = inject(Router);
 
   readonly invoices = signal<InvoiceSummary[]>([]);
   readonly totalInvoices = signal(0);
@@ -56,7 +58,9 @@ export class InvoicesListComponent implements OnInit {
     this.searchTerm.set(term);
   }
 
-  openCreateInvoice(): void {}
+  openCreateInvoice(): void {
+    this.router.navigate(['/invoices/new']).catch(() => undefined);
+  }
 
   downloadInvoiceDocument(invoice: InvoiceSummary): void {
     this.getInvoiceFileUseCase.execute(invoice.invoiceId).subscribe({

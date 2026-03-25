@@ -20,6 +20,7 @@ const mockResponse: InvoiceListResponse = {
 
 const mockPort = {
   getInvoices: vi.fn(),
+  createManualInvoice: vi.fn(),
   getInvoice: vi.fn(),
   updateInvoice: vi.fn(),
   getInvoiceFile: vi.fn(),

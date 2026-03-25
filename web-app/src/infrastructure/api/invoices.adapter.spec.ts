@@ -9,7 +9,11 @@ import {
   InvoiceListParams,
   InvoiceListResponse,
 } from '../../core/domain/invoices/invoice-list-params.model';
-import { InvoiceDetail, InvoiceUpdateRequest } from '../../core/domain/invoices/invoice.model';
+import {
+  CreateManualInvoiceRequest,
+  InvoiceDetail,
+  InvoiceUpdateRequest,
+} from '../../core/domain/invoices/invoice.model';
 
 const BASE = '/api/documents';
 
@@ -102,6 +106,32 @@ describe('InvoicesAdapter', () => {
 
       controller.expectOne(BASE).flush(mockResponse);
       expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe('createManualInvoice', () => {
+    it('should POST /api/documents/manual with payload', () => {
+      const request: CreateManualInvoiceRequest = {
+        providerId: 'prov-1',
+        invoice: {
+          numeroFactura: 'F-001',
+          movements: [
+            {
+              concepto: 'Servicio',
+              cantidad: 1,
+              precio: 100,
+              total: 100,
+            },
+          ],
+        },
+      };
+
+      adapter.createManualInvoice(request).subscribe();
+
+      const req = controller.expectOne(`${BASE}/manual`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(request);
+      req.flush({ invoiceId: 'inv-99' });
     });
   });
 

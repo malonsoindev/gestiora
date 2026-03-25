@@ -5,7 +5,7 @@
       Volver al listado
     </a>
 
-    <h2>Factura {{ invoiceId() }}</h2>
+    <h2>{{ isCreateMode() ? 'Nueva factura' : 'Factura ' + invoiceId() }}</h2>
   </div>
 
   @if (isLoading()) {
@@ -23,6 +23,9 @@
           <mat-form-field appearance="outline">
             <mat-label>ID proveedor</mat-label>
             <input matInput formControlName="providerId" />
+            @if (form.controls.providerId.hasError('required') && form.controls.providerId.touched) {
+              <mat-error>El ID de proveedor es obligatorio.</mat-error>
+            }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
@@ -33,16 +36,27 @@
           <mat-form-field appearance="outline">
             <mat-label>Número factura</mat-label>
             <input matInput formControlName="numeroFactura" />
+            @if (form.controls.numeroFactura.hasError('required') && form.controls.numeroFactura.touched) {
+              <mat-error>El número de factura es obligatorio.</mat-error>
+            }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>Fecha operación</mat-label>
-            <input matInput formControlName="fechaOperacion" />
+            <input matInput type="date" formControlName="fechaOperacion" />
+            @if (form.controls.fechaOperacion.hasError('required') && form.controls.fechaOperacion.touched) {
+              <mat-error>La fecha de operación es obligatoria.</mat-error>
+            } @else if (form.controls.fechaOperacion.hasError('invalidDate') && form.controls.fechaOperacion.touched) {
+              <mat-error>Formato de fecha inválido (yyyy-mm-dd).</mat-error>
+            }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>Fecha vencimiento</mat-label>
-            <input matInput formControlName="fechaVencimiento" />
+            <input matInput type="date" formControlName="fechaVencimiento" />
+            @if (form.controls.fechaVencimiento.hasError('invalidDate') && form.controls.fechaVencimiento.touched) {
+              <mat-error>Formato de fecha inválido (yyyy-mm-dd).</mat-error>
+            }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
@@ -86,24 +100,48 @@
                 <mat-form-field appearance="outline">
                   <mat-label>Concepto</mat-label>
                   <input matInput formControlName="concepto" />
+                  @if (movementGroup.get('concepto')?.hasError('required') && movementGroup.get('concepto')?.touched) {
+                    <mat-error>El concepto es obligatorio.</mat-error>
+                  }
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
                   <mat-label>Cantidad</mat-label>
-                  <input matInput type="number" formControlName="cantidad" />
+                  <input matInput type="number" min="0.000001" step="0.000001" formControlName="cantidad" />
+                  @if (movementGroup.get('cantidad')?.hasError('required') && movementGroup.get('cantidad')?.touched) {
+                    <mat-error>La cantidad es obligatoria.</mat-error>
+                  } @else if (movementGroup.get('cantidad')?.hasError('min') && movementGroup.get('cantidad')?.touched) {
+                    <mat-error>La cantidad debe ser mayor que 0.</mat-error>
+                  }
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
                   <mat-label>Precio</mat-label>
-                  <input matInput type="number" formControlName="precio" />
+                  <input matInput type="number" min="0" step="0.01" formControlName="precio" />
+                  @if (movementGroup.get('precio')?.hasError('required') && movementGroup.get('precio')?.touched) {
+                    <mat-error>El precio es obligatorio.</mat-error>
+                  } @else if (movementGroup.get('precio')?.hasError('min') && movementGroup.get('precio')?.touched) {
+                    <mat-error>El precio no puede ser negativo.</mat-error>
+                  }
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
                   <mat-label>Total</mat-label>
-                  <input matInput type="number" formControlName="total" />
+                  <input matInput type="number" min="0" step="0.01" formControlName="total" />
+                  @if (movementGroup.get('total')?.hasError('required') && movementGroup.get('total')?.touched) {
+                    <mat-error>El total es obligatorio.</mat-error>
+                  } @else if (movementGroup.get('total')?.hasError('min') && movementGroup.get('total')?.touched) {
+                    <mat-error>El total no puede ser negativo.</mat-error>
+                  }
                 </mat-form-field>
 
-                <button mat-icon-button color="warn" matTooltip="Eliminar movimiento" (click)="removeMovement(i)">
+                <button
+                  mat-icon-button
+                  color="warn"
+                  matTooltip="Eliminar movimiento"
+                  [disabled]="movementsArray.length === 1"
+                  (click)="removeMovement(i)"
+                >
                   <mat-icon>delete</mat-icon>
                 </button>
               </div>
@@ -120,7 +158,7 @@
         (click)="saveInvoice()"
         [disabled]="isSaving() || form.invalid || hasTotalsMismatch()"
       >
-        {{ isSaving() ? 'Guardando...' : 'Guardar cambios' }}
+        {{ isSaving() ? 'Guardando...' : (isCreateMode() ? 'Crear factura' : 'Guardar cambios') }}
       </button>
     </div>
   }

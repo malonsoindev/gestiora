@@ -23,4 +23,15 @@ describe('app routes', () => {
     expect(invoiceDetailRoute).toBeTruthy();
     expect(invoiceDetailRoute?.loadComponent).toBeTypeOf('function');
   });
+
+  it('should include invoice create route under authenticated shell', () => {
+    const shellRoute = routes.find(
+      (route) => route.path === '' && route.component === AppShellComponent,
+    );
+    const children = shellRoute?.children ?? [];
+    const invoiceCreateRoute = children.find((route) => route.path === 'invoices/new');
+
+    expect(invoiceCreateRoute).toBeTruthy();
+    expect(invoiceCreateRoute?.loadComponent).toBeTypeOf('function');
+  });
 });

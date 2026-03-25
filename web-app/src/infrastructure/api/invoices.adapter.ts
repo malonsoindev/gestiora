@@ -6,7 +6,12 @@ import {
   InvoiceListParams,
   InvoiceListResponse,
 } from '../../core/domain/invoices/invoice-list-params.model';
-import { InvoiceDetail, InvoiceUpdateRequest } from '../../core/domain/invoices/invoice.model';
+import {
+  CreateManualInvoiceRequest,
+  CreateManualInvoiceResponse,
+  InvoiceDetail,
+  InvoiceUpdateRequest,
+} from '../../core/domain/invoices/invoice.model';
 
 @Injectable()
 export class InvoicesAdapter implements IInvoicesPort {
@@ -39,6 +44,10 @@ export class InvoicesAdapter implements IInvoicesPort {
     }
 
     return this.http.get<InvoiceListResponse>(this.baseUrl, { params: httpParams });
+  }
+
+  createManualInvoice(request: CreateManualInvoiceRequest): Observable<CreateManualInvoiceResponse> {
+    return this.http.post<CreateManualInvoiceResponse>(`${this.baseUrl}/manual`, request);
   }
 
   getInvoice(invoiceId: string): Observable<InvoiceDetail> {

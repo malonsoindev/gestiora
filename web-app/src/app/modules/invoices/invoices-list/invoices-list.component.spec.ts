@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { PageEvent } from '@angular/material/paginator';
 import { of } from 'rxjs';
 import { InvoicesListComponent } from './invoices-list.component';
@@ -158,5 +158,17 @@ describe('InvoicesListComponent', () => {
     createObjectURLSpy.mockRestore();
     revokeObjectURLSpy.mockRestore();
     clickSpy.mockRestore();
+  });
+
+  it('should navigate to new invoice route on create action', () => {
+    const fixture = TestBed.createComponent(InvoicesListComponent);
+    fixture.detectChanges();
+
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+    fixture.componentInstance.openCreateInvoice();
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/invoices/new']);
   });
 });
