@@ -1,0 +1,10 @@
+<button
+  mat-mini-fab
+  class="toolbar-action-btn"
+  [matTooltip]="tooltip()"
+  [attr.aria-label]="label()"
+  [disabled]="disabled()"
+  (click)="onClick()"
+>
+  <mat-icon>{{ icon() }}</mat-icon>
+</button>

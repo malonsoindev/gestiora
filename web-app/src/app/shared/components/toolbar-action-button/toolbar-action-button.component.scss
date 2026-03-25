@@ -1,0 +1,24 @@
+.toolbar-action-btn {
+  --mdc-fab-container-color: var(--primary);
+  --mdc-fab-small-container-color: var(--primary);
+  --mat-fab-foreground-color: #fff;
+  --mat-fab-small-foreground-color: #fff;
+  --mat-fab-state-layer-color: #fff;
+  --mat-fab-ripple-color: rgba(255 255 255 / 30%);
+
+  border: 1px solid rgba(255 255 255 / 35%);
+  box-shadow: 0 4px 12px rgba(0 0 0 / 18%);
+  background-color: var(--primary) !important;
+  color: var(--white) !important;
+
+  mat-icon {
+    color: #fff;
+  }
+
+  &:hover {
+    --mdc-fab-container-color: var(--primary-dark);
+    --mdc-fab-small-container-color: var(--primary-dark);
+    border-color: rgba(255 255 255 / 35%);
+    background-color: var(--primary-dark) !important;
+  }
+}

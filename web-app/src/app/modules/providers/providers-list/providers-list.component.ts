@@ -21,6 +21,7 @@ import {
   ProviderFormDialogComponent,
   ProviderFormDialogData,
 } from '../provider-form-dialog/provider-form-dialog.component';
+import { ToolbarActionButtonComponent } from '../../../shared/components/toolbar-action-button/toolbar-action-button.component';
 
 @Component({
   selector: 'app-providers-list',
@@ -34,6 +35,7 @@ import {
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
+    ToolbarActionButtonComponent,
   ],
   templateUrl: './providers-list.component.html',
   styleUrl: './providers-list.component.scss',
@@ -57,6 +59,10 @@ export class ProvidersListComponent implements OnInit {
 
   onPageChange(event: PageEvent): void {
     this.currentPage = event.pageIndex + 1;
+    this.loadProviders();
+  }
+
+  refreshProviders(): void {
     this.loadProviders();
   }
 
@@ -112,7 +118,11 @@ export class ProvidersListComponent implements OnInit {
     this.isLoading.set(true);
     this.getProvidersUseCase.execute(params).subscribe({
       next: (response) => {
-        this.providers.set(response.items);
+        this.providers.set(
+          [...response.items].sort((a, b) =>
+            a.razonSocial.localeCompare(b.razonSocial, 'es', { sensitivity: 'base' }),
+          ),
+        );
         this.totalProviders.set(response.total ?? 0);
         this.isLoading.set(false);
       },

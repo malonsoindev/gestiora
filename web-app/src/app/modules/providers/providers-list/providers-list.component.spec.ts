@@ -64,6 +64,38 @@ describe('ProvidersListComponent', () => {
     expect(fixture.componentInstance.isLoading()).toBe(false);
   });
 
+  it('should sort providers by razonSocial ascending', () => {
+    mockGetProviders.execute.mockReturnValue(
+      of({
+        ...mockListResponse,
+        items: [
+          { providerId: 'p-1', razonSocial: 'Proveedor Uno', status: 'ACTIVE' },
+          { providerId: 'p-2', razonSocial: 'Proveedor Dos', status: 'INACTIVE' },
+        ],
+      }),
+    );
+
+    const fixture = TestBed.createComponent(ProvidersListComponent);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.providers().map((p) => p.razonSocial)).toEqual([
+      'Proveedor Dos',
+      'Proveedor Uno',
+    ]);
+  });
+
+  describe('refreshProviders', () => {
+    it('should reload providers keeping current paging state', () => {
+      const fixture = TestBed.createComponent(ProvidersListComponent);
+      fixture.detectChanges();
+
+      const initialCalls = mockGetProviders.execute.mock.calls.length;
+      fixture.componentInstance.refreshProviders();
+
+      expect(mockGetProviders.execute.mock.calls.length).toBeGreaterThan(initialCalls);
+    });
+  });
+
   describe('openCreateDialog', () => {
     it('should open ProviderFormDialog with null provider data', () => {
       const mockAfterClosed = { afterClosed: vi.fn(() => of(false)) };

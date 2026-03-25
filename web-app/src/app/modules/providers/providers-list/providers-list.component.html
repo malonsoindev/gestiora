@@ -1,15 +1,22 @@
 <mat-toolbar color="primary">
   <span>Proveedores</span>
   <span class="toolbar-spacer"></span>
-  <button
-    mat-mini-fab
-    class="create-provider-btn"
-    matTooltip="Nuevo proveedor"
-    aria-label="Nuevo proveedor"
-    (click)="openCreateDialog()"
-  >
-    <mat-icon>add</mat-icon>
-  </button>
+  <div class="toolbar-actions">
+    <app-toolbar-action-button
+      icon="refresh"
+      label="Refrescar lista"
+      tooltip="Refrescar lista"
+      [disabled]="isLoading()"
+      (action)="refreshProviders()"
+    />
+
+    <app-toolbar-action-button
+      icon="add"
+      label="Nuevo proveedor"
+      tooltip="Nuevo proveedor"
+      (action)="openCreateDialog()"
+    />
+  </div>
 </mat-toolbar>
 
 <div class="providers-container">
