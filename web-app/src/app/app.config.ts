@@ -14,6 +14,8 @@ import { AuthAdapter } from '../infrastructure/api/auth.adapter';
 import { authInterceptor } from '../infrastructure/http/auth.interceptor';
 import { PROVIDERS_PORT } from '../core/application/providers/providers.tokens';
 import { ProvidersAdapter } from '../infrastructure/api/providers.adapter';
+import { INVOICES_PORT } from '../core/application/invoices/invoices.tokens';
+import { InvoicesAdapter } from '../infrastructure/api/invoices.adapter';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -23,5 +25,6 @@ export const appConfig: ApplicationConfig = {
     provideAnimations(),
     { provide: AUTH_PORT, useClass: AuthAdapter },
     { provide: PROVIDERS_PORT, useClass: ProvidersAdapter },
+    { provide: INVOICES_PORT, useClass: InvoicesAdapter },
   ],
 };

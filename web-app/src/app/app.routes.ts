@@ -39,6 +39,13 @@ export const routes: Routes = [
             (m) => m.ProvidersListComponent,
           ),
       },
+      {
+        path: 'invoices',
+        loadComponent: () =>
+          import('./modules/invoices/invoices-list/invoices-list.component').then(
+            (m) => m.InvoicesListComponent,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: 'login' },

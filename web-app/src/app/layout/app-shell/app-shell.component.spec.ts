@@ -44,6 +44,7 @@ function createTestBed(bpObserver = mockBreakpointObserver(true, true)): void {
         { path: 'login', component: StubComponent },
         { path: 'dashboard', component: StubComponent },
         { path: 'providers', component: StubComponent },
+        { path: 'invoices', component: StubComponent },
       ]),
       { provide: LogoutUseCase, useValue: mockLogoutUseCase },
       { provide: SessionService, useValue: mockSessionService },
@@ -108,6 +109,20 @@ describe('AppShellComponent', () => {
           (l as HTMLAnchorElement).pathname,
       );
       expect(hrefs.some((h) => h.includes('providers'))).toBe(true);
+    });
+
+    it('should render a navigation link to /invoices', () => {
+      const fixture = TestBed.createComponent(AppShellComponent);
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      const links = el.querySelectorAll('a[routerLink]');
+      const hrefs = Array.from(links).map(
+        (l) =>
+          l.getAttribute('ng-reflect-router-link') ??
+          l.getAttribute('href') ??
+          (l as HTMLAnchorElement).pathname,
+      );
+      expect(hrefs.some((h) => h.includes('invoices'))).toBe(true);
     });
 
     it('should render a logout button', () => {

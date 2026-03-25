@@ -1,0 +1,60 @@
+<app-filterable-list-layout
+  title="Facturas"
+  searchLabel="Buscar factura"
+  searchPlaceholder="ID factura, ID proveedor..."
+  searchTooltip="Buscar facturas"
+  [searchTerm]="searchTerm()"
+  [isLoading]="isLoading()"
+  createLabel="Nueva factura"
+  createTooltip="Nueva factura"
+  (searchChange)="onSearchChange($event)"
+  (refresh)="onRefresh()"
+  (create)="onCreate()"
+>
+  <div list-content>
+    <mat-table [dataSource]="invoices()" class="invoices-table">
+      <ng-container matColumnDef="invoiceId">
+        <mat-header-cell *matHeaderCellDef>ID factura</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.invoiceId }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="providerId">
+        <mat-header-cell *matHeaderCellDef>ID proveedor</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.providerId }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <mat-header-cell *matHeaderCellDef>Estado</mat-header-cell>
+        <mat-cell *matCellDef="let row">
+          <mat-chip [class]="'status-chip status-' + row.status.toLowerCase()">
+            {{ row.status }}
+          </mat-chip>
+        </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="createdAt">
+        <mat-header-cell *matHeaderCellDef>Fecha creación</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.createdAt }}</mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="displayedColumns" />
+      <mat-row *matRowDef="let row; columns: displayedColumns;" />
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell no-data-cell" [attr.colspan]="displayedColumns.length">
+          No hay facturas registradas.
+        </td>
+      </tr>
+    </mat-table>
+  </div>
+
+  <div list-pagination>
+    <mat-paginator
+      [length]="totalInvoices()"
+      [pageSize]="10"
+      [pageSizeOptions]="[10, 25, 50]"
+      (page)="onPageChange($event)"
+      showFirstLastButtons
+    />
+  </div>
+</app-filterable-list-layout>

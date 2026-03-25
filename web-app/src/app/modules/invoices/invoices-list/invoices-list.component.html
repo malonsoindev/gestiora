@@ -1,0 +1,10 @@
+<app-invoice-list-view
+  [invoices]="visibleInvoices()"
+  [totalInvoices]="totalInvoices()"
+  [isLoading]="isLoading()"
+  [searchTerm]="searchTerm()"
+  (searchChange)="onSearchChange($event)"
+  (refresh)="refreshInvoices()"
+  (create)="openCreateInvoice()"
+  (pageChange)="onPageChange($event)"
+/>

@@ -81,6 +81,20 @@
             <span matListItemTitle>Proveedores</span>
           }
         </a>
+
+        <a
+          mat-list-item
+          routerLink="/invoices"
+          routerLinkActive="active-link"
+          ariaCurrentWhenActive="page"
+          [matTooltip]="isCompact() ? 'Facturas' : ''"
+          matTooltipPosition="right"
+        >
+          <mat-icon matListItemIcon>receipt_long</mat-icon>
+          @if (!isCompact()) {
+            <span matListItemTitle>Facturas</span>
+          }
+        </a>
       </mat-nav-list>
 
       <span class="sidenav-spacer"></span>
