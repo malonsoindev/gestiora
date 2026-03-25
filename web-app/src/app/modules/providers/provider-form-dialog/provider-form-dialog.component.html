@@ -2,7 +2,12 @@
 
 <mat-dialog-content>
   <form [formGroup]="form" class="provider-form">
-    <mat-form-field appearance="outline" class="full-width">
+    <mat-form-field appearance="outline" class="full-row">
+      <mat-label>CIF / NIF</mat-label>
+      <input matInput formControlName="cif" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-row">
       <mat-label>Razón social *</mat-label>
       <input matInput formControlName="razonSocial" autocomplete="organization" />
       @if (form.controls.razonSocial.hasError('required') && form.controls.razonSocial.touched) {
@@ -10,33 +15,28 @@
       }
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>CIF / NIF</mat-label>
-      <input matInput formControlName="cif" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="full-width">
+    <mat-form-field appearance="outline" class="full-row">
       <mat-label>Dirección</mat-label>
       <input matInput formControlName="direccion" />
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="half-width">
+    <mat-form-field appearance="outline" class="full-row">
       <mat-label>Población</mat-label>
       <input matInput formControlName="poblacion" />
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="half-width">
+    <mat-form-field appearance="outline" class="half-row">
       <mat-label>Provincia</mat-label>
       <input matInput formControlName="provincia" />
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="full-width">
+    <mat-form-field appearance="outline" class="half-row">
       <mat-label>País</mat-label>
       <input matInput formControlName="pais" />
     </mat-form-field>
 
     @if (isEditMode) {
-      <mat-form-field appearance="outline" class="full-width">
+      <mat-form-field appearance="outline" class="full-row">
         <mat-label>Estado</mat-label>
         <mat-select formControlName="status">
           @for (option of statusOptions; track option) {

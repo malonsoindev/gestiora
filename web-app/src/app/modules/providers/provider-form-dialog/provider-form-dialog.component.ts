@@ -47,6 +47,7 @@ export const PROVIDER_STATUS_OPTIONS: ProviderStatus[] = [
     MatSelectModule,
   ],
   templateUrl: './provider-form-dialog.component.html',
+  styleUrl: './provider-form-dialog.component.scss',
 })
 export class ProviderFormDialogComponent {
   private readonly fb = inject(FormBuilder);
